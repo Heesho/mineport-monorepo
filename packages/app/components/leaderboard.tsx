@@ -16,9 +16,9 @@ type LeaderboardProps = {
 };
 
 function getRankIcon(rank: number) {
-  if (rank === 1) return <Crown className="w-4 h-4 text-yellow-500" />;
-  if (rank === 2) return <Medal className="w-4 h-4 text-zinc-400" />;
-  if (rank === 3) return <Medal className="w-4 h-4 text-amber-600" />;
+  if (rank === 1) return <Crown className="w-4 h-4 text-zinc-100" />;
+  if (rank === 2) return <Medal className="w-4 h-4 text-zinc-300" />;
+  if (rank === 3) return <Medal className="w-4 h-4 text-zinc-400" />;
   return <span className="w-4 text-center text-xs text-zinc-500">#{rank}</span>;
 }
 
@@ -31,14 +31,7 @@ function LeaderboardRow({ entry, tokenSymbol }: { entry: LeaderboardEntry; token
     ?? `https://api.dicebear.com/7.x/shapes/svg?seed=${entry.address.toLowerCase()}`;
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-3 p-2.5 rounded-lg transition-colors",
-        entry.isCurrentUser && "bg-purple-500/10 border border-purple-500/30",
-        entry.isFriend && !entry.isCurrentUser && "bg-blue-500/5 border border-blue-500/20",
-        !entry.isCurrentUser && !entry.isFriend && "bg-zinc-900/30"
-      )}
-    >
+    <div className="flex items-center gap-3 py-2.5 border-b border-zinc-800/50 last:border-b-0">
       {/* Rank */}
       <div className="w-6 flex justify-center flex-shrink-0">
         {getRankIcon(entry.rank)}
@@ -57,16 +50,16 @@ function LeaderboardRow({ entry, tokenSymbol }: { entry: LeaderboardEntry; token
         <div className="flex items-center gap-1.5">
           <span className={cn(
             "text-sm truncate",
-            entry.isCurrentUser && "font-semibold text-purple-400",
-            entry.isFriend && !entry.isCurrentUser && "text-blue-400"
+            entry.isCurrentUser && "font-semibold text-white",
+            entry.isFriend && !entry.isCurrentUser && "text-zinc-300"
           )}>
             {displayName}
           </span>
           {entry.isCurrentUser && (
-            <span className="text-[10px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded-full">You</span>
+            <span className="text-[10px] bg-zinc-700 text-zinc-300 px-1.5 py-0.5 rounded-full">You</span>
           )}
           {entry.isFriend && !entry.isCurrentUser && (
-            <Users className="w-3 h-3 text-blue-400" />
+            <Users className="w-3 h-3 text-zinc-400" />
           )}
         </div>
       </div>
@@ -123,7 +116,7 @@ export function Leaderboard({
         {userRank && (
           <button
             onClick={handleShareChallenge}
-            className="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-300 transition-colors"
           >
             <Share2 className="w-3.5 h-3.5" />
             Challenge friends
@@ -133,15 +126,15 @@ export function Leaderboard({
 
       {/* User rank summary if not in top entries */}
       {userRank && userRank > entries.length && (
-        <div className="mb-3 p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/30">
+        <div className="mb-3 p-2.5 rounded-lg bg-zinc-800 border border-zinc-700">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-purple-400">Your rank</span>
-            <span className="text-sm font-semibold text-purple-400">#{userRank}</span>
+            <span className="text-sm text-zinc-400">Your rank</span>
+            <span className="text-sm font-semibold text-white">#{userRank}</span>
           </div>
         </div>
       )}
 
-      <div className="space-y-1.5">
+      <div>
         {entries.map((entry) => (
           <LeaderboardRow key={entry.address} entry={entry} tokenSymbol={tokenSymbol} />
         ))}

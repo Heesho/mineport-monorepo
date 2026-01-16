@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { formatEther } from "viem";
+import { formatUnits } from "viem";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useBatchProfiles";
 import { viewProfile } from "@/hooks/useFarcaster";
@@ -13,10 +13,21 @@ type MineHistoryItemProps = {
     uri: string;
     price: bigint;
     spent: bigint;
+    earned?: bigint;
+    mined?: bigint;
+    multiplier?: number;
     timestamp: number;
+    slotIndex?: number;
   };
   timeAgo: (ts: number) => string;
+  tokenSymbol?: string;
 };
+
+function formatNumber(num: number): string {
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
+  return num.toFixed(0);
+}
 
 /**
  * Memoized mine history item with cached profile lookup
@@ -24,6 +35,7 @@ type MineHistoryItemProps = {
 export const MineHistoryItem = memo(function MineHistoryItem({
   mine,
   timeAgo,
+  tokenSymbol = "DONUT",
 }: MineHistoryItemProps) {
   // Use cached profile lookup
   const { displayName, avatarUrl, fid } = useProfile(mine.miner);
@@ -32,8 +44,12 @@ export const MineHistoryItem = memo(function MineHistoryItem({
     if (fid) viewProfile(fid);
   };
 
+  const spent = Number(formatUnits(mine.spent, 6));
+  const earned = mine.earned ? Number(formatUnits(mine.earned, 6)) : null;
+  const mined = mine.mined ? Number(formatUnits(mine.mined, 18)) : null;
+
   return (
-    <div className="flex items-start gap-3 p-3 rounded-xl bg-zinc-900/50">
+    <div className="flex items-center gap-3 py-2.5 border-b border-zinc-800/50 last:border-b-0">
       <button
         onClick={handleProfileClick}
         disabled={!fid}
@@ -46,23 +62,45 @@ export const MineHistoryItem = memo(function MineHistoryItem({
           </AvatarFallback>
         </Avatar>
       </button>
+
       <div className="flex-1 min-w-0">
-        <button
-          onClick={handleProfileClick}
-          disabled={!fid}
-          className={`text-xs text-zinc-400 ${fid ? "hover:text-purple-400 cursor-pointer" : "cursor-default"}`}
-        >
-          {displayName}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleProfileClick}
+            disabled={!fid}
+            className={`text-sm font-medium truncate ${fid ? "hover:text-zinc-300 cursor-pointer" : "cursor-default"}`}
+          >
+            {displayName}
+          </button>
+          <span className="text-xs text-zinc-500">{timeAgo(mine.timestamp)}</span>
+          {mine.multiplier && mine.multiplier > 1 && (
+            <span className="text-[10px] font-semibold text-zinc-300 bg-zinc-700 px-1.5 py-0.5 rounded">
+              {mine.multiplier}x
+            </span>
+          )}
+        </div>
         {mine.uri && (
-          <div className="text-sm text-white mt-0.5 break-words">{mine.uri}</div>
+          <div className="text-xs text-zinc-400 mt-0.5 truncate">{mine.uri}</div>
         )}
       </div>
-      <div className="text-xs flex-shrink-0 text-right">
-        <div className="text-white">
-          Ξ{Number(formatEther(mine.spent)).toFixed(4)}
+
+      <div className="flex items-center gap-4 flex-shrink-0 text-right">
+        <div>
+          <div className="text-xs text-zinc-500">Spent</div>
+          <div className="text-sm font-medium">${spent.toFixed(2)}</div>
         </div>
-        <div className="text-zinc-500">{timeAgo(mine.timestamp)}</div>
+        {earned !== null && (
+          <div>
+            <div className="text-xs text-zinc-500">Earned</div>
+            <div className="text-sm font-medium">${earned.toFixed(2)}</div>
+          </div>
+        )}
+        {mined !== null && (
+          <div>
+            <div className="text-xs text-zinc-500">Mined</div>
+            <div className="text-sm font-medium">{formatNumber(mined)}</div>
+          </div>
+        )}
       </div>
     </div>
   );
