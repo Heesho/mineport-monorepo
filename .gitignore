@@ -30,6 +30,10 @@ packages/subgraph/generated/
 # OS
 .DS_Store
 Thumbs.db
+nul
+
+# Playwright MCP screenshots
+.playwright-mcp/
 
 # Logs
 *.log
