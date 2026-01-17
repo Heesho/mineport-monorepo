@@ -43,6 +43,7 @@ templates:
         - Slot
         - Account
         - Epoch
+        - Mine
       abis:
         - name: Rig
           file: ./abis/Rig.json

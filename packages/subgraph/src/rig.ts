@@ -11,7 +11,7 @@ import {
   Rig__CapacitySet as RigCapacitySetEvent,
   Rig__UriSet as RigUriSetEvent,
 } from "../generated/templates/Rig/Rig";
-import { Launchpad, Rig, Slot, Account, RigAccount, Epoch } from "../generated/schema";
+import { Launchpad, Rig, Slot, Account, RigAccount, Epoch, Mine } from "../generated/schema";
 import { ZERO_BD, ZERO_BI, ONE_BI, LAUNCHPAD_ID, ADDRESS_ZERO } from "./constants";
 import { convertTokenToDecimal } from "./helpers";
 
@@ -105,6 +105,10 @@ function getEpochId(rigAddress: string, index: BigInt, epochId: BigInt): string 
   return rigAddress + "-" + index.toString() + "-" + epochId.toString();
 }
 
+function getMineId(rigAddress: string, index: BigInt, epochId: BigInt): string {
+  return rigAddress + "-" + index.toString() + "-" + epochId.toString();
+}
+
 function getOrCreateEpoch(rigAddress: string, index: BigInt, epochId: BigInt, accountAddress: string): Epoch {
   let id = getEpochId(rigAddress, index, epochId);
   let epoch = Epoch.load(id);
@@ -136,14 +140,16 @@ export function handleRigMine(event: RigMineEvent): void {
   let index = event.params.index;
   let epochId = event.params.epochId;
 
+  // Get the previous miner before updating slot
+  let slot = getOrCreateSlot(rigAddress, index);
+  let prevMinerAddress = slot.currentMiner;
+
   // Update rig
   let rig = getOrCreateRig(rigAddress);
   rig.lastMined = event.block.timestamp;
   rig.save();
 
-  // Update or create slot
-  let slot = getOrCreateSlot(rigAddress, index);
-  // Increment epoch for this slot (epochId in event is the OLD epoch being mined out)
+  // Update slot - Increment epoch for this slot (epochId in event is the OLD epoch being mined out)
   slot.epochId = epochId.plus(ONE_BI);
   slot.currentMiner = minerAddress;
   slot.uri = event.params.uri;
@@ -167,6 +173,23 @@ export function handleRigMine(event: RigMineEvent): void {
 
   // Ensure Account exists for the miner
   getOrCreateAccount(minerAddress);
+
+  // Create Mine event for activity feed (keyed by rig-slot-epoch for aggregation)
+  let mineId = getMineId(rigAddress, index, newEpochId);
+  let mine = new Mine(mineId);
+  mine.rig = rigAddress;
+  mine.miner = minerAddress;
+  mine.prevMiner = prevMinerAddress; // Previous miner who got displaced
+  mine.slotIndex = index;
+  mine.epochId = newEpochId;
+  mine.uri = event.params.uri;
+  mine.price = price;
+  mine.mined = ZERO_BD; // Will be updated by Rig__Mint event
+  mine.earned = ZERO_BD; // Will be updated by Rig__MinerFee event
+  mine.upsMultiplier = null; // Will be updated by Rig__UpsMultiplierSet event if applicable
+  mine.timestamp = event.block.timestamp;
+  mine.blockNumber = event.block.number;
+  mine.save();
 }
 
 export function handleRigMinerFee(event: RigMinerFeeEvent): void {
@@ -188,6 +211,13 @@ export function handleRigMinerFee(event: RigMinerFeeEvent): void {
   if (epoch != null) {
     epoch.earned = epoch.earned.plus(amount);
     epoch.save();
+  }
+
+  // Update the Mine entity with earned amount
+  let mine = Mine.load(getMineId(rigAddress, index, newEpochId));
+  if (mine != null) {
+    mine.earned = mine.earned.plus(amount);
+    mine.save();
   }
 }
 
@@ -228,6 +258,15 @@ export function handleRigMint(event: RigMintEvent): void {
   if (epoch != null) {
     epoch.mined = epoch.mined.plus(amount);
     epoch.save();
+  }
+
+  // Update the Mine entity with mined amount
+  // The new epoch is epochId + 1 (since Mint is for the OLD epoch)
+  let newEpochId = epochId.plus(ONE_BI);
+  let mine = Mine.load(getMineId(rigAddress, index, newEpochId));
+  if (mine != null) {
+    mine.mined = mine.mined.plus(amount);
+    mine.save();
   }
 }
 

@@ -86,3 +86,20 @@ type Epoch @entity(immutable: false) {
   spent: BigDecimal! # Quote tokens spent this epoch
   earned: BigDecimal! # Quote tokens earned this epoch (miner fee)
 }
+
+# Mine event for activity feed (tracks each mine action with aggregated data)
+type Mine @entity(immutable: false) {
+  id: ID! # {rigAddress}-{slotIndex}-{epochId}
+  rig: Rig!
+  miner: Account! # New miner who took the slot
+  prevMiner: Account # Previous miner who got displaced (if any)
+  slotIndex: BigInt!
+  epochId: BigInt!
+  uri: String!
+  price: BigDecimal! # What the new miner paid (spent)
+  mined: BigDecimal! # Tokens minted for previous miner
+  earned: BigDecimal! # Fee earned by previous miner
+  upsMultiplier: BigInt # UPS multiplier at time of mine (if set)
+  timestamp: BigInt!
+  blockNumber: BigInt!
+}

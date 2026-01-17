@@ -3,7 +3,7 @@ import { GraphQLClient, gql } from "graphql-request";
 // Subgraph URL (Goldsky)
 export const LAUNCHPAD_SUBGRAPH_URL =
   process.env.NEXT_PUBLIC_LAUNCHPAD_SUBGRAPH_URL ||
-  "https://api.goldsky.com/api/public/project_cmgscxhw81j5601xmhgd42rej/subgraphs/miner-launchpad/1.0.0/gn";
+  "https://api.goldsky.com/api/public/project_cmgscxhw81j5601xmhgd42rej/subgraphs/mineport/1.0.0/gn";
 
 const client = new GraphQLClient(LAUNCHPAD_SUBGRAPH_URL);
 
@@ -72,6 +72,23 @@ export type SubgraphEpoch = {
   mined: string;
   spent: string;
   earned: string;
+};
+
+// Mine event for activity feed (with aggregated data)
+export type SubgraphMineEvent = {
+  id: string; // {rigAddress}-{slotIndex}-{epochId}
+  rig: { id: string };
+  miner: { id: string };
+  prevMiner: { id: string } | null;
+  slotIndex: string;
+  epochId: string;
+  uri: string;
+  price: string; // What new miner paid
+  mined: string; // Tokens minted for prev miner
+  earned: string; // Fee earned by prev miner
+  upsMultiplier: string | null;
+  timestamp: string;
+  blockNumber: string;
 };
 
 // Queries
@@ -267,6 +284,71 @@ export const GET_ALL_EPOCHS_QUERY = gql`
       mined
       spent
       earned
+    }
+  }
+`;
+
+// Get mine events for a rig (activity feed with aggregated data)
+export const GET_MINES_QUERY = gql`
+  query GetMines($rigId: String!, $first: Int!, $skip: Int!) {
+    mines(
+      where: { rig_: { id: $rigId } }
+      orderBy: timestamp
+      orderDirection: desc
+      first: $first
+      skip: $skip
+    ) {
+      id
+      rig {
+        id
+      }
+      miner {
+        id
+      }
+      prevMiner {
+        id
+      }
+      slotIndex
+      epochId
+      uri
+      price
+      mined
+      earned
+      upsMultiplier
+      timestamp
+      blockNumber
+    }
+  }
+`;
+
+// Get all recent mines (global activity feed)
+export const GET_ALL_MINES_QUERY = gql`
+  query GetAllMines($first: Int!, $skip: Int!) {
+    mines(
+      orderBy: timestamp
+      orderDirection: desc
+      first: $first
+      skip: $skip
+    ) {
+      id
+      rig {
+        id
+      }
+      miner {
+        id
+      }
+      prevMiner {
+        id
+      }
+      slotIndex
+      epochId
+      uri
+      price
+      mined
+      earned
+      upsMultiplier
+      timestamp
+      blockNumber
     }
   }
 `;
@@ -517,6 +599,48 @@ export async function getAllEpochs(
     );
     return data.epochs ?? [];
   } catch {
+    return [];
+  }
+}
+
+// Get mine events for a rig (simple activity feed)
+export async function getMines(
+  rigId: string,
+  first = 50,
+  skip = 0
+): Promise<SubgraphMineEvent[]> {
+  try {
+    const data = await client.request<{ mines: SubgraphMineEvent[] }>(
+      GET_MINES_QUERY,
+      {
+        rigId: rigId.toLowerCase(),
+        first,
+        skip,
+      }
+    );
+    return data.mines ?? [];
+  } catch (error) {
+    console.error("[getMines] Error:", error);
+    return [];
+  }
+}
+
+// Get all recent mines (global activity feed)
+export async function getAllMines(
+  first = 50,
+  skip = 0
+): Promise<SubgraphMineEvent[]> {
+  try {
+    const data = await client.request<{ mines: SubgraphMineEvent[] }>(
+      GET_ALL_MINES_QUERY,
+      {
+        first,
+        skip,
+      }
+    );
+    return data.mines ?? [];
+  } catch (error) {
+    console.error("[getAllMines] Error:", error);
     return [];
   }
 }

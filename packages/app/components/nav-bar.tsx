@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Compass, Flame, PlusCircle, HelpCircle, UserCircle } from "lucide-react";
+import { Compass, PlusCircle, HelpCircle, UserCircle } from "lucide-react";
 
 export function NavBar() {
   const pathname = usePathname();
@@ -12,12 +12,11 @@ export function NavBar() {
   const isRigPage = pathname.startsWith("/rig/");
 
   const navItems: Array<{
-    href: "/explore" | "/auctions" | "/launch" | "/info" | "/profile";
+    href: "/explore" | "/launch" | "/info" | "/profile";
     icon: typeof Compass;
     isActive: boolean;
   }> = [
     { href: "/explore", icon: Compass, isActive: pathname === "/explore" || pathname === "/" || isRigPage },
-    { href: "/auctions", icon: Flame, isActive: pathname === "/auctions" },
     { href: "/launch", icon: PlusCircle, isActive: pathname === "/launch" },
     { href: "/info", icon: HelpCircle, isActive: pathname === "/info" },
     { href: "/profile", icon: UserCircle, isActive: pathname === "/profile" },

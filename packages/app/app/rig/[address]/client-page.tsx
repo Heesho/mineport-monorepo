@@ -7,6 +7,10 @@ import { ArrowLeft, Share2, Copy, Check } from "lucide-react";
 import { NavBar } from "@/components/nav-bar";
 import { Leaderboard } from "@/components/leaderboard";
 import { MineHistoryItem } from "@/components/mine-history-item";
+import { MineModal } from "@/components/mine-modal";
+import { TradeModal } from "@/components/trade-modal";
+import { AuctionModal } from "@/components/auction-modal";
+import { LiquidityModal } from "@/components/liquidity-modal";
 // import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useFarcaster } from "@/hooks/useFarcaster";
 import { useRigLeaderboard } from "@/hooks/useRigLeaderboard";
@@ -223,6 +227,11 @@ export default function RigDetailPage() {
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [showHeaderPrice, setShowHeaderPrice] = useState(false);
   const [minedAmount, setMinedAmount] = useState(MOCK_MINING_SESSION.minedSession);
+  const [showMineModal, setShowMineModal] = useState(false);
+  const [showTradeModal, setShowTradeModal] = useState(false);
+  const [tradeMode, setTradeMode] = useState<"buy" | "sell">("buy");
+  const [showAuctionModal, setShowAuctionModal] = useState(false);
+  const [showLiquidityModal, setShowLiquidityModal] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const tokenInfoRef = useRef<HTMLDivElement>(null);
 
@@ -624,31 +633,48 @@ export default function RigDetailPage() {
               {showActionMenu && (
                 <div className="absolute bottom-full right-0 mb-2 flex flex-col gap-1.5">
                   <button
-                    onClick={() => setShowActionMenu(false)}
+                    onClick={() => {
+                      setShowActionMenu(false);
+                      setTradeMode("buy");
+                      setShowTradeModal(true);
+                    }}
                     className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
                   >
                     Buy
                   </button>
                   <button
-                    onClick={() => setShowActionMenu(false)}
+                    onClick={() => {
+                      setShowActionMenu(false);
+                      setTradeMode("sell");
+                      setShowTradeModal(true);
+                    }}
                     className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
                   >
                     Sell
                   </button>
                   <button
-                    onClick={() => setShowActionMenu(false)}
+                    onClick={() => {
+                      setShowActionMenu(false);
+                      setShowMineModal(true);
+                    }}
                     className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
                   >
                     Mine
                   </button>
                   <button
-                    onClick={() => setShowActionMenu(false)}
+                    onClick={() => {
+                      setShowActionMenu(false);
+                      setShowAuctionModal(true);
+                    }}
                     className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
                   >
                     Auction
                   </button>
                   <button
-                    onClick={() => setShowActionMenu(false)}
+                    onClick={() => {
+                      setShowActionMenu(false);
+                      setShowLiquidityModal(true);
+                    }}
                     className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
                   >
                     Liquidity
@@ -670,6 +696,46 @@ export default function RigDetailPage() {
         </div>
       </div>
       <NavBar />
+
+      {/* Mine Modal */}
+      <MineModal
+        isOpen={showMineModal}
+        onClose={() => setShowMineModal(false)}
+        tokenSymbol={MOCK_TOKEN.symbol}
+        userBalance={12.45}
+      />
+
+      {/* Trade Modal (Buy/Sell) */}
+      <TradeModal
+        isOpen={showTradeModal}
+        onClose={() => setShowTradeModal(false)}
+        mode={tradeMode}
+        tokenSymbol={MOCK_TOKEN.symbol}
+        tokenName={MOCK_TOKEN.name}
+        marketPrice={MOCK_TOKEN.price}
+        userBalance={tradeMode === "buy" ? 45.73 : MOCK_USER_POSITION.balance}
+        priceImpact={0.5}
+      />
+
+      {/* Auction Modal */}
+      <AuctionModal
+        isOpen={showAuctionModal}
+        onClose={() => setShowAuctionModal(false)}
+        tokenSymbol={MOCK_TOKEN.symbol}
+        tokenName={MOCK_TOKEN.name}
+      />
+
+      {/* Liquidity Modal */}
+      <LiquidityModal
+        isOpen={showLiquidityModal}
+        onClose={() => setShowLiquidityModal(false)}
+        tokenSymbol={MOCK_TOKEN.symbol}
+        tokenName={MOCK_TOKEN.name}
+        tokenBalance={MOCK_USER_POSITION.balance}
+        donutBalance={1186.38}
+        tokenPrice={MOCK_TOKEN.price}
+        donutPrice={0.001}
+      />
     </main>
   );
 }
