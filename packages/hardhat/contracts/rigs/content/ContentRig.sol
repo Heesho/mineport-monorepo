@@ -17,7 +17,7 @@ import {IContentCore} from "./interfaces/IContentCore.sol";
  * @notice NFT collection where collectors can "steal" content by paying a dutch auction price.
  *         The purchase price determines the owner's stake in the Rewarder, earning them Unit rewards.
  * @dev Each content has a dutch auction that resets after collection with a 2x price multiplier.
- *      Fees: 80% to previous owner, 15% to treasury, 3% to creator, 1% to team, 1% to protocol.
+ *      Fees: 80% to previous owner, 15% to treasury, 2% to creator, 2% to team, 1% to protocol.
  */
 contract ContentRig is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
@@ -25,8 +25,8 @@ contract ContentRig is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGua
     /*----------  CONSTANTS  --------------------------------------------*/
 
     uint256 public constant PREVIOUS_OWNER_BPS = 8_000; // 80% to previous owner
-    uint256 public constant CREATOR_BPS = 300; // 3% to creator
-    uint256 public constant TEAM_BPS = 400; // 4% to team
+    uint256 public constant CREATOR_BPS = 200; // 2% to creator
+    uint256 public constant TEAM_BPS = 200; // 2% to team
     uint256 public constant PROTOCOL_BPS = 100; // 1% to protocol
     uint256 public constant DIVISOR = 10_000;
     uint256 public constant PRECISION = 1e18;

@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The ContentRig system is an NFT-based content marketplace where collectors "steal" content by paying a Dutch auction price. The purchase price becomes the collector's stake in a Synthetix-style reward pool, earning them Unit token emissions. Unique features include perpetual 3% creator royalties, disabled NFT transfers (only `collect()` allowed), and weekly minting via a permissionless Minter contract.
+The ContentRig system is an NFT-based content marketplace where collectors "steal" content by paying a Dutch auction price. The purchase price becomes the collector's stake in a Synthetix-style reward pool, earning them Unit token emissions. Unique features include perpetual 2% creator royalties, disabled NFT transfers (only `collect()` allowed), and weekly minting via a permissionless Minter contract.
 
 | Severity | Count |
 |----------|-------|
@@ -37,10 +37,10 @@ ContentRig is the most complex rig type with 5 interacting contracts:
 ```
 ContentRig (NFT) ←→ Rewarder (Staking) ←→ Minter (Emissions)
        ↓
-    Creator gets 3% royalty (perpetual)
+    Creator gets 2% royalty (perpetual)
     Previous Owner gets 80%
-    Treasury gets 12%
-    Team gets 4%
+    Treasury gets 15%
+    Team gets 2%
     Protocol gets 1%
 ```
 
@@ -48,7 +48,7 @@ ContentRig (NFT) ←→ Rewarder (Staking) ←→ Minter (Emissions)
 
 | Actor | Trust Level | Capabilities |
 |-------|-------------|--------------|
-| **Creator** | Untrusted | `create()`, receives 3% perpetual royalty |
+| **Creator** | Untrusted | `create()`, receives 2% perpetual royalty |
 | **Collector** | Untrusted | `collect()`, earns rewards based on stake |
 | **Owner** | Semi-trusted | `setModerators()`, `setIsModerated()`, `addReward()` |
 | **Moderator** | Semi-trusted | `approveContents()` |
@@ -366,7 +366,7 @@ Anyone can call `updatePeriod()`, removing dependence on a centralized keeper. H
 1. **Pull Pattern** - User fees (prevOwner, creator) use pull pattern preventing blacklist DoS
 2. **Soulbound Design** - Disabled transfers enforce fee structure
 3. **Permissionless Minting** - No centralized keeper dependency
-4. **Perpetual Royalties** - Creators earn 3% forever
+4. **Perpetual Royalties** - Creators earn 2% forever
 5. **Synthetix-style Rewarder** - Battle-tested reward distribution pattern
 6. **ReentrancyGuard** - On all critical functions
 7. **SafeERC20** - For all token operations

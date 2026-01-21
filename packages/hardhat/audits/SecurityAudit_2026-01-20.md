@@ -374,7 +374,7 @@ No minimum donation amount. A user could donate 1 wei on a low-activity day and 
 | # | Contract | Issue | Notes |
 |---|----------|-------|-------|
 | I-1 | `Auction.sol` | Free purchase at price=0 | Intentional Dutch auction behavior |
-| I-2 | `ContentRig.sol` | Creator gets 83% when self-collecting | 80% prev owner + 3% creator fees to same address |
+| I-2 | `ContentRig.sol` | Creator gets 82% when self-collecting | 80% prev owner + 2% creator fees to same address |
 | I-3 | `MineRig.sol` | Epoch ID uses unchecked | Safe - would take 10^70 years to overflow |
 | I-4 | `MockEntropy.sol` | Locked ether | Mock contract only, not production |
 | I-5 | `MockUniswapV2.sol` | Unchecked transfer | Mock contract only |
@@ -653,7 +653,7 @@ Consider making `rig` immutable or adding a one-time lock.
 **Location:** Line 233
 
 **Description:**
-The creator address receives 3% on every collection via `safeTransfer`. If the creator address is a contract that reverts on token receipt, all future `collect()` calls will permanently fail.
+The creator address receives 2% on every collection via `safeTransfer`. If the creator address is a contract that reverts on token receipt, all future `collect()` calls will permanently fail.
 
 ```solidity
 IERC20(quote).safeTransfer(creator, creatorAmount);
