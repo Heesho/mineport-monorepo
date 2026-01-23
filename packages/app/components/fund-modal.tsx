@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NavBar } from "@/components/nav-bar";
 import { Leaderboard } from "@/components/leaderboard";
 import { LeaderboardEntry } from "@/hooks/useRigLeaderboard";
+import { DonationHistoryItem } from "@/components/donation-history-item";
 
 type FundModalProps = {
   isOpen: boolean;
@@ -56,6 +57,28 @@ export function FundModal({
     { rank: 5, address: "0x5678901234abcdef5678901234abcdef56789012", mined: BigInt(198000e18), minedFormatted: "198K", spent: BigInt(0), spentFormatted: "0", earned: BigInt(198000e18), earnedFormatted: "198K", isCurrentUser: false, isFriend: false },
   ];
   const userRank = 4;
+
+  // Mock recent donations
+  const now = Math.floor(Date.now() / 1000);
+  const recentDonations = [
+    { id: "1", donor: "0x1234567890abcdef1234567890abcdef12345678", amount: BigInt(50e6), estimatedTokens: BigInt(2500e18), timestamp: now - 120 },
+    { id: "2", donor: "0xabcdef1234567890abcdef1234567890abcdef12", amount: BigInt(25e6), estimatedTokens: BigInt(1250e18), timestamp: now - 300 },
+    { id: "3", donor: "0x9876543210fedcba9876543210fedcba98765432", amount: BigInt(100e6), estimatedTokens: BigInt(4800e18), timestamp: now - 600 },
+    { id: "4", donor: "0xfedcba9876543210fedcba9876543210fedcba98", amount: BigInt(10e6), estimatedTokens: BigInt(500e18), timestamp: now - 1800 },
+    { id: "5", donor: "0x5678901234abcdef5678901234abcdef56789012", amount: BigInt(75e6), estimatedTokens: BigInt(3600e18), timestamp: now - 3600 },
+  ];
+
+  // Time ago helper
+  function timeAgo(timestamp: number): string {
+    const seconds = now - timestamp;
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
 
   // Mock recipient data
   const recipient = {
@@ -281,9 +304,19 @@ export function FundModal({
             rigUrl={`https://mineport.xyz/rig/${rigAddress}`}
           />
 
-          {/* Placeholder for remaining sections */}
-          <div className="text-center text-zinc-600 py-4">
-            More sections coming...
+          {/* Recent Donations */}
+          <div className="mt-6 mb-6">
+            <h2 className="text-[18px] font-semibold mb-3">Recent Donations</h2>
+            <div>
+              {recentDonations.map((donation) => (
+                <DonationHistoryItem
+                  key={donation.id}
+                  donation={donation}
+                  timeAgo={timeAgo}
+                  tokenSymbol={tokenSymbol}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
