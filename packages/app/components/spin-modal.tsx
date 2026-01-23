@@ -44,6 +44,14 @@ export function SpinModal({
     { chance: 2, payout: 100 },
   ];
 
+  const userStats = {
+    spent: 564.68,
+    won: 45230,
+    wonUsd: 123.45,
+    spins: 47,
+    net: -441.23,
+  };
+
   // Prize pool ticking effect
   useEffect(() => {
     if (!isOpen) return;
@@ -170,6 +178,43 @@ export function SpinModal({
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Your Position */}
+          <div className="mb-6">
+            <div className="font-semibold text-[18px] mb-3">Your position</div>
+            <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+              <div>
+                <div className="text-muted-foreground text-[12px] mb-1">Spent</div>
+                <div className="font-semibold text-[15px] tabular-nums">
+                  ${userStats.spent.toFixed(2)}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground text-[12px] mb-1">Won</div>
+                <div className="font-semibold text-[15px] tabular-nums flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[10px] text-white font-semibold">
+                    {tokenSymbol.charAt(0)}
+                  </span>
+                  {userStats.won.toLocaleString()}
+                </div>
+                <div className="text-[12px] text-zinc-500">${userStats.wonUsd.toFixed(2)}</div>
+              </div>
+              <div>
+                <div className="text-muted-foreground text-[12px] mb-1">Spins</div>
+                <div className="font-semibold text-[15px] tabular-nums">
+                  {userStats.spins}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground text-[12px] mb-1">Net</div>
+                <div className={`font-semibold text-[15px] tabular-nums ${
+                  userStats.net >= 0 ? "text-white" : "text-zinc-400"
+                }`}>
+                  {userStats.net >= 0 ? "+" : ""}${userStats.net.toFixed(2)}
+                </div>
+              </div>
             </div>
           </div>
 
