@@ -36,6 +36,14 @@ export function SpinModal({
     won: 14943,
   });
 
+  const odds = [
+    { chance: 50, payout: 1 },
+    { chance: 25, payout: 5 },
+    { chance: 15, payout: 15 },
+    { chance: 8, payout: 35 },
+    { chance: 2, payout: 100 },
+  ];
+
   // Prize pool ticking effect
   useEffect(() => {
     if (!isOpen) return;
@@ -128,6 +136,41 @@ export function SpinModal({
           <div className="text-center mb-6">
             <span className="text-sm text-zinc-500">Current price: </span>
             <span className="text-sm font-medium">${currentPrice.toFixed(4)}</span>
+          </div>
+
+          {/* Odds Breakdown */}
+          <div className="mb-6">
+            <div className="font-semibold text-[18px] mb-3">Odds</div>
+            <div className="bg-zinc-900 rounded-xl overflow-hidden">
+              {/* Header */}
+              <div className="grid grid-cols-3 px-4 py-2 text-xs text-zinc-500 border-b border-zinc-800">
+                <div>Chance</div>
+                <div>Payout</div>
+                <div className="text-right">Win</div>
+              </div>
+              {/* Rows */}
+              {odds.map((odd, i) => {
+                const winAmount = (prizePool * odd.payout) / 100;
+                const isJackpot = odd.payout === 100;
+                return (
+                  <div
+                    key={i}
+                    className={`grid grid-cols-3 px-4 py-3 text-sm ${
+                      isJackpot ? "bg-zinc-800/50" : ""
+                    } ${i < odds.length - 1 ? "border-b border-zinc-800/50" : ""}`}
+                  >
+                    <div className="font-medium">{odd.chance}%</div>
+                    <div className="text-zinc-400">{odd.payout}%</div>
+                    <div className="text-right font-medium tabular-nums flex items-center justify-end gap-1">
+                      <span className="w-4 h-4 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[8px] text-white font-bold">
+                        {tokenSymbol.charAt(0)}
+                      </span>
+                      {winAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Placeholder for remaining sections */}
