@@ -91,14 +91,14 @@ contract FundMulticall {
     /*----------  EXTERNAL FUNCTIONS  -----------------------------------*/
 
     /**
-     * @notice Donate to a fund using the rig's payment token.
+     * @notice Fund a rig using the rig's payment token.
      * @dev User must approve the payment token to this contract.
      * @param rig Rig contract address
-     * @param account The account to credit for this donation
+     * @param account The account to credit for this funding
      * @param recipient The whitelisted fund address
-     * @param amount The amount of payment tokens to donate
+     * @param amount The amount of payment tokens to fund
      */
-    function donate(
+    function fund(
         address rig,
         address account,
         address recipient,
@@ -110,7 +110,7 @@ contract FundMulticall {
         IERC20(paymentToken).safeTransferFrom(msg.sender, address(this), amount);
         IERC20(paymentToken).safeApprove(rig, 0);
         IERC20(paymentToken).safeApprove(rig, amount);
-        IFundRig(rig).donate(account, recipient, amount);
+        IFundRig(rig).fund(account, recipient, amount);
     }
 
     /**

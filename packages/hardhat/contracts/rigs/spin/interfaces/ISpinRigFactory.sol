@@ -2,11 +2,11 @@
 pragma solidity 0.8.19;
 
 /**
- * @title ISlotRigFactory
+ * @title ISpinRigFactory
  * @author heesho
- * @notice Interface for the SlotRigFactory contract.
+ * @notice Interface for the SpinRigFactory contract.
  */
-interface ISlotRigFactory {
+interface ISpinRigFactory {
     function deploy(
         address _unit,
         address _quote,

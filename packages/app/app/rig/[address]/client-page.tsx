@@ -1,28 +1,141 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Share2, Copy, Check } from "lucide-react";
+import { ArrowLeft, Share2, Copy } from "lucide-react";
 import { NavBar } from "@/components/nav-bar";
 import { MineModal } from "@/components/mine-modal";
+import { SpinModal } from "@/components/spin-modal";
+import { FundModal } from "@/components/fund-modal";
 import { TradeModal } from "@/components/trade-modal";
 import { AuctionModal } from "@/components/auction-modal";
 import { LiquidityModal } from "@/components/liquidity-modal";
-import { SpinModal } from "@/components/spin-modal";
-import { FundModal } from "@/components/fund-modal";
-// import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-// import { useFriendActivity, getFriendActivityMessage } from "@/hooks/useFriendActivity";
 
 type Timeframe = "1H" | "1D" | "1W" | "1M" | "ALL";
+type RigType = "mine" | "spin" | "fund";
 
-// Mock token data (will be replaced with real data later)
-const MOCK_TOKEN = {
-  name: "Donut",
-  symbol: "DONUT",
-  price: 0.00234,
-  change24h: 12.5,
-  description: "The original donut token. Mine it, earn it, love it.",
+// Mock data for different rig types
+type MineConfig = {
+  rigType: "Mine";
+  capacity: number;
+  initialUps: number;
+  tailUps: number;
+  halvingAmount: number;
+  epochPeriod: number;
+  priceMultiplier: number;
+  minInitPrice: number;
+};
+
+type SpinConfig = {
+  rigType: "Spin";
+  initialUps: number;
+  tailUps: number;
+  halvingPeriod: number;
+  epochPeriod: number;
+  priceMultiplier: number;
+  minInitPrice: number;
+};
+
+type FundConfig = {
+  rigType: "Fund";
+  initialEmission: number;
+  minEmission: number;
+  minDonation: number;
+  halvingPeriod: number;
+};
+
+type RigConfig = MineConfig | SpinConfig | FundConfig;
+
+const RIG_DATA: Record<RigType, {
+  token: { name: string; symbol: string; price: number; change24h: number; description: string; color: string };
+  config: RigConfig;
+  stats: { marketCap: number; totalSupply: number; liquidity: number; volume24h: number; treasuryRevenue: number; teamRevenue: number };
+  position: { balance: number; balanceUsd: number };
+}> = {
+  mine: {
+    token: {
+      name: "Mine Token",
+      symbol: "MINE",
+      price: 0.00234,
+      change24h: 12.5,
+      description: "A mining rig token. Compete for mining seats to earn token emissions over time.",
+      color: "from-emerald-500 to-green-600",
+    },
+    config: {
+      rigType: "Mine",
+      capacity: 9,
+      initialUps: 4.0,
+      tailUps: 0.5,
+      halvingAmount: 1000000,
+      epochPeriod: 3600,
+      priceMultiplier: 2.0,
+      minInitPrice: 0.01,
+    },
+    stats: {
+      marketCap: 234000,
+      totalSupply: 9993464,
+      liquidity: 122.69,
+      volume24h: 2.12,
+      treasuryRevenue: 45.60,
+      teamRevenue: 12.16,
+    },
+    position: { balance: 154888, balanceUsd: 362.44 },
+  },
+  spin: {
+    token: {
+      name: "Spin Token",
+      symbol: "SPIN",
+      price: 0.0456,
+      change24h: 28.3,
+      description: "A slot machine rig token. Spin to win from the prize pool with randomized odds.",
+      color: "from-purple-500 to-violet-600",
+    },
+    config: {
+      rigType: "Spin",
+      initialUps: 2.0,
+      tailUps: 0.25,
+      halvingPeriod: 604800, // 7 days
+      epochPeriod: 1800,
+      priceMultiplier: 1.5,
+      minInitPrice: 0.05,
+    },
+    stats: {
+      marketCap: 345000,
+      totalSupply: 7564200,
+      liquidity: 89.45,
+      volume24h: 5.67,
+      treasuryRevenue: 78.90,
+      teamRevenue: 21.04,
+    },
+    position: { balance: 45230, balanceUsd: 2062.49 },
+  },
+  fund: {
+    token: {
+      name: "Fund Token",
+      symbol: "FUND",
+      price: 0.0089,
+      change24h: 15.7,
+      description: "A charity funding rig token. Fund daily to earn token emissions proportional to your contribution.",
+      color: "from-sky-500 to-blue-600",
+    },
+    config: {
+      rigType: "Fund",
+      initialEmission: 50000,
+      minEmission: 5000,
+      minDonation: 1.0,
+      halvingPeriod: 2592000, // 30 days
+    },
+    stats: {
+      marketCap: 189000,
+      totalSupply: 21234567,
+      liquidity: 56.78,
+      volume24h: 1.23,
+      treasuryRevenue: 34.56,
+      teamRevenue: 9.22,
+    },
+    position: { balance: 12456, balanceUsd: 110.86 },
+  },
 };
 
 // Mock chart data
@@ -37,46 +150,11 @@ const MOCK_CHART_DATA = [
   { time: "16:00", price: 0.00234 },
 ];
 
-// Mock user position
-const MOCK_USER_POSITION = {
-  balance: 154888,
-  balanceUsd: 1.89,
-  totalMined: 183464,
-  totalMinedUsd: 2.24,
-  spent: 564.68,
-  earned: 267.52,
-};
-
-// Mock global stats
-const MOCK_GLOBAL_STATS = {
-  marketCap: 123.00,
-  totalSupply: 9993464,
-  liquidity: 122.69,
-  volume24h: 2.12,
-  treasuryRevenue: 45.60,
-  teamRevenue: 12.16,
-  totalMinted: 2450000,
-  miningSlots: 4,
-  emissionRate: 4.0, // current UPS
-};
-
 // Mock launcher
 const MOCK_LAUNCHER = {
   name: "Heeshilio Frost",
   avatar: "https://api.dicebear.com/7.x/shapes/svg?seed=heesho",
   launchDate: "2d ago",
-};
-
-// Mock rig configs for different rig types
-const MINE_RIG_CONFIG = {
-  rigType: "Mine Rig",
-  initialUps: 4.0,
-  tailUps: 0.5,
-  halvingAmount: 1000000,
-  capacity: 9,
-  epochPeriod: 3600,
-  priceMultiplier: 2.0,
-  minInitPrice: 0.01,
 };
 
 // Mock links
@@ -98,11 +176,19 @@ function formatNumber(num: number): string {
   return num.toFixed(2);
 }
 
+function formatMarketCap(mcap: number): string {
+  if (mcap >= 1_000_000) return `$${(mcap / 1_000_000).toFixed(2)}M`;
+  if (mcap >= 1_000) return `$${(mcap / 1_000).toFixed(0)}K`;
+  return `$${mcap}`;
+}
+
 function TokenLogo({
   name,
+  color,
   size = "md",
 }: {
   name: string;
+  color: string;
   size?: "xs" | "sm" | "md" | "lg";
 }) {
   const sizeClasses = {
@@ -114,7 +200,7 @@ function TokenLogo({
 
   return (
     <div
-      className={`${sizeClasses[size]} rounded-full flex items-center justify-center font-semibold bg-gradient-to-br from-amber-500 to-orange-600 text-white`}
+      className={`${sizeClasses[size]} rounded-full flex items-center justify-center font-semibold bg-gradient-to-br ${color} text-white`}
     >
       {name.charAt(0)}
     </div>
@@ -177,26 +263,43 @@ function SimpleChart({
   );
 }
 
+function getRigTypeFromAddress(address: string): RigType {
+  if (address.includes("spin") || address.includes("slot")) return "spin";
+  if (address.includes("fund")) return "fund";
+  return "mine";
+}
+
 export default function RigDetailPage() {
-  useParams(); // Keep for Next.js routing
-  const MOCK_RIG_CONFIG = MINE_RIG_CONFIG;
+  const params = useParams();
+  const address = (params?.address as string) || "";
+
+  const rigType = useMemo(() => getRigTypeFromAddress(address), [address]);
+  const rigData = RIG_DATA[rigType];
+  const { token, config, stats, position } = rigData;
 
   const [timeframe, setTimeframe] = useState<Timeframe>("1D");
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [showHeaderPrice, setShowHeaderPrice] = useState(false);
   const [showMineModal, setShowMineModal] = useState(false);
+  const [showSpinModal, setShowSpinModal] = useState(false);
+  const [showFundModal, setShowFundModal] = useState(false);
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [tradeMode, setTradeMode] = useState<"buy" | "sell">("buy");
   const [showAuctionModal, setShowAuctionModal] = useState(false);
   const [showLiquidityModal, setShowLiquidityModal] = useState(false);
-  const [showSpinModal, setShowSpinModal] = useState(false);
-  const [showFundModal, setShowFundModal] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const tokenInfoRef = useRef<HTMLDivElement>(null);
 
+  const isPositive = token.change24h >= 0;
+  const hasPosition = position.balance > 0;
 
-  const isPositive = MOCK_TOKEN.change24h >= 0;
-  const hasPosition = MOCK_USER_POSITION.balance > 0;
+  // Primary action based on rig type
+  const primaryAction = rigType === "spin" ? "Spin" : rigType === "fund" ? "Fund" : "Mine";
+  const showPrimaryModal = () => {
+    if (rigType === "spin") setShowSpinModal(true);
+    else if (rigType === "fund") setShowFundModal(true);
+    else setShowMineModal(true);
+  };
 
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
@@ -233,8 +336,8 @@ export default function RigDetailPage() {
           </Link>
           {/* Center - Price appears on scroll */}
           <div className={`text-center transition-opacity duration-200 ${showHeaderPrice ? "opacity-100" : "opacity-0"}`}>
-            <div className="text-[15px] font-semibold">{formatPrice(MOCK_TOKEN.price)}</div>
-            <div className="text-[11px] text-muted-foreground">{MOCK_TOKEN.symbol}</div>
+            <div className="text-[15px] font-semibold">{formatPrice(token.price)}</div>
+            <div className="text-[11px] text-muted-foreground">{token.symbol}</div>
           </div>
           <button className="p-2 -mr-2 rounded-xl hover:bg-secondary transition-colors">
             <Share2 className="w-5 h-5" />
@@ -246,21 +349,21 @@ export default function RigDetailPage() {
           {/* Token Info Section */}
           <div ref={tokenInfoRef} className="flex items-center justify-between py-3">
             <div className="flex items-center gap-3">
-              <TokenLogo name={MOCK_TOKEN.name} size="lg" />
+              <TokenLogo name={token.name} color={token.color} size="lg" />
               <div>
-                <div className="text-[13px] text-muted-foreground">{MOCK_TOKEN.symbol}</div>
-                <div className="text-[15px] font-medium">{MOCK_TOKEN.name}</div>
+                <div className="text-[13px] text-muted-foreground">{token.symbol}</div>
+                <div className="text-[15px] font-medium">{token.name}</div>
               </div>
             </div>
             <div className="text-right">
-              <div className="price-large">{formatPrice(MOCK_TOKEN.price)}</div>
+              <div className="price-large">{formatPrice(token.price)}</div>
               <div
                 className={`text-[13px] font-medium ${
                   isPositive ? "text-zinc-300" : "text-zinc-500"
                 }`}
               >
                 {isPositive ? "+" : ""}
-                {MOCK_TOKEN.change24h.toFixed(2)}%
+                {token.change24h.toFixed(2)}%
               </div>
             </div>
           </div>
@@ -295,14 +398,14 @@ export default function RigDetailPage() {
                 <div>
                   <div className="text-muted-foreground text-[12px] mb-1">Balance</div>
                   <div className="font-semibold text-[15px] tabular-nums flex items-center gap-1.5">
-                    <TokenLogo name={MOCK_TOKEN.name} size="sm" />
-                    <span>{formatNumber(MOCK_USER_POSITION.balance)}</span>
+                    <TokenLogo name={token.name} color={token.color} size="sm" />
+                    <span>{formatNumber(position.balance)}</span>
                   </div>
                 </div>
                 <div>
                   <div className="text-muted-foreground text-[12px] mb-1">Value</div>
                   <div className="font-semibold text-[15px] tabular-nums text-white">
-                    ${MOCK_USER_POSITION.balanceUsd.toFixed(2)}
+                    ${position.balanceUsd.toFixed(2)}
                   </div>
                 </div>
               </div>
@@ -316,37 +419,37 @@ export default function RigDetailPage() {
               <div>
                 <div className="text-muted-foreground text-[12px] mb-0.5">Market cap</div>
                 <div className="font-semibold text-[15px] tabular-nums">
-                  ${MOCK_GLOBAL_STATS.marketCap.toFixed(2)}
+                  {formatMarketCap(stats.marketCap)}
                 </div>
               </div>
               <div>
                 <div className="text-muted-foreground text-[12px] mb-0.5">Total supply</div>
                 <div className="font-semibold text-[15px] tabular-nums">
-                  {formatNumber(MOCK_GLOBAL_STATS.totalSupply)}
+                  {formatNumber(stats.totalSupply)}
                 </div>
               </div>
               <div>
                 <div className="text-muted-foreground text-[12px] mb-0.5">Liquidity</div>
                 <div className="font-semibold text-[15px] tabular-nums">
-                  ${MOCK_GLOBAL_STATS.liquidity.toFixed(2)}
+                  ${stats.liquidity.toFixed(2)}
                 </div>
               </div>
               <div>
                 <div className="text-muted-foreground text-[12px] mb-0.5">24h volume</div>
                 <div className="font-semibold text-[15px] tabular-nums">
-                  ${MOCK_GLOBAL_STATS.volume24h.toFixed(2)}
+                  ${stats.volume24h.toFixed(2)}
                 </div>
               </div>
               <div>
                 <div className="text-muted-foreground text-[12px] mb-0.5">Treasury</div>
                 <div className="font-semibold text-[15px] tabular-nums">
-                  ${MOCK_GLOBAL_STATS.treasuryRevenue.toFixed(2)}
+                  ${stats.treasuryRevenue.toFixed(2)}
                 </div>
               </div>
               <div>
                 <div className="text-muted-foreground text-[12px] mb-0.5">Team</div>
                 <div className="font-semibold text-[15px] tabular-nums">
-                  ${MOCK_GLOBAL_STATS.teamRevenue.toFixed(2)}
+                  ${stats.teamRevenue.toFixed(2)}
                 </div>
               </div>
             </div>
@@ -356,26 +459,24 @@ export default function RigDetailPage() {
           <div className="mb-6">
             <div className="font-semibold text-[18px] mb-3">About</div>
 
-            {/* Deployed by row with rig type badge on right */}
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
-                <span>Deployed by</span>
-                <img
-                  src={MOCK_LAUNCHER.avatar}
-                  alt={MOCK_LAUNCHER.name}
-                  className="w-5 h-5 rounded-full object-cover"
-                />
-                <span className="text-foreground font-medium">{MOCK_LAUNCHER.name}</span>
-                <span className="text-muted-foreground/60">{MOCK_LAUNCHER.launchDate}</span>
-              </div>
-              <span className="text-[12px] font-medium text-zinc-300 bg-zinc-700 px-2 py-1 rounded">
-                {MOCK_RIG_CONFIG.rigType}
-              </span>
+            {/* Deployed by row */}
+            <div className="flex items-center gap-2 text-[13px] text-muted-foreground mb-2">
+              <span className="text-zinc-400">{config.rigType}</span>
+              <span className="text-muted-foreground/60">·</span>
+              <span>Deployed by</span>
+              <img
+                src={MOCK_LAUNCHER.avatar}
+                alt={MOCK_LAUNCHER.name}
+                className="w-5 h-5 rounded-full object-cover"
+              />
+              <span className="text-foreground font-medium">{MOCK_LAUNCHER.name}</span>
+              <span className="text-muted-foreground/60">·</span>
+              <span className="text-muted-foreground/60">{MOCK_LAUNCHER.launchDate}</span>
             </div>
 
             {/* Description */}
             <p className="text-[13px] text-muted-foreground leading-relaxed mb-2">
-              {MOCK_TOKEN.description}
+              {token.description}
             </p>
 
             {/* Link buttons */}
@@ -384,48 +485,100 @@ export default function RigDetailPage() {
                 onClick={() => navigator.clipboard.writeText(MOCK_LINKS.tokenAddress)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-[12px] text-muted-foreground hover:bg-secondary/80 transition-colors"
               >
-                {MOCK_TOKEN.symbol}
+                {token.symbol}
                 <Copy className="w-3 h-3" />
               </button>
               <button
                 onClick={() => navigator.clipboard.writeText(MOCK_LINKS.lpAddress)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-[12px] text-muted-foreground hover:bg-secondary/80 transition-colors"
               >
-                {MOCK_TOKEN.symbol}-DONUT LP
+                {token.symbol}-DONUT LP
                 <Copy className="w-3 h-3" />
               </button>
             </div>
 
-            {/* Launch parameters */}
+            {/* Launch parameters - varies by rig type */}
             <div className="grid grid-cols-2 gap-y-3 gap-x-8">
-              <div>
-                <div className="text-muted-foreground text-[12px] mb-0.5">Slots</div>
-                <div className="font-medium text-[13px]">{MOCK_RIG_CONFIG.capacity}</div>
-              </div>
-              <div>
-                <div className="text-muted-foreground text-[12px] mb-0.5">Initial rate</div>
-                <div className="font-medium text-[13px]">{MOCK_RIG_CONFIG.initialUps}/s</div>
-              </div>
-              <div>
-                <div className="text-muted-foreground text-[12px] mb-0.5">Floor rate</div>
-                <div className="font-medium text-[13px]">{MOCK_RIG_CONFIG.tailUps}/s</div>
-              </div>
-              <div>
-                <div className="text-muted-foreground text-[12px] mb-0.5">Halving at</div>
-                <div className="font-medium text-[13px]">{formatNumber(MOCK_RIG_CONFIG.halvingAmount)}</div>
-              </div>
-              <div>
-                <div className="text-muted-foreground text-[12px] mb-0.5">Epoch</div>
-                <div className="font-medium text-[13px]">{MOCK_RIG_CONFIG.epochPeriod / 3600}h</div>
-              </div>
-              <div>
-                <div className="text-muted-foreground text-[12px] mb-0.5">Price multiplier</div>
-                <div className="font-medium text-[13px]">{MOCK_RIG_CONFIG.priceMultiplier}x</div>
-              </div>
-              <div>
-                <div className="text-muted-foreground text-[12px] mb-0.5">Min price</div>
-                <div className="font-medium text-[13px]">${MOCK_RIG_CONFIG.minInitPrice}</div>
-              </div>
+              {config.rigType === "Mine" && (
+                <>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Slots</div>
+                    <div className="font-medium text-[13px]">{config.capacity}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Initial rate</div>
+                    <div className="font-medium text-[13px]">{config.initialUps}/s</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Floor rate</div>
+                    <div className="font-medium text-[13px]">{config.tailUps}/s</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Halving at</div>
+                    <div className="font-medium text-[13px]">{formatNumber(config.halvingAmount)}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Epoch</div>
+                    <div className="font-medium text-[13px]">{config.epochPeriod / 3600}h</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Price multiplier</div>
+                    <div className="font-medium text-[13px]">{config.priceMultiplier}x</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Min price</div>
+                    <div className="font-medium text-[13px]">${config.minInitPrice}</div>
+                  </div>
+                </>
+              )}
+              {config.rigType === "Spin" && (
+                <>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Initial rate</div>
+                    <div className="font-medium text-[13px]">{config.initialUps}/s</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Floor rate</div>
+                    <div className="font-medium text-[13px]">{config.tailUps}/s</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Halving</div>
+                    <div className="font-medium text-[13px]">{config.halvingPeriod / 86400}d</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Epoch</div>
+                    <div className="font-medium text-[13px]">{config.epochPeriod / 60}m</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Price multiplier</div>
+                    <div className="font-medium text-[13px]">{config.priceMultiplier}x</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Min price</div>
+                    <div className="font-medium text-[13px]">${config.minInitPrice}</div>
+                  </div>
+                </>
+              )}
+              {config.rigType === "Fund" && (
+                <>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Initial emission</div>
+                    <div className="font-medium text-[13px]">{formatNumber(config.initialEmission)}/day</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Min emission</div>
+                    <div className="font-medium text-[13px]">{formatNumber(config.minEmission)}/day</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Min donation</div>
+                    <div className="font-medium text-[13px]">${config.minDonation}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Halving</div>
+                    <div className="font-medium text-[13px]">{config.halvingPeriod / 86400}d</div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -446,7 +599,7 @@ export default function RigDetailPage() {
             <div>
               <div className="text-muted-foreground text-[12px]">Market Cap</div>
               <div className="font-semibold text-[17px] tabular-nums">
-                ${MOCK_GLOBAL_STATS.marketCap.toFixed(2)}
+                {formatMarketCap(stats.marketCap)}
               </div>
             </div>
             <div className="relative">
@@ -476,29 +629,11 @@ export default function RigDetailPage() {
                   <button
                     onClick={() => {
                       setShowActionMenu(false);
-                      setShowMineModal(true);
+                      showPrimaryModal();
                     }}
                     className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
                   >
-                    Mine
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowActionMenu(false);
-                      setShowSpinModal(true);
-                    }}
-                    className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
-                  >
-                    Spin
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowActionMenu(false);
-                      setShowFundModal(true);
-                    }}
-                    className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
-                  >
-                    Fund
+                    {primaryAction}
                   </button>
                   <button
                     onClick={() => {
@@ -540,8 +675,27 @@ export default function RigDetailPage() {
       <MineModal
         isOpen={showMineModal}
         onClose={() => setShowMineModal(false)}
-        tokenSymbol={MOCK_TOKEN.symbol}
-        userBalance={12.45}
+        tokenSymbol={token.symbol}
+        tokenName={token.name}
+        userBalance={45.73}
+      />
+
+      {/* Spin Modal */}
+      <SpinModal
+        isOpen={showSpinModal}
+        onClose={() => setShowSpinModal(false)}
+        tokenSymbol={token.symbol}
+        tokenName={token.name}
+        userBalance={45.73}
+      />
+
+      {/* Fund Modal */}
+      <FundModal
+        isOpen={showFundModal}
+        onClose={() => setShowFundModal(false)}
+        tokenSymbol={token.symbol}
+        tokenName={token.name}
+        userBalance={45.73}
       />
 
       {/* Trade Modal (Buy/Sell) */}
@@ -549,10 +703,10 @@ export default function RigDetailPage() {
         isOpen={showTradeModal}
         onClose={() => setShowTradeModal(false)}
         mode={tradeMode}
-        tokenSymbol={MOCK_TOKEN.symbol}
-        tokenName={MOCK_TOKEN.name}
-        marketPrice={MOCK_TOKEN.price}
-        userBalance={tradeMode === "buy" ? 45.73 : MOCK_USER_POSITION.balance}
+        tokenSymbol={token.symbol}
+        tokenName={token.name}
+        marketPrice={token.price}
+        userBalance={tradeMode === "buy" ? 45.73 : position.balance}
         priceImpact={0.5}
       />
 
@@ -560,39 +714,22 @@ export default function RigDetailPage() {
       <AuctionModal
         isOpen={showAuctionModal}
         onClose={() => setShowAuctionModal(false)}
-        tokenSymbol={MOCK_TOKEN.symbol}
-        tokenName={MOCK_TOKEN.name}
+        tokenSymbol={token.symbol}
+        tokenName={token.name}
       />
 
       {/* Liquidity Modal */}
       <LiquidityModal
         isOpen={showLiquidityModal}
         onClose={() => setShowLiquidityModal(false)}
-        tokenSymbol={MOCK_TOKEN.symbol}
-        tokenName={MOCK_TOKEN.name}
-        tokenBalance={MOCK_USER_POSITION.balance}
+        tokenSymbol={token.symbol}
+        tokenName={token.name}
+        tokenBalance={position.balance}
         donutBalance={1186.38}
-        tokenPrice={MOCK_TOKEN.price}
+        tokenPrice={token.price}
         donutPrice={0.001}
       />
 
-      {/* Spin Modal (for SlotRig) */}
-      <SpinModal
-        isOpen={showSpinModal}
-        onClose={() => setShowSpinModal(false)}
-        tokenSymbol={MOCK_TOKEN.symbol}
-        tokenName={MOCK_TOKEN.name}
-        userBalance={45.73}
-      />
-
-      {/* Fund Modal (for FundRig) */}
-      <FundModal
-        isOpen={showFundModal}
-        onClose={() => setShowFundModal(false)}
-        tokenSymbol={MOCK_TOKEN.symbol}
-        tokenName={MOCK_TOKEN.name}
-        userBalance={45.73}
-      />
     </main>
   );
 }

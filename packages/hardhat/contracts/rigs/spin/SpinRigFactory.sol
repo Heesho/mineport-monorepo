@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {SlotRig} from "./SlotRig.sol";
+import {SpinRig} from "./SpinRig.sol";
 
 /**
- * @title SlotRigFactory
+ * @title SpinRigFactory
  * @author heesho
- * @notice Factory contract for deploying new SlotRig instances.
- * @dev Called by SlotCore during the launch process to create new SlotRig contracts.
+ * @notice Factory contract for deploying new SpinRig instances.
+ * @dev Called by SpinCore during the launch process to create new SpinRig contracts.
  */
-contract SlotRigFactory {
+contract SpinRigFactory {
     /**
-     * @notice Deploy a new SlotRig contract.
+     * @notice Deploy a new SpinRig contract.
      * @param _unit Unit token address (deployed separately by Core)
      * @param _quote Payment token address (e.g., USDC)
      * @param _entropy Pyth Entropy contract address
@@ -22,7 +22,7 @@ contract SlotRigFactory {
      * @param _initialUps Starting units per second
      * @param _halvingPeriod Time between halvings
      * @param _tailUps Minimum units per second
-     * @return Address of the newly deployed SlotRig
+     * @return Address of the newly deployed SpinRig
      */
     function deploy(
         address _unit,
@@ -36,7 +36,7 @@ contract SlotRigFactory {
         uint256 _halvingPeriod,
         uint256 _tailUps
     ) external returns (address) {
-        SlotRig.Config memory config = SlotRig.Config({
+        SpinRig.Config memory config = SpinRig.Config({
             epochPeriod: _epochPeriod,
             priceMultiplier: _priceMultiplier,
             minInitPrice: _minInitPrice,
@@ -45,7 +45,7 @@ contract SlotRigFactory {
             tailUps: _tailUps
         });
 
-        SlotRig rig = new SlotRig(
+        SpinRig rig = new SpinRig(
             _unit,
             _quote,
             _entropy,

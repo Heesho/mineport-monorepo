@@ -5,8 +5,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {ISlotRig} from "./interfaces/ISlotRig.sol";
-import {ISlotRigFactory} from "./interfaces/ISlotRigFactory.sol";
+import {ISpinRig} from "./interfaces/ISpinRig.sol";
+import {ISpinRigFactory} from "./interfaces/ISpinRigFactory.sol";
 import {IUnit} from "../../interfaces/IUnit.sol";
 import {IUnitFactory} from "../../interfaces/IUnitFactory.sol";
 import {IAuctionFactory} from "../../interfaces/IAuctionFactory.sol";
@@ -14,29 +14,29 @@ import {IUniswapV2Factory, IUniswapV2Router} from "../../interfaces/IUniswapV2.s
 import {IRegistry} from "../../interfaces/IRegistry.sol";
 
 /**
- * @title SlotCore
+ * @title SpinCore
  * @author heesho
- * @notice The launchpad contract for deploying new SlotRig instances.
- *         Users provide DONUT tokens to launch a new slot-to-earn slot machine. The SlotCore contract:
+ * @notice The launchpad contract for deploying new SpinRig instances.
+ *         Users provide DONUT tokens to launch a new spin-to-earn slot machine. The SpinCore contract:
  *         1. Deploys a new Unit token via UnitFactory
  *         2. Mints initial Unit tokens for liquidity
  *         3. Creates a Unit/DONUT liquidity pool on Uniswap V2
  *         4. Burns the initial LP tokens
  *         5. Deploys an Auction contract to collect and auction treasury fees
- *         6. Deploys a new SlotRig contract via SlotRigFactory
- *         7. Transfers Unit minting rights to the SlotRig (permanently locked)
- *         8. Transfers ownership of the SlotRig to the launcher
- *         9. Registers the SlotRig with the central Registry
+ *         6. Deploys a new SpinRig contract via SpinRigFactory
+ *         7. Transfers Unit minting rights to the SpinRig (permanently locked)
+ *         8. Transfers ownership of the SpinRig to the launcher
+ *         9. Registers the SpinRig with the central Registry
  */
-contract SlotCore is Ownable, ReentrancyGuard {
+contract SpinCore is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /*----------  CONSTANTS  --------------------------------------------*/
 
-    string public constant RIG_TYPE = "slot";
+    string public constant RIG_TYPE = "spin";
     address public constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
-    // Rig parameter bounds (mirrored from SlotRig.sol for early validation)
+    // Rig parameter bounds (mirrored from SpinRig.sol for early validation)
     uint256 public constant RIG_MIN_EPOCH_PERIOD = 10 minutes;
     uint256 public constant RIG_MAX_EPOCH_PERIOD = 365 days;
     uint256 public constant RIG_MIN_PRICE_MULTIPLIER = 1.1e18;
@@ -62,7 +62,7 @@ contract SlotCore is Ownable, ReentrancyGuard {
     address public immutable uniswapV2Factory; // Uniswap V2 factory
     address public immutable uniswapV2Router; // Uniswap V2 router
     address public immutable unitFactory; // factory for deploying Unit tokens
-    address public immutable slotRigFactory; // factory for deploying SlotRigs
+    address public immutable spinRigFactory; // factory for deploying SpinRigs
     address public immutable auctionFactory; // factory for deploying Auctions
     address public immutable entropy; // Pyth Entropy contract for randomness
 
@@ -82,12 +82,12 @@ contract SlotCore is Ownable, ReentrancyGuard {
     /*----------  STRUCTS  ----------------------------------------------*/
 
     /**
-     * @notice Parameters for launching a new SlotRig.
+     * @notice Parameters for launching a new SpinRig.
      * @dev quoteToken must be a standard ERC20 (no rebasing or fee-on-transfer tokens)
      */
     struct LaunchParams {
-        address launcher; // address to receive SlotRig ownership and team fees
-        address quoteToken; // ERC20 payment token for slotning (e.g., USDC, WETH)
+        address launcher; // address to receive SpinRig ownership and team fees
+        address quoteToken; // ERC20 payment token for spinning (e.g., USDC, WETH)
         string tokenName; // Unit token name
         string tokenSymbol; // Unit token symbol
         uint256 donutAmount; // DONUT to provide for LP
@@ -106,29 +106,29 @@ contract SlotCore is Ownable, ReentrancyGuard {
 
     /*----------  ERRORS  -----------------------------------------------*/
 
-    error SlotCore__InsufficientDonut();
-    error SlotCore__ZeroLauncher();
-    error SlotCore__ZeroQuoteToken();
-    error SlotCore__EmptyTokenName();
-    error SlotCore__EmptyTokenSymbol();
-    error SlotCore__ZeroUnitAmount();
-    error SlotCore__ZeroAddress();
+    error SpinCore__InsufficientDonut();
+    error SpinCore__ZeroLauncher();
+    error SpinCore__ZeroQuoteToken();
+    error SpinCore__EmptyTokenName();
+    error SpinCore__EmptyTokenSymbol();
+    error SpinCore__ZeroUnitAmount();
+    error SpinCore__ZeroAddress();
     // Rig parameter errors
-    error SlotCore__RigEpochPeriodOutOfRange();
-    error SlotCore__RigPriceMultiplierOutOfRange();
-    error SlotCore__RigMinInitPriceOutOfRange();
-    error SlotCore__RigInitialUpsOutOfRange();
-    error SlotCore__RigTailUpsOutOfRange();
-    error SlotCore__RigHalvingPeriodOutOfRange();
+    error SpinCore__RigEpochPeriodOutOfRange();
+    error SpinCore__RigPriceMultiplierOutOfRange();
+    error SpinCore__RigMinInitPriceOutOfRange();
+    error SpinCore__RigInitialUpsOutOfRange();
+    error SpinCore__RigTailUpsOutOfRange();
+    error SpinCore__RigHalvingPeriodOutOfRange();
     // Auction parameter errors
-    error SlotCore__AuctionEpochPeriodOutOfRange();
-    error SlotCore__AuctionPriceMultiplierOutOfRange();
-    error SlotCore__AuctionInitPriceOutOfRange();
-    error SlotCore__AuctionMinInitPriceOutOfRange();
+    error SpinCore__AuctionEpochPeriodOutOfRange();
+    error SpinCore__AuctionPriceMultiplierOutOfRange();
+    error SpinCore__AuctionInitPriceOutOfRange();
+    error SpinCore__AuctionMinInitPriceOutOfRange();
 
     /*----------  EVENTS  -----------------------------------------------*/
 
-    event SlotCore__Launched(
+    event SpinCore__Launched(
         address indexed launcher,
         address indexed rig,
         address indexed unit,
@@ -150,19 +150,19 @@ contract SlotCore is Ownable, ReentrancyGuard {
         uint256 auctionPriceMultiplier,
         uint256 auctionMinInitPrice
     );
-    event SlotCore__ProtocolFeeAddressSet(address protocolFeeAddress);
-    event SlotCore__MinDonutForLaunchSet(uint256 minDonutForLaunch);
+    event SpinCore__ProtocolFeeAddressSet(address protocolFeeAddress);
+    event SpinCore__MinDonutForLaunchSet(uint256 minDonutForLaunch);
 
     /*----------  CONSTRUCTOR  ------------------------------------------*/
 
     /**
-     * @notice Deploy the SlotCore launchpad contract.
+     * @notice Deploy the SpinCore launchpad contract.
      * @param _registry Central registry for all rig types
      * @param _donutToken DONUT token address
      * @param _uniswapV2Factory Uniswap V2 factory address
      * @param _uniswapV2Router Uniswap V2 router address
      * @param _unitFactory UnitFactory contract address
-     * @param _slotRigFactory SlotRigFactory contract address
+     * @param _spinRigFactory SpinRigFactory contract address
      * @param _auctionFactory AuctionFactory contract address
      * @param _entropy Pyth Entropy contract address
      * @param _protocolFeeAddress Address to receive protocol fees
@@ -174,7 +174,7 @@ contract SlotCore is Ownable, ReentrancyGuard {
         address _uniswapV2Factory,
         address _uniswapV2Router,
         address _unitFactory,
-        address _slotRigFactory,
+        address _spinRigFactory,
         address _auctionFactory,
         address _entropy,
         address _protocolFeeAddress,
@@ -182,10 +182,10 @@ contract SlotCore is Ownable, ReentrancyGuard {
     ) {
         if (
             _registry == address(0) || _donutToken == address(0) || _uniswapV2Factory == address(0)
-                || _uniswapV2Router == address(0) || _unitFactory == address(0) || _slotRigFactory == address(0)
+                || _uniswapV2Router == address(0) || _unitFactory == address(0) || _spinRigFactory == address(0)
                 || _auctionFactory == address(0) || _entropy == address(0)
         ) {
-            revert SlotCore__ZeroAddress();
+            revert SpinCore__ZeroAddress();
         }
 
         registry = _registry;
@@ -193,7 +193,7 @@ contract SlotCore is Ownable, ReentrancyGuard {
         uniswapV2Factory = _uniswapV2Factory;
         uniswapV2Router = _uniswapV2Router;
         unitFactory = _unitFactory;
-        slotRigFactory = _slotRigFactory;
+        spinRigFactory = _spinRigFactory;
         auctionFactory = _auctionFactory;
         entropy = _entropy;
         protocolFeeAddress = _protocolFeeAddress;
@@ -203,11 +203,11 @@ contract SlotCore is Ownable, ReentrancyGuard {
     /*----------  EXTERNAL FUNCTIONS  -----------------------------------*/
 
     /**
-     * @notice Launch a new SlotRig with associated Unit token, LP, and Auction.
+     * @notice Launch a new SpinRig with associated Unit token, LP, and Auction.
      * @dev Caller must approve DONUT tokens before calling.
      * @param params Launch parameters struct
      * @return unit Address of deployed Unit token
-     * @return rig Address of deployed SlotRig contract
+     * @return rig Address of deployed SpinRig contract
      * @return auction Address of deployed Auction contract
      * @return lpToken Address of Unit/DONUT LP token
      */
@@ -222,7 +222,7 @@ contract SlotCore is Ownable, ReentrancyGuard {
         // Transfer DONUT from launcher
         IERC20(donutToken).safeTransferFrom(msg.sender, address(this), params.donutAmount);
 
-        // Deploy Unit token via factory (SlotCore becomes initial rig/minter)
+        // Deploy Unit token via factory (SpinCore becomes initial rig/minter)
         unit = IUnitFactory(unitFactory).deploy(params.tokenName, params.tokenSymbol);
 
         // Mint initial Unit tokens for LP seeding
@@ -259,9 +259,9 @@ contract SlotCore is Ownable, ReentrancyGuard {
             params.auctionMinInitPrice
         );
 
-        // Deploy SlotRig via factory
-        // Treasury is the Auction contract (receives 90% of slot fees)
-        rig = ISlotRigFactory(slotRigFactory).deploy(
+        // Deploy SpinRig via factory
+        // Treasury is the Auction contract (receives 90% of spin fees)
+        rig = ISpinRigFactory(spinRigFactory).deploy(
             unit,
             params.quoteToken,
             entropy,
@@ -274,11 +274,11 @@ contract SlotCore is Ownable, ReentrancyGuard {
             params.tailUps
         );
 
-        // Transfer Unit minting rights to SlotRig (permanently locked)
+        // Transfer Unit minting rights to SpinRig (permanently locked)
         IUnit(unit).setRig(rig);
 
-        // Transfer SlotRig ownership to launcher
-        ISlotRig(rig).transferOwnership(params.launcher);
+        // Transfer SpinRig ownership to launcher
+        ISpinRig(rig).transferOwnership(params.launcher);
 
         // Update local registry
         deployedRigs.push(rig);
@@ -292,7 +292,7 @@ contract SlotCore is Ownable, ReentrancyGuard {
         // Register with central registry
         IRegistry(registry).register(rig, RIG_TYPE, unit, params.launcher);
 
-        emit SlotCore__Launched(
+        emit SpinCore__Launched(
             params.launcher,
             rig,
             unit,
@@ -327,7 +327,7 @@ contract SlotCore is Ownable, ReentrancyGuard {
      */
     function setProtocolFeeAddress(address _protocolFeeAddress) external onlyOwner {
         protocolFeeAddress = _protocolFeeAddress;
-        emit SlotCore__ProtocolFeeAddressSet(_protocolFeeAddress);
+        emit SpinCore__ProtocolFeeAddressSet(_protocolFeeAddress);
     }
 
     /**
@@ -336,65 +336,65 @@ contract SlotCore is Ownable, ReentrancyGuard {
      */
     function setMinDonutForLaunch(uint256 _minDonutForLaunch) external onlyOwner {
         minDonutForLaunch = _minDonutForLaunch;
-        emit SlotCore__MinDonutForLaunchSet(_minDonutForLaunch);
+        emit SpinCore__MinDonutForLaunchSet(_minDonutForLaunch);
     }
 
     /*----------  INTERNAL FUNCTIONS  -----------------------------------*/
 
     /**
      * @notice Validate all launch parameters upfront to fail fast.
-     * @dev Mirrors validation from SlotRig and Auction constructors for early revert.
+     * @dev Mirrors validation from SpinRig and Auction constructors for early revert.
      * @param params Launch parameters to validate
      */
     function _validateLaunchParams(LaunchParams calldata params) internal view {
         // Basic validations
-        if (params.launcher == address(0)) revert SlotCore__ZeroLauncher();
-        if (params.quoteToken == address(0)) revert SlotCore__ZeroQuoteToken();
-        if (params.donutAmount < minDonutForLaunch) revert SlotCore__InsufficientDonut();
-        if (bytes(params.tokenName).length == 0) revert SlotCore__EmptyTokenName();
-        if (bytes(params.tokenSymbol).length == 0) revert SlotCore__EmptyTokenSymbol();
-        if (params.unitAmount == 0) revert SlotCore__ZeroUnitAmount();
+        if (params.launcher == address(0)) revert SpinCore__ZeroLauncher();
+        if (params.quoteToken == address(0)) revert SpinCore__ZeroQuoteToken();
+        if (params.donutAmount < minDonutForLaunch) revert SpinCore__InsufficientDonut();
+        if (bytes(params.tokenName).length == 0) revert SpinCore__EmptyTokenName();
+        if (bytes(params.tokenSymbol).length == 0) revert SpinCore__EmptyTokenSymbol();
+        if (params.unitAmount == 0) revert SpinCore__ZeroUnitAmount();
 
         // Rig parameter validations
         if (params.rigEpochPeriod < RIG_MIN_EPOCH_PERIOD || params.rigEpochPeriod > RIG_MAX_EPOCH_PERIOD) {
-            revert SlotCore__RigEpochPeriodOutOfRange();
+            revert SpinCore__RigEpochPeriodOutOfRange();
         }
         if (params.rigPriceMultiplier < RIG_MIN_PRICE_MULTIPLIER || params.rigPriceMultiplier > RIG_MAX_PRICE_MULTIPLIER) {
-            revert SlotCore__RigPriceMultiplierOutOfRange();
+            revert SpinCore__RigPriceMultiplierOutOfRange();
         }
         if (params.rigMinInitPrice < RIG_ABS_MIN_INIT_PRICE || params.rigMinInitPrice > RIG_ABS_MAX_INIT_PRICE) {
-            revert SlotCore__RigMinInitPriceOutOfRange();
+            revert SpinCore__RigMinInitPriceOutOfRange();
         }
         if (params.initialUps == 0 || params.initialUps > RIG_MAX_INITIAL_UPS) {
-            revert SlotCore__RigInitialUpsOutOfRange();
+            revert SpinCore__RigInitialUpsOutOfRange();
         }
         if (params.tailUps == 0 || params.tailUps > params.initialUps) {
-            revert SlotCore__RigTailUpsOutOfRange();
+            revert SpinCore__RigTailUpsOutOfRange();
         }
         if (params.halvingPeriod < RIG_MIN_HALVING_PERIOD || params.halvingPeriod > RIG_MAX_HALVING_PERIOD) {
-            revert SlotCore__RigHalvingPeriodOutOfRange();
+            revert SpinCore__RigHalvingPeriodOutOfRange();
         }
 
         // Auction parameter validations
         if (params.auctionEpochPeriod < AUCTION_MIN_EPOCH_PERIOD || params.auctionEpochPeriod > AUCTION_MAX_EPOCH_PERIOD) {
-            revert SlotCore__AuctionEpochPeriodOutOfRange();
+            revert SpinCore__AuctionEpochPeriodOutOfRange();
         }
         if (params.auctionPriceMultiplier < AUCTION_MIN_PRICE_MULTIPLIER || params.auctionPriceMultiplier > AUCTION_MAX_PRICE_MULTIPLIER) {
-            revert SlotCore__AuctionPriceMultiplierOutOfRange();
+            revert SpinCore__AuctionPriceMultiplierOutOfRange();
         }
         if (params.auctionMinInitPrice < AUCTION_ABS_MIN_INIT_PRICE || params.auctionMinInitPrice > AUCTION_ABS_MAX_INIT_PRICE) {
-            revert SlotCore__AuctionMinInitPriceOutOfRange();
+            revert SpinCore__AuctionMinInitPriceOutOfRange();
         }
         if (params.auctionInitPrice < params.auctionMinInitPrice || params.auctionInitPrice > AUCTION_ABS_MAX_INIT_PRICE) {
-            revert SlotCore__AuctionInitPriceOutOfRange();
+            revert SpinCore__AuctionInitPriceOutOfRange();
         }
     }
 
     /*----------  VIEW FUNCTIONS  ---------------------------------------*/
 
     /**
-     * @notice Get the total number of deployed slot rigs.
-     * @return Number of slot rigs launched
+     * @notice Get the total number of deployed spin rigs.
+     * @return Number of spin rigs launched
      */
     function deployedRigsLength() external view returns (uint256) {
         return deployedRigs.length;

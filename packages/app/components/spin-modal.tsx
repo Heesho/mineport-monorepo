@@ -132,7 +132,7 @@ export function SpinModal({
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-4">
           {/* Prize Pool Hero */}
           <div className="text-center py-4">
-            <div className="text-sm text-zinc-500 mb-1">PRIZE POOL</div>
+            <div className="text-[12px] text-muted-foreground mb-1">PRIZE POOL</div>
             <div className="flex items-center justify-center gap-2 mb-1">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-sm font-semibold">
                 {tokenSymbol.charAt(0)}
@@ -141,75 +141,73 @@ export function SpinModal({
                 {prizePool.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
-            <div className="text-sm text-zinc-500">
+            <div className="text-[13px] text-muted-foreground">
               ${(prizePool * 0.01).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
 
-          {/* Spinner Area */}
-          <div className="bg-zinc-900 rounded-xl p-4 mb-4">
+          {/* Last Winner / Spinning State */}
+          <div className="py-4 mb-2">
             {isSpinning ? (
-              <div className="flex items-center justify-center py-8">
+              <div className="flex items-center justify-center py-4">
                 <div className="animate-spin w-12 h-12 border-4 border-zinc-700 border-t-white rounded-full" />
               </div>
             ) : (
-              <div className="flex items-center gap-3 py-2">
-                <Avatar className="h-10 w-10">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12">
                   <AvatarImage src={lastWinner.avatar} alt={lastWinner.name} />
                   <AvatarFallback className="bg-zinc-700 text-sm">
                     {lastWinner.address.slice(2, 4).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium">{lastWinner.name}</div>
-                  <div className="text-xs text-zinc-400">
+                  <div className="text-[15px] font-medium">{lastWinner.name}</div>
+                  <div className="text-[13px] text-muted-foreground">
                     Won {lastWinner.payoutPercent}% → {lastWinner.won.toLocaleString()} {tokenSymbol}
                   </div>
                 </div>
-                <div className="text-xs text-zinc-500">Last spin</div>
+                <div className="text-[12px] text-muted-foreground">Last spin</div>
               </div>
             )}
           </div>
 
           {/* Current Price */}
           <div className="text-center mb-6">
-            <span className="text-sm text-zinc-500">Current price: </span>
-            <span className="text-sm font-medium">${currentPrice.toFixed(4)}</span>
+            <span className="text-[13px] text-muted-foreground">Current price: </span>
+            <span className="text-[13px] font-medium">${currentPrice.toFixed(4)}</span>
           </div>
 
-          {/* Odds Breakdown */}
+          {/* Odds */}
           <div className="mb-6">
             <div className="font-semibold text-[18px] mb-3">Odds</div>
-            <div className="bg-zinc-900 rounded-xl overflow-hidden">
-              {/* Header */}
-              <div className="grid grid-cols-3 px-4 py-2 text-xs text-zinc-500 border-b border-zinc-800">
-                <div>Chance</div>
-                <div>Payout</div>
-                <div className="text-right">Win</div>
-              </div>
-              {/* Rows */}
-              {odds.map((odd, i) => {
-                const winAmount = (prizePool * odd.payout) / 100;
-                const isJackpot = odd.payout === 100;
-                return (
-                  <div
-                    key={i}
-                    className={`grid grid-cols-3 px-4 py-3 text-sm ${
-                      isJackpot ? "bg-zinc-800/50" : ""
-                    } ${i < odds.length - 1 ? "border-b border-zinc-800/50" : ""}`}
-                  >
-                    <div className="font-medium">{odd.chance}%</div>
-                    <div className="text-zinc-400">{odd.payout}%</div>
-                    <div className="text-right font-medium tabular-nums flex items-center justify-end gap-1">
-                      <span className="w-4 h-4 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[8px] text-white font-bold">
-                        {tokenSymbol.charAt(0)}
-                      </span>
-                      {winAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                    </div>
-                  </div>
-                );
-              })}
+            {/* Header */}
+            <div className="grid grid-cols-3 py-2 text-[12px] text-muted-foreground border-b border-zinc-800">
+              <div>Chance</div>
+              <div>Payout</div>
+              <div className="text-right">Win</div>
             </div>
+            {/* Rows */}
+            {odds.map((odd, i) => {
+              const winAmount = (prizePool * odd.payout) / 100;
+              const isJackpot = odd.payout === 100;
+              return (
+                <div
+                  key={i}
+                  className={`grid grid-cols-3 py-3 text-[14px] ${
+                    isJackpot ? "bg-zinc-800/30 -mx-4 px-4" : ""
+                  } ${i < odds.length - 1 ? "border-b border-zinc-800/50" : ""}`}
+                >
+                  <div className="font-medium">{odd.chance}%</div>
+                  <div className="text-muted-foreground">{odd.payout}%</div>
+                  <div className="text-right font-medium tabular-nums flex items-center justify-end gap-1">
+                    <span className="w-4 h-4 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[8px] text-white font-bold">
+                      {tokenSymbol.charAt(0)}
+                    </span>
+                    {winAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Your Position */}
@@ -230,7 +228,7 @@ export function SpinModal({
                   </span>
                   {userStats.won.toLocaleString()}
                 </div>
-                <div className="text-[12px] text-zinc-500">${userStats.wonUsd.toFixed(2)}</div>
+                <div className="text-[12px] text-muted-foreground">${userStats.wonUsd.toFixed(2)}</div>
               </div>
               <div>
                 <div className="text-muted-foreground text-[12px] mb-1">Spins</div>
@@ -241,7 +239,7 @@ export function SpinModal({
               <div>
                 <div className="text-muted-foreground text-[12px] mb-1">Net</div>
                 <div className={`font-semibold text-[15px] tabular-nums ${
-                  userStats.net >= 0 ? "text-white" : "text-zinc-400"
+                  userStats.net >= 0 ? "text-white" : "text-muted-foreground"
                 }`}>
                   {userStats.net >= 0 ? "+" : ""}${userStats.net.toFixed(2)}
                 </div>
@@ -261,8 +259,8 @@ export function SpinModal({
 
           {/* Recent Spins */}
           <div className="mt-6 mb-6">
-            <div className="font-semibold text-[18px] mb-3 px-2">Recent Spins</div>
-            <div className="px-2">
+            <div className="font-semibold text-[18px] mb-3">Recent Spins</div>
+            <div>
               {mockSpins.map((spin) => (
                 <SpinHistoryItem
                   key={spin.id}

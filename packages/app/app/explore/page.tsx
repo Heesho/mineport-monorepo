@@ -23,8 +23,8 @@ const SPARKLINES = {
 const INITIAL_COINS = [
   // Demo token for Mine Rig (at top for easy testing)
   { address: "0xmine", name: "[Mine Rig Demo]", symbol: "MINE", price: 0.00234, change24h: 12.5, marketCap: 234000, color: "from-emerald-500 to-green-600", sparkline: SPARKLINES.up1, lastBumped: 100000 },
-  // Demo token for Slot Rig
-  { address: "0xslot", name: "[Slot Rig Demo]", symbol: "SLOT", price: 0.0456, change24h: 28.3, marketCap: 345000, color: "from-purple-500 to-violet-600", sparkline: SPARKLINES.up3, lastBumped: 99500 },
+  // Demo token for Spin Rig
+  { address: "0xspin", name: "[Spin Rig Demo]", symbol: "SPIN", price: 0.0456, change24h: 28.3, marketCap: 345000, color: "from-purple-500 to-violet-600", sparkline: SPARKLINES.up3, lastBumped: 99500 },
   // Demo token for Fund Rig
   { address: "0xfund", name: "[Fund Rig Demo]", symbol: "FUND", price: 0.0089, change24h: 15.7, marketCap: 189000, color: "from-sky-500 to-blue-600", sparkline: SPARKLINES.up4, lastBumped: 99000 },
   // Regular tokens

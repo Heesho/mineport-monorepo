@@ -2,11 +2,11 @@
 pragma solidity 0.8.19;
 
 /**
- * @title ISlotRig
+ * @title ISpinRig
  * @author heesho
- * @notice Interface for the SlotRig contract.
+ * @notice Interface for the SpinRig contract.
  */
-interface ISlotRig {
+interface ISpinRig {
     // Constants
     function TEAM_BPS() external view returns (uint256);
     function PROTOCOL_BPS() external view returns (uint256);
@@ -42,15 +42,15 @@ interface ISlotRig {
     function team() external view returns (address);
     function epochId() external view returns (uint256);
     function initPrice() external view returns (uint256);
-    function slotStartTime() external view returns (uint256);
+    function spinStartTime() external view returns (uint256);
     function lastEmissionTime() external view returns (uint256);
     function odds(uint256 index) external view returns (uint256);
-    function sequenceToSlotner(uint64 sequenceNumber) external view returns (address);
+    function sequenceToSpinner(uint64 sequenceNumber) external view returns (address);
     function sequenceToEpoch(uint64 sequenceNumber) external view returns (uint256);
 
     // Functions
-    function slot(
-        address slotner,
+    function spin(
+        address spinner,
         uint256 _epochId,
         uint256 deadline,
         uint256 maxPrice
@@ -72,27 +72,27 @@ interface ISlotRig {
     function getOddsLength() external view returns (uint256);
     function getEpochId() external view returns (uint256);
     function getInitPrice() external view returns (uint256);
-    function getSlotStartTime() external view returns (uint256);
+    function getSpinStartTime() external view returns (uint256);
 
     // Events
-    event SlotRig__Slot(
+    event SpinRig__Spin(
         address indexed sender,
-        address indexed slotner,
+        address indexed spinner,
         uint256 indexed epochId,
         uint256 price
     );
-    event SlotRig__Win(
-        address indexed slotner,
+    event SpinRig__Win(
+        address indexed spinner,
         uint256 indexed epochId,
         uint256 oddsBps,
         uint256 amount
     );
-    event SlotRig__EntropyRequested(uint256 indexed epochId, uint64 indexed sequenceNumber);
-    event SlotRig__TreasuryFee(address indexed treasury, uint256 indexed epochId, uint256 amount);
-    event SlotRig__TeamFee(address indexed team, uint256 indexed epochId, uint256 amount);
-    event SlotRig__ProtocolFee(address indexed protocol, uint256 indexed epochId, uint256 amount);
-    event SlotRig__EmissionMinted(uint256 indexed epochId, uint256 amount);
-    event SlotRig__TreasurySet(address indexed treasury);
-    event SlotRig__TeamSet(address indexed team);
-    event SlotRig__OddsSet(uint256[] odds);
+    event SpinRig__EntropyRequested(uint256 indexed epochId, uint64 indexed sequenceNumber);
+    event SpinRig__TreasuryFee(address indexed treasury, uint256 indexed epochId, uint256 amount);
+    event SpinRig__TeamFee(address indexed team, uint256 indexed epochId, uint256 amount);
+    event SpinRig__ProtocolFee(address indexed protocol, uint256 indexed epochId, uint256 amount);
+    event SpinRig__EmissionMinted(uint256 indexed epochId, uint256 amount);
+    event SpinRig__TreasurySet(address indexed treasury);
+    event SpinRig__TeamSet(address indexed team);
+    event SpinRig__OddsSet(uint256[] odds);
 }

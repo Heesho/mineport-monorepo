@@ -33,7 +33,7 @@ interface IFundRig {
     function dayAccountToHasClaimed(uint256 day, address account) external view returns (bool);
 
     // External functions
-    function donate(address account, address recipient, uint256 amount) external;
+    function fund(address account, address recipient, uint256 amount) external;
     function claim(address account, uint256 day) external;
 
     // Restricted functions
@@ -51,7 +51,7 @@ interface IFundRig {
     function getDayTotal(uint256 day) external view returns (uint256);
 
     // Events
-    event FundRig__Donated(address indexed account, address indexed recipient, uint256 amount, uint256 day);
+    event FundRig__Funded(address indexed account, address indexed recipient, uint256 amount, uint256 day);
     event FundRig__Claimed(address indexed account, uint256 amount, uint256 day);
     event FundRig__RecipientAdded(address indexed recipient);
     event FundRig__RecipientRemoved(address indexed recipient);

@@ -76,7 +76,7 @@ contract FundRig is ReentrancyGuard, Ownable {
 
     /*----------  EVENTS  -----------------------------------------------*/
 
-    event FundRig__Donated(address indexed account, address indexed recipient, uint256 amount, uint256 day);
+    event FundRig__Funded(address indexed account, address indexed recipient, uint256 amount, uint256 day);
     event FundRig__Claimed(address indexed account, uint256 amount, uint256 day);
     event FundRig__RecipientAdded(address indexed recipient);
     event FundRig__RecipientRemoved(address indexed recipient);
@@ -129,14 +129,14 @@ contract FundRig is ReentrancyGuard, Ownable {
     /*----------  EXTERNAL FUNCTIONS  -----------------------------------*/
 
     /**
-     * @notice Donate payment tokens to the daily pool on behalf of an account.
+     * @notice Fund the daily pool on behalf of an account.
      * @dev Requires msg.sender to have approved this contract for `amount`.
      *      Transfers `amount` from msg.sender, splits it, and credits `account`.
-     * @param account The account to credit for this donation (receives Unit on claim)
-     * @param recipient The whitelisted recipient address to receive 50% of donation
-     * @param amount The amount of payment tokens to donate
+     * @param account The account to credit for this funding (receives Unit on claim)
+     * @param recipient The whitelisted recipient address to receive 50% of funding
+     * @param amount The amount of payment tokens to fund
      */
-    function donate(address account, address recipient, uint256 amount) external nonReentrant {
+    function fund(address account, address recipient, uint256 amount) external nonReentrant {
         if (account == address(0)) revert FundRig__InvalidAddress();
         if (amount < minDonation) revert FundRig__BelowMinDonation();
         if (!accountToIsRecipient[recipient]) revert FundRig__NotRecipient();
@@ -168,7 +168,7 @@ contract FundRig is ReentrancyGuard, Ownable {
         dayToTotalDonated[day] += amount;
         dayAccountToDonation[day][account] += amount;
 
-        emit FundRig__Donated(account, recipient, amount, day);
+        emit FundRig__Funded(account, recipient, amount, day);
     }
 
     /**

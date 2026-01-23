@@ -2,11 +2,11 @@
 pragma solidity 0.8.19;
 
 /**
- * @title ISlotCore
+ * @title ISpinCore
  * @author heesho
- * @notice Interface for the SlotCore launchpad contract.
+ * @notice Interface for the SpinCore launchpad contract.
  */
-interface ISlotCore {
+interface ISpinCore {
     struct LaunchParams {
         address launcher;
         address quoteToken;
@@ -36,7 +36,7 @@ interface ISlotCore {
     function uniswapV2Factory() external view returns (address);
     function uniswapV2Router() external view returns (address);
     function unitFactory() external view returns (address);
-    function slotRigFactory() external view returns (address);
+    function spinRigFactory() external view returns (address);
     function auctionFactory() external view returns (address);
     function entropy() external view returns (address);
 
@@ -64,7 +64,7 @@ interface ISlotCore {
     function deployedRigsLength() external view returns (uint256);
 
     // Events
-    event SlotCore__Launched(
+    event SpinCore__Launched(
         address indexed launcher,
         address indexed rig,
         address indexed unit,
@@ -86,6 +86,6 @@ interface ISlotCore {
         uint256 auctionPriceMultiplier,
         uint256 auctionMinInitPrice
     );
-    event SlotCore__ProtocolFeeAddressSet(address protocolFeeAddress);
-    event SlotCore__MinDonutForLaunchSet(uint256 minDonutForLaunch);
+    event SpinCore__ProtocolFeeAddressSet(address protocolFeeAddress);
+    event SpinCore__MinDonutForLaunchSet(uint256 minDonutForLaunch);
 }

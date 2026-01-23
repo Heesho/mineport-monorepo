@@ -28,8 +28,8 @@ export function FundModal({
   const rigAddress = (params?.address as string) || "";
 
   // Mock data - will be replaced with real data
-  const [donationAmount, setDonationAmount] = useState("");
-  const [isDonating, setIsDonating] = useState(false);
+  const [fundAmount, setFundAmount] = useState("");
+  const [isFunding, setIsFunding] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
 
   const pendingClaims = {
@@ -40,8 +40,8 @@ export function FundModal({
 
   // Mock user stats
   const userStats = {
-    totalDonated: 2456.78,
-    todayDonation: 50.00,
+    totalFunded: 2456.78,
+    todayFunding: 50.00,
     pendingTokens: 12456,
     pendingUsd: 124.56,
     claimedTokens: 45230,
@@ -89,12 +89,12 @@ export function FundModal({
   };
 
   // Mock today's pool data
-  const [todayDonated, setTodayDonated] = useState(1234.56);
+  const [todayFunded, setTodayFunded] = useState(1234.56);
   const [todayEmission, setTodayEmission] = useState(50000);
   const [dayEndsIn, setDayEndsIn] = useState(4 * 3600 + 32 * 60); // seconds
 
   // Calculate current price per token
-  const currentPricePerToken = todayDonated > 0 ? todayDonated / todayEmission : 0;
+  const currentPricePerToken = todayFunded > 0 ? todayFunded / todayEmission : 0;
 
   // Countdown timer effect
   useEffect(() => {
@@ -119,11 +119,11 @@ export function FundModal({
 
   if (!isOpen) return null;
 
-  const parsedAmount = parseFloat(donationAmount) || 0;
+  const parsedAmount = parseFloat(fundAmount) || 0;
 
   // Calculate estimated tokens for current input
   const estimatedTokens = parsedAmount > 0 && todayEmission > 0
-    ? (parsedAmount / (todayDonated + parsedAmount)) * todayEmission
+    ? (parsedAmount / (todayFunded + parsedAmount)) * todayEmission
     : 0;
 
   return (
@@ -151,7 +151,7 @@ export function FundModal({
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-4">
           {/* Hero: Current Recipient */}
           <div className="text-center py-4">
-            <div className="text-sm text-zinc-500 mb-2">CURRENT RECIPIENT</div>
+            <div className="text-[12px] text-muted-foreground mb-2">CURRENT RECIPIENT</div>
             <div className="flex items-center justify-center gap-3 mb-1">
               <Avatar className="h-12 w-12">
                 <AvatarImage src={recipient.avatar} alt={recipient.name} />
@@ -161,24 +161,24 @@ export function FundModal({
               </Avatar>
               <div className="text-left">
                 <div className="text-lg font-semibold">{recipient.name}</div>
-                <div className="text-sm text-zinc-500">{recipient.handle}</div>
+                <div className="text-[13px] text-muted-foreground">{recipient.handle}</div>
               </div>
             </div>
           </div>
 
-          {/* Hero: Today's Pool */}
-          <div className="bg-zinc-900 rounded-xl p-4 mb-4">
-            <div className="text-sm text-zinc-500 mb-3">Today's Pool</div>
-            <div className="grid grid-cols-2 gap-4 mb-3">
+          {/* Today's Pool Stats */}
+          <div className="mb-6">
+            <div className="font-semibold text-[18px] mb-3">Today's Pool</div>
+            <div className="grid grid-cols-2 gap-y-4 gap-x-8 mb-3">
               <div>
-                <div className="text-xs text-zinc-500 mb-1">Donated</div>
-                <div className="text-xl font-bold tabular-nums">
-                  ${todayDonated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <div className="text-muted-foreground text-[12px] mb-1">Funded</div>
+                <div className="font-semibold text-[15px] tabular-nums">
+                  ${todayFunded.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-zinc-500 mb-1">Emission</div>
-                <div className="text-xl font-bold tabular-nums flex items-center gap-1.5">
+                <div className="text-muted-foreground text-[12px] mb-1">Emission</div>
+                <div className="font-semibold text-[15px] tabular-nums flex items-center gap-1.5">
                   <span className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[10px] text-white font-semibold">
                     {tokenSymbol.charAt(0)}
                   </span>
@@ -186,111 +186,104 @@ export function FundModal({
                 </div>
               </div>
             </div>
-            <div className="text-sm text-zinc-400 mb-2">
+            <div className="text-[13px] text-muted-foreground mb-1">
               Current price: {currentPricePerToken > 0 ? `$${currentPricePerToken.toFixed(6)}/token` : "Be first!"}
             </div>
-            <div className="text-sm text-zinc-500">
-              Day ends in <span className="text-white font-medium">{formatCountdown(dayEndsIn)}</span>
+            <div className="text-[13px] text-muted-foreground">
+              Day ends in <span className="text-foreground font-medium">{formatCountdown(dayEndsIn)}</span>
             </div>
           </div>
 
-          {/* Donate Section */}
+          {/* Fund Input */}
           <div className="mb-6">
-            <div className="font-semibold text-[18px] mb-3">Donate</div>
-            <div className="bg-zinc-900 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-xl text-zinc-400">$</span>
-                <input
-                  type="number"
-                  value={donationAmount}
-                  onChange={(e) => setDonationAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="flex-1 bg-transparent text-2xl font-semibold outline-none placeholder:text-zinc-600 tabular-nums"
-                />
-              </div>
-              <div className="text-sm text-zinc-500 mb-2">
-                Balance: ${userBalance.toFixed(2)}
-              </div>
-              {parsedAmount > 0 && (
-                <div className="text-sm text-zinc-400">
-                  You'll receive ~{estimatedTokens.toLocaleString(undefined, { maximumFractionDigits: 0 })} {tokenSymbol}
-                  <span className="text-zinc-600 ml-1">(based on current pool)</span>
-                </div>
-              )}
+            <div className="font-semibold text-[18px] mb-3">Fund</div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xl text-muted-foreground">$</span>
+              <input
+                type="number"
+                value={fundAmount}
+                onChange={(e) => setFundAmount(e.target.value)}
+                placeholder="0.00"
+                className="flex-1 bg-transparent text-2xl font-semibold outline-none placeholder:text-zinc-600 tabular-nums"
+              />
             </div>
+            <div className="text-[13px] text-muted-foreground mb-1">
+              Balance: ${userBalance.toFixed(2)}
+            </div>
+            {parsedAmount > 0 && (
+              <div className="text-[13px] text-muted-foreground">
+                You'll receive ~{estimatedTokens.toLocaleString(undefined, { maximumFractionDigits: 0 })} {tokenSymbol}
+                <span className="text-zinc-600 ml-1">(based on current pool)</span>
+              </div>
+            )}
           </div>
 
           {/* Pending Claims */}
           {pendingClaims.unclaimedDays > 0 && (
             <div className="mb-6">
               <div className="font-semibold text-[18px] mb-3">Pending Claims</div>
-              <div className="bg-zinc-900 rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-xl font-bold tabular-nums flex items-center gap-1.5">
-                      <span className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[10px] text-white font-semibold">
-                        {tokenSymbol.charAt(0)}
-                      </span>
-                      {pendingClaims.totalTokens.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </div>
-                    <div className="text-sm text-zinc-500">${pendingClaims.totalUsd.toFixed(2)}</div>
-                    <div className="text-xs text-zinc-600 mt-1">From {pendingClaims.unclaimedDays} days</div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-semibold text-[15px] tabular-nums flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[10px] text-white font-semibold">
+                      {tokenSymbol.charAt(0)}
+                    </span>
+                    {pendingClaims.totalTokens.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
-                  <button
-                    onClick={() => setIsClaiming(true)}
-                    disabled={isClaiming}
-                    className={`
-                      px-6 py-2.5 text-[14px] font-semibold rounded-xl transition-all
-                      ${isClaiming
-                        ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
-                        : "bg-white text-black hover:bg-zinc-200"
-                      }
-                    `}
-                  >
-                    {isClaiming ? "Claiming..." : "Claim All"}
-                  </button>
+                  <div className="text-[12px] text-muted-foreground">${pendingClaims.totalUsd.toFixed(2)} · {pendingClaims.unclaimedDays} days</div>
                 </div>
+                <button
+                  onClick={() => setIsClaiming(true)}
+                  disabled={isClaiming}
+                  className={`
+                    px-6 py-2.5 text-[14px] font-semibold rounded-xl transition-all
+                    ${isClaiming
+                      ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
+                      : "bg-white text-black hover:bg-zinc-200"
+                    }
+                  `}
+                >
+                  {isClaiming ? "Claiming..." : "Claim All"}
+                </button>
               </div>
             </div>
           )}
 
           {/* Your Position */}
           <div className="mb-6">
-            <div className="font-semibold text-[18px] mb-3">Your Position</div>
-            <div className="bg-zinc-900 rounded-xl p-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-xs text-zinc-500 mb-1">Total Donated</div>
-                  <div className="text-lg font-bold tabular-nums">
-                    ${userStats.totalDonated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </div>
+            <div className="font-semibold text-[18px] mb-3">Your position</div>
+            <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+              <div>
+                <div className="text-muted-foreground text-[12px] mb-1">Total funded</div>
+                <div className="font-semibold text-[15px] tabular-nums">
+                  ${userStats.totalFunded.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
-                <div>
-                  <div className="text-xs text-zinc-500 mb-1">Today</div>
-                  <div className="text-lg font-bold tabular-nums">
-                    ${userStats.todayDonation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground text-[12px] mb-1">Today</div>
+                <div className="font-semibold text-[15px] tabular-nums">
+                  ${userStats.todayFunding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
-                <div>
-                  <div className="text-xs text-zinc-500 mb-1">Pending</div>
-                  <div className="text-lg font-bold tabular-nums flex items-center gap-1.5">
-                    <span className="w-4 h-4 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[8px] text-white font-semibold">
-                      {tokenSymbol.charAt(0)}
-                    </span>
-                    {userStats.pendingTokens.toLocaleString()}
-                  </div>
-                  <div className="text-xs text-zinc-500">${userStats.pendingUsd.toFixed(2)}</div>
+              </div>
+              <div>
+                <div className="text-muted-foreground text-[12px] mb-1">Pending</div>
+                <div className="font-semibold text-[15px] tabular-nums flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[10px] text-white font-semibold">
+                    {tokenSymbol.charAt(0)}
+                  </span>
+                  {userStats.pendingTokens.toLocaleString()}
                 </div>
-                <div>
-                  <div className="text-xs text-zinc-500 mb-1">Claimed</div>
-                  <div className="text-lg font-bold tabular-nums flex items-center gap-1.5">
-                    <span className="w-4 h-4 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[8px] text-white font-semibold">
-                      {tokenSymbol.charAt(0)}
-                    </span>
-                    {userStats.claimedTokens.toLocaleString()}
-                  </div>
-                  <div className="text-xs text-zinc-500">${userStats.claimedUsd.toFixed(2)}</div>
+                <div className="text-[12px] text-muted-foreground">${userStats.pendingUsd.toFixed(2)}</div>
+              </div>
+              <div>
+                <div className="text-muted-foreground text-[12px] mb-1">Claimed</div>
+                <div className="font-semibold text-[15px] tabular-nums flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[10px] text-white font-semibold">
+                    {tokenSymbol.charAt(0)}
+                  </span>
+                  {userStats.claimedTokens.toLocaleString()}
                 </div>
+                <div className="text-[12px] text-muted-foreground">${userStats.claimedUsd.toFixed(2)}</div>
               </div>
             </div>
           </div>
@@ -306,7 +299,7 @@ export function FundModal({
 
           {/* Recent Donations */}
           <div className="mt-6 mb-6">
-            <h2 className="text-[18px] font-semibold mb-3">Recent Donations</h2>
+            <h2 className="text-[18px] font-semibold mb-3">Recent Funding</h2>
             <div>
               {recentDonations.map((donation) => (
                 <DonationHistoryItem
@@ -341,10 +334,10 @@ export function FundModal({
               </div>
             </div>
             <button
-              disabled={isDonating || parsedAmount <= 0 || parsedAmount > userBalance}
+              disabled={isFunding || parsedAmount <= 0 || parsedAmount > userBalance}
               className={`
                 w-32 h-10 text-[14px] font-semibold rounded-xl transition-all
-                ${isDonating
+                ${isFunding
                   ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
                   : parsedAmount > 0 && parsedAmount <= userBalance
                     ? "bg-white text-black hover:bg-zinc-200"
@@ -352,7 +345,7 @@ export function FundModal({
                 }
               `}
             >
-              {isDonating ? "Donating..." : "Fund"}
+              {isFunding ? "Funding..." : "Fund"}
             </button>
           </div>
         </div>
