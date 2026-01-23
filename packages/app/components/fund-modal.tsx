@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { X } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NavBar } from "@/components/nav-bar";
 
 type FundModalProps = {
@@ -26,6 +27,43 @@ export function FundModal({
   // Mock data - will be replaced with real data
   const [donationAmount, setDonationAmount] = useState("");
   const [isDonating, setIsDonating] = useState(false);
+
+  // Mock recipient data
+  const recipient = {
+    address: "0xcharity1234567890abcdef1234567890abcdef",
+    name: "Ocean Cleanup Foundation",
+    avatar: "https://api.dicebear.com/7.x/shapes/svg?seed=ocean",
+    handle: "@oceancleanup",
+  };
+
+  // Mock today's pool data
+  const [todayDonated, setTodayDonated] = useState(1234.56);
+  const [todayEmission, setTodayEmission] = useState(50000);
+  const [dayEndsIn, setDayEndsIn] = useState(4 * 3600 + 32 * 60); // seconds
+
+  // Calculate current price per token
+  const currentPricePerToken = todayDonated > 0 ? todayDonated / todayEmission : 0;
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const interval = setInterval(() => {
+      setDayEndsIn(prev => Math.max(0, prev - 1));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isOpen]);
+
+  // Format countdown
+  function formatCountdown(seconds: number): string {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  }
 
   if (!isOpen) return null;
 
@@ -52,10 +90,56 @@ export function FundModal({
           <div className="w-9" />
         </div>
 
-        {/* Scrollable Content - placeholder */}
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-4 pt-4">
-          <div className="text-center text-zinc-500">
-            Content coming in next tasks...
+        {/* Scrollable Content */}
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-4">
+          {/* Hero: Current Recipient */}
+          <div className="text-center py-4">
+            <div className="text-sm text-zinc-500 mb-2">CURRENT RECIPIENT</div>
+            <div className="flex items-center justify-center gap-3 mb-1">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={recipient.avatar} alt={recipient.name} />
+                <AvatarFallback className="bg-zinc-700 text-sm">
+                  {recipient.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="text-left">
+                <div className="text-lg font-semibold">{recipient.name}</div>
+                <div className="text-sm text-zinc-500">{recipient.handle}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Hero: Today's Pool */}
+          <div className="bg-zinc-900 rounded-xl p-4 mb-4">
+            <div className="text-sm text-zinc-500 mb-3">Today's Pool</div>
+            <div className="grid grid-cols-2 gap-4 mb-3">
+              <div>
+                <div className="text-xs text-zinc-500 mb-1">Donated</div>
+                <div className="text-xl font-bold tabular-nums">
+                  ${todayDonated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-zinc-500 mb-1">Emission</div>
+                <div className="text-xl font-bold tabular-nums flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[10px] text-white font-semibold">
+                    {tokenSymbol.charAt(0)}
+                  </span>
+                  {todayEmission.toLocaleString()}
+                </div>
+              </div>
+            </div>
+            <div className="text-sm text-zinc-400 mb-2">
+              Current price: {currentPricePerToken > 0 ? `$${currentPricePerToken.toFixed(6)}/token` : "Be first!"}
+            </div>
+            <div className="text-sm text-zinc-500">
+              Day ends in <span className="text-white font-medium">{formatCountdown(dayEndsIn)}</span>
+            </div>
+          </div>
+
+          {/* Placeholder for remaining sections */}
+          <div className="text-center text-zinc-600 py-4">
+            More sections coming...
           </div>
         </div>
 
