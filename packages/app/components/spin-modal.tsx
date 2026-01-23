@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NavBar } from "@/components/nav-bar";
 import { Leaderboard } from "@/components/leaderboard";
+import { SpinHistoryItem } from "@/components/spin-history-item";
 
 type SpinModalProps = {
   isOpen: boolean;
@@ -61,6 +62,25 @@ export function SpinModal({
     { rank: 3, address: "0xabcdef1234567890abcdef1234567890abcdef12", mined: BigInt(421000n * 10n**18n), minedFormatted: "421K", spent: BigInt(0), spentFormatted: "0", earned: BigInt(0), earnedFormatted: "0", isCurrentUser: false, isFriend: false, profile: null },
     { rank: 4, address: "0x9876543210fedcba9876543210fedcba98765432", mined: BigInt(287000n * 10n**18n), minedFormatted: "287K", spent: BigInt(0), spentFormatted: "0", earned: BigInt(0), earnedFormatted: "0", isCurrentUser: false, isFriend: false, profile: null },
     { rank: 5, address: "0xcafebabecafebabecafebabecafebabecafebabe", mined: BigInt(156000n * 10n**18n), minedFormatted: "156K", spent: BigInt(0), spentFormatted: "0", earned: BigInt(0), earnedFormatted: "0", isCurrentUser: true, isFriend: false, profile: null },
+  ];
+
+  function timeAgo(timestamp: number): string {
+    const seconds = Math.floor(Date.now() / 1000 - timestamp);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
+
+  const mockSpins = [
+    { id: "1", spinner: "0x1234567890abcdef1234567890abcdef12345678", price: BigInt(2_340_000), payoutPercent: 12, won: BigInt(14943n * 10n**18n), timestamp: Math.floor(Date.now() / 1000) - 120 },
+    { id: "2", spinner: "0xabcdef1234567890abcdef1234567890abcdef12", price: BigInt(1_800_000), payoutPercent: 1, won: BigInt(1203n * 10n**18n), timestamp: Math.floor(Date.now() / 1000) - 340 },
+    { id: "3", spinner: "0x9876543210fedcba9876543210fedcba98765432", price: BigInt(3_200_000), payoutPercent: 35, won: BigInt(41234n * 10n**18n), timestamp: Math.floor(Date.now() / 1000) - 890 },
+    { id: "4", spinner: "0x1111222233334444555566667777888899990000", price: BigInt(950_000), payoutPercent: 5, won: BigInt(5800n * 10n**18n), timestamp: Math.floor(Date.now() / 1000) - 1800 },
+    { id: "5", spinner: "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef", price: BigInt(4_100_000), payoutPercent: 15, won: BigInt(18200n * 10n**18n), timestamp: Math.floor(Date.now() / 1000) - 3600 },
   ];
 
   // Prize pool ticking effect
@@ -239,9 +259,19 @@ export function SpinModal({
             isLoading={false}
           />
 
-          {/* Placeholder for remaining sections */}
-          <div className="text-center text-zinc-600 py-4">
-            More sections coming...
+          {/* Recent Spins */}
+          <div className="mt-6 mb-6">
+            <div className="font-semibold text-[18px] mb-3 px-2">Recent Spins</div>
+            <div className="px-2">
+              {mockSpins.map((spin) => (
+                <SpinHistoryItem
+                  key={spin.id}
+                  spin={spin}
+                  timeAgo={timeAgo}
+                  tokenSymbol={tokenSymbol}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
