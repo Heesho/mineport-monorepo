@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { X } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NavBar } from "@/components/nav-bar";
 
 type SpinModalProps = {
@@ -26,6 +27,36 @@ export function SpinModal({
   // Mock data - will be replaced with real data
   const [currentPrice, setCurrentPrice] = useState(0.0234);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [prizePool, setPrizePool] = useState(124532.45);
+  const [lastWinner, setLastWinner] = useState({
+    address: "0x1234567890abcdef1234567890abcdef12345678",
+    name: "DiamondHands",
+    avatar: "https://api.dicebear.com/7.x/shapes/svg?seed=winner",
+    payoutPercent: 12,
+    won: 14943,
+  });
+
+  // Prize pool ticking effect
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const interval = setInterval(() => {
+      setPrizePool(prev => prev + 0.1); // Simulate emissions
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isOpen]);
+
+  // Price decay effect
+  useEffect(() => {
+    if (!isOpen || isSpinning) return;
+
+    const interval = setInterval(() => {
+      setCurrentPrice(prev => Math.max(0.001, prev * 0.9995));
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isOpen, isSpinning]);
 
   if (!isOpen) return null;
 
@@ -50,10 +81,58 @@ export function SpinModal({
           <div className="w-9" />
         </div>
 
-        {/* Scrollable Content - placeholder */}
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-4 pt-4">
-          <div className="text-center text-zinc-500">
-            Content coming in next tasks...
+        {/* Scrollable Content */}
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-4">
+          {/* Prize Pool Hero */}
+          <div className="text-center py-4">
+            <div className="text-sm text-zinc-500 mb-1">PRIZE POOL</div>
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-sm font-semibold">
+                {tokenSymbol.charAt(0)}
+              </div>
+              <span className="text-3xl font-bold tabular-nums">
+                {prizePool.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="text-sm text-zinc-500">
+              ${(prizePool * 0.01).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          </div>
+
+          {/* Spinner Area */}
+          <div className="bg-zinc-900 rounded-xl p-4 mb-4">
+            {isSpinning ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin w-12 h-12 border-4 border-zinc-700 border-t-white rounded-full" />
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 py-2">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={lastWinner.avatar} alt={lastWinner.name} />
+                  <AvatarFallback className="bg-zinc-700 text-sm">
+                    {lastWinner.address.slice(2, 4).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium">{lastWinner.name}</div>
+                  <div className="text-xs text-zinc-400">
+                    Won {lastWinner.payoutPercent}% → {lastWinner.won.toLocaleString()} {tokenSymbol}
+                  </div>
+                </div>
+                <div className="text-xs text-zinc-500">Last spin</div>
+              </div>
+            )}
+          </div>
+
+          {/* Current Price */}
+          <div className="text-center mb-6">
+            <span className="text-sm text-zinc-500">Current price: </span>
+            <span className="text-sm font-medium">${currentPrice.toFixed(4)}</span>
+          </div>
+
+          {/* Placeholder for remaining sections */}
+          <div className="text-center text-zinc-600 py-4">
+            More sections coming...
           </div>
         </div>
 
