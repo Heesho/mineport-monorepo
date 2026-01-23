@@ -25,6 +25,8 @@ const INITIAL_COINS = [
   { address: "0xmine", name: "[Mine Rig Demo]", symbol: "MINE", price: 0.00234, change24h: 12.5, marketCap: 234000, color: "from-emerald-500 to-green-600", sparkline: SPARKLINES.up1, lastBumped: 100000 },
   // Demo token for Slot Rig
   { address: "0xslot", name: "[Slot Rig Demo]", symbol: "SLOT", price: 0.0456, change24h: 28.3, marketCap: 345000, color: "from-purple-500 to-violet-600", sparkline: SPARKLINES.up3, lastBumped: 99500 },
+  // Demo token for Fund Rig
+  { address: "0xfund", name: "[Fund Rig Demo]", symbol: "FUND", price: 0.0089, change24h: 15.7, marketCap: 189000, color: "from-sky-500 to-blue-600", sparkline: SPARKLINES.up4, lastBumped: 99000 },
   // Regular tokens
   { address: "0x1234", name: "Donut", symbol: "DONUT", price: 0.00234, change24h: 12.5, marketCap: 234000, color: "from-amber-500 to-orange-600", sparkline: SPARKLINES.up1, lastBumped: 1000 },
   { address: "0x2345", name: "PepeCoin", symbol: "PEPE", price: 0.00000123, change24h: -5.2, marketCap: 89000, color: "from-green-500 to-emerald-600", sparkline: SPARKLINES.down1, lastBumped: 2000 },
