@@ -27,6 +27,13 @@ export function FundModal({
   // Mock data - will be replaced with real data
   const [donationAmount, setDonationAmount] = useState("");
   const [isDonating, setIsDonating] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
+
+  const pendingClaims = {
+    totalTokens: 12456.78,
+    totalUsd: 124.56,
+    unclaimedDays: 3,
+  };
 
   // Mock recipient data
   const recipient = {
@@ -167,6 +174,40 @@ export function FundModal({
               )}
             </div>
           </div>
+
+          {/* Pending Claims */}
+          {pendingClaims.unclaimedDays > 0 && (
+            <div className="mb-6">
+              <div className="font-semibold text-[18px] mb-3">Pending Claims</div>
+              <div className="bg-zinc-900 rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xl font-bold tabular-nums flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[10px] text-white font-semibold">
+                        {tokenSymbol.charAt(0)}
+                      </span>
+                      {pendingClaims.totalTokens.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <div className="text-sm text-zinc-500">${pendingClaims.totalUsd.toFixed(2)}</div>
+                    <div className="text-xs text-zinc-600 mt-1">From {pendingClaims.unclaimedDays} days</div>
+                  </div>
+                  <button
+                    onClick={() => setIsClaiming(true)}
+                    disabled={isClaiming}
+                    className={`
+                      px-6 py-2.5 text-[14px] font-semibold rounded-xl transition-all
+                      ${isClaiming
+                        ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
+                        : "bg-white text-black hover:bg-zinc-200"
+                      }
+                    `}
+                  >
+                    {isClaiming ? "Claiming..." : "Claim All"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Placeholder for remaining sections */}
           <div className="text-center text-zinc-600 py-4">
