@@ -2,7 +2,7 @@
 
 ## Overview
 
-Mineport is a decentralized token launchpad on Base with four distinct rig types, each implementing different token distribution mechanics. All rigs share common infrastructure (Unit tokens, Auctions, LP burning) but differ in how users earn tokens.
+Mineport is a decentralized token launchpad on Base with three distinct rig types, each implementing different token distribution mechanics. All rigs share common infrastructure (Unit tokens, Auctions, LP burning) but differ in how users earn tokens.
 
 ## Contract Hierarchy
 
@@ -16,37 +16,33 @@ Mineport is a decentralized token launchpad on Base with four distinct rig types
         |                            |                            |
 +-------v-------+           +--------v--------+          +--------v--------+
 |   MineCore    |           |    SlotCore     |          |    FundCore     |
-|   SlotCore    |           |    ContentCore  |          |    ContentCore  |
-|   FundCore    |           +--------+--------+          +--------+--------+
-|  ContentCore  |                    |                            |
 +-------+-------+           +--------+--------+          +--------+--------+
-        |                   |                 |          |                 |
-+-------v-------+    +------v------+   +------v------+  +------v------+   |
-| UnitFactory   |    | RigFactory  |   |AuctionFactory| | MinterFactory|   |
-| RigFactory    |    +------+------+   +------+------+  +------+------+   |
-|AuctionFactory |           |                 |                |          |
-+-------+-------+    +------v------+   +------v------+  +------v------+   |
-        |           |     Rig      |   |   Auction   |  |    Minter   |   |
-+-------v-------+   | (MineRig,   |   | (Treasury   |  | (Weekly     |   |
-|     Unit      |   |  SlotRig,   |   |  Dutch      |  |  emissions) |   |
-|   (ERC20)     |   |  FundRig,   |   |  Auction)   |  +-------------+   |
-+---------------+   |  ContentRig)|   +-------------+                    |
-                    +-------------+                   +------------------+
-                                                      |    Rewarder      |
-                                                      | (Staking rewards)|
-                                                      +------------------+
+        |                            |                            |
++-------v-------+           +--------v--------+          +--------v--------+
+| UnitFactory   |           | RigFactory      |          | RigFactory      |
+| RigFactory    |           +--------+--------+          +--------+--------+
+|AuctionFactory |                    |                            |
++-------+-------+           +--------v--------+          +--------v--------+
+        |                   |     Rig         |          |     Rig         |
++-------v-------+           | (SlotRig)       |          | (FundRig)       |
+|     Unit      |           +--------+--------+          +--------+--------+
+|   (ERC20)     |                    |                            |
++---------------+           +--------v--------+          +--------v--------+
+                            |   Auction       |          |   Auction       |
+                            | (Treasury)      |          | (Treasury)      |
+                            +-----------------+          +-----------------+
 ```
 
 ## Rig Types Comparison
 
-| Feature | MineRig | SlotRig | FundRig | ContentRig |
-|---------|---------|---------|---------|------------|
-| **Mechanism** | Seat competition | Slot machine | Daily pools | NFT stealing |
-| **Multi-slot** | Yes (configurable) | No | No | Yes (NFTs) |
-| **VRF** | Optional (multiplier) | Required (payout) | None | None |
-| **Emission** | Time × UPS × multiplier | Time-based to pool | Day-based | Weekly via Minter |
-| **Payout timing** | On seat takeover | On VRF callback | After day ends | Continuous staking |
-| **Pull pattern** | Yes (miner fees) | No | No | No |
+| Feature | MineRig | SlotRig | FundRig |
+|---------|---------|---------|---------|
+| **Mechanism** | Seat competition | Slot machine | Daily pools |
+| **Multi-slot** | Yes (configurable) | No | No |
+| **VRF** | Optional (multiplier) | Required (payout) | None |
+| **Emission** | Time × UPS × multiplier | Time-based to pool | Day-based |
+| **Payout timing** | On seat takeover | On VRF callback | After day ends |
+| **Pull pattern** | Yes (miner fees) | No | No |
 
 ## Common Launch Flow
 
@@ -409,131 +405,6 @@ Day 60-89       |  250  (2nd halving)
 
 ---
 
-## ContentRig Architecture
-
-### Create Flow
-
-```
-User calls create(to, uri)
-        |
-        v
-+-------+-------+
-| Validate      |
-| - to ≠ 0      |
-+-------+-------+
-        |
-        v
-+-------+-------+
-| Mint NFT      |
-| tokenId++     |
-+-------+-------+
-        |
-        v
-+-------+-------+
-| Set metadata  |
-| tokenIdToUri  |
-+-------+-------+
-        |
-        v
-+-------+-------+
-| Set creator   |
-| tokenIdTo     |
-|   Creator     |
-+---------------+
-```
-
-### Collect Flow
-
-```
-User calls collect(to, tokenId, epochId, deadline, maxPrice)
-        |
-        v
-+-------+-------+
-| Validate      |
-| - to ≠ 0      |
-| - approved    |
-| - deadline    |
-| - epochId     |
-| - price       |
-+-------+-------+
-        |
-        v
-+-------+-------+
-| Transfer      |
-| quote token   |
-| from user     |
-+-------+-------+
-        |
-        v
-+-------+-------+
-| Distribute    |
-| fees          |
-+-------+-------+
-        |
-        +---> Protocol (1%)  --> protocolFeeAddress
-        |
-        +---> Treasury (15%) --> Auction contract
-        |
-        +---> Team (2%)      --> team address
-        |
-        +---> Creator (2%)   --> original creator
-        |
-        +---> Owner (80%)    --> previous owner (PUSH)
-        |
-        v
-+-------+-------+
-| Update stake  |
-| in Rewarder   |
-+-------+-------+
-        |
-        +---> Deposit new owner stake
-        |
-        +---> Withdraw prev owner stake
-        |
-        v
-+-------+-------+
-| Update epoch  |
-| per token     |
-+-------+-------+
-        |
-        v
-+-------+-------+
-| Transfer NFT  |
-| ownership     |
-+---------------+
-```
-
-### Staking Rewards (Rewarder)
-
-```
-+------------------+
-| Minter deposits  |
-| weekly emissions |
-| to Rewarder      |
-+--------+---------+
-         |
-         v
-+--------+---------+
-| rewardPerToken   |
-| accumulates      |
-+--------+---------+
-         |
-         v
-+--------+---------+
-| Users with stake |
-| earn rewards     |
-| proportionally   |
-+--------+---------+
-         |
-         v
-+--------+---------+
-| getReward()      |
-| claims earned    |
-+------------------+
-```
-
----
-
 ## Treasury Auction Flow (All Rigs)
 
 ```
@@ -595,11 +466,6 @@ User calls collect(to, tokenId, epochId, deadline, maxPrice)
 10. **Day isolation**: Donations in one day don't affect other days
 11. **Single claim**: Each account can only claim once per day
 
-### ContentRig Specific
-12. **Transfer blocked**: NFTs can only move via `collect()`, not transfer
-13. **Approval required**: Only approved content can be collected
-14. **Stake tracking**: Rewarder stake always matches ownership
-
 ---
 
 ## Contract Addresses (Deployed)
@@ -609,5 +475,4 @@ User calls collect(to, tokenId, epochId, deadline, maxPrice)
 | MineCore | TBD | Base |
 | SlotCore | TBD | Base |
 | FundCore | TBD | Base |
-| ContentCore | TBD | Base |
 | Registry | TBD | Base |

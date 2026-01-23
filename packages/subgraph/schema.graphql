@@ -216,7 +216,7 @@ type Swap @entity(immutable: true) {
 type Rig @entity(immutable: false) {
   id: ID!                              # Rig contract address
   unit: Unit!                          # The Unit token this rig mints
-  rigType: String!                     # "seat", "spin", "content", "charity"
+  rigType: String!                     # "seat", "spin", "charity"
 
   # Common fields
   launcher: Account!
@@ -245,7 +245,6 @@ type Rig @entity(immutable: false) {
 
   mineRig: MineRig
   slotRig: SlotRig
-  contentRig: ContentRig
   fundRig: FundRig
 }
 
@@ -371,98 +370,6 @@ type Spin @entity(immutable: true) {
 }
 
 # =============================================================================
-# CONTENT RIG - NFT collection with staking
-# =============================================================================
-
-type ContentRig @entity(immutable: false) {
-  id: ID!
-  rig: Rig!
-
-  # Emission config
-  initialUps: BigInt!                  # Starting units per second
-  tailUps: BigInt!                     # Minimum units per second (floor)
-  halvingPeriod: BigInt!               # Time between halvings (seconds)
-
-  # Rig config
-  minInitPrice: BigDecimal!
-  isModerated: Boolean!
-
-  # Associated contracts
-  minter: Bytes!
-  rewarder: Bytes!
-
-  # Stats
-  totalContent: BigInt!                # Total NFTs created
-  totalCollections: BigInt!            # Total collection events
-  totalStaked: BigDecimal!             # Total quote tokens staked
-
-  # Relations
-  contents: [Content!]! @derivedFrom(field: "contentRig")
-  collections: [Collection!]! @derivedFrom(field: "contentRig")
-  claims: [ContentClaim!]! @derivedFrom(field: "contentRig")
-}
-
-type Content @entity(immutable: false) {
-  id: ID!                              # {rigAddress}-{tokenId}
-  contentRig: ContentRig!
-  tokenId: BigInt!
-
-  creator: Account!
-  currentOwner: Account!
-  uri: String!
-
-  # Current state
-  stake: BigDecimal!                   # Current stake determining rewards
-  epochId: BigInt!
-  initPrice: BigDecimal!
-
-  # Stats
-  totalCollections: BigInt!
-  totalStaked: BigDecimal!             # All-time stake on this content
-
-  createdAt: BigInt!
-
-  collections: [Collection!]! @derivedFrom(field: "content")
-}
-
-type Collection @entity(immutable: true) {
-  id: ID!                              # {txHash}-{logIndex}
-  contentRig: ContentRig!
-  content: Content!
-
-  collector: Account!
-  prevOwner: Account
-
-  tokenId: BigInt!
-  epochId: BigInt!
-  price: BigDecimal!                   # Collection price
-
-  # Fee breakdown
-  prevOwnerFee: BigDecimal!            # 80% to prev owner
-  creatorFee: BigDecimal!              # 3% to creator
-  treasuryFee: BigDecimal!             # 12% to treasury (remainder)
-  teamFee: BigDecimal!                 # 4% to team
-  protocolFee: BigDecimal!             # 1% to protocol
-
-  timestamp: BigInt!
-  blockNumber: BigInt!
-  txHash: Bytes!
-}
-
-# Claim record for ContentRig pull pattern (prevOwner + creator fees)
-type ContentClaim @entity(immutable: true) {
-  id: ID!                              # {txHash}-{logIndex}
-  contentRig: ContentRig!
-
-  account: Account!                    # Account that claimed
-  amount: BigDecimal!                  # Amount claimed (in quote token)
-
-  timestamp: BigInt!
-  blockNumber: BigInt!
-  txHash: Bytes!
-}
-
-# =============================================================================
 # CHARITY RIG - Daily donation pool mining
 # =============================================================================
 
@@ -569,9 +476,6 @@ type Account @entity(immutable: false) {
   seatMines: [SeatMine!]! @derivedFrom(field: "miner")
   seatSlots: [SeatSlot!]! @derivedFrom(field: "currentMiner")
   spins: [Spin!]! @derivedFrom(field: "spinner")
-  contents: [Content!]! @derivedFrom(field: "currentOwner")
-  contentsCreated: [Content!]! @derivedFrom(field: "creator")
-  collections: [Collection!]! @derivedFrom(field: "collector")
   donations: [Donation!]! @derivedFrom(field: "donor")
 }
 

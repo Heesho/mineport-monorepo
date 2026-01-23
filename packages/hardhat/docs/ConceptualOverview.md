@@ -22,9 +22,9 @@ Mining inverts this:
 - **No team allocation** - everyone earns through the same mechanisms
 - **Burned liquidity** means no one can pull the rug
 
-## 3) The Four Rig Types
+## 3) The Three Rig Types
 
-Mineport supports four distinct rig architectures, each designed to incentivize different behaviors:
+Mineport supports three distinct rig architectures, each designed to incentivize different behaviors:
 
 ### MineRig - Classic Mining
 
@@ -52,15 +52,6 @@ Daily donation pools where contributors claim proportional token rewards.
 - **Earning**: Your claim = (your donation / total daily donations) × daily emissions
 - **Fee split**: 50% to charity recipient, 45% treasury, 4% team, 1% protocol
 - **Use case**: Fundraising for causes with crypto incentives
-
-### ContentRig - Content Creation
-
-NFT collection with a "steal" mechanic where collectors earn staking rewards.
-
-- **Mechanism**: Create content as NFTs. Others can "collect" (steal) your NFT by paying the Dutch auction price.
-- **Earning**: Hold NFTs to earn staking rewards. Get paid when someone collects from you.
-- **Fee split**: 80% to previous owner, 15% treasury, 2% creator, 2% team, 1% protocol
-- **Use case**: Art, memes, and creative content
 
 ## 4) The Launch Process
 
@@ -147,7 +138,6 @@ The system is designed so that selfish behavior still benefits the ecosystem:
 | Miner | Maximize token earnings | Provides liquidity and activity |
 | Spinner | Win big payouts | Funds prize pool and treasury |
 | Donor | Earn tokens from charity | Actual charitable donations occur |
-| Collector | Profit from NFT flipping | Rewards creators and previous holders |
 | LP Holder | Buy cheap treasury | Burns LP, concentrating liquidity |
 
 ## 9) What This Solves (And What It Doesn't)

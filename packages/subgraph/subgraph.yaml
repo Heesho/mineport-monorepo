@@ -65,36 +65,6 @@ dataSources:
       file: ./src/cores/slotCore.ts
 
   # ==========================================================================
-  # CONTENT CORE - Launches ContentRigs
-  # ==========================================================================
-  - kind: ethereum
-    name: ContentCore
-    network: base
-    source:
-      address: "0x0000000000000000000000000000000000000003" # TODO: Update after deployment
-      abi: ContentCore
-      startBlock: 1
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.9
-      language: wasm/assemblyscript
-      entities:
-        - Protocol
-        - Unit
-        - Rig
-        - ContentRig
-        - Account
-      abis:
-        - name: ContentCore
-          file: ./abis/ContentCore.json
-        - name: ERC20
-          file: ./abis/ERC20.json
-      eventHandlers:
-        - event: ContentCore__Launched(indexed address,indexed address,indexed address,address,address,address,address,string,string,string,uint256,uint256,uint256,uint256,uint256,uint256,bool,uint256,uint256,uint256,uint256)
-          handler: handleContentCoreLaunched
-      file: ./src/cores/contentCore.ts
-
-  # ==========================================================================
   # CHARITY CORE - Launches FundRigs
   # ==========================================================================
   - kind: ethereum
@@ -225,38 +195,6 @@ templates:
         - event: SlotRig__TeamFee(indexed address,indexed uint256,uint256)
           handler: handleSpinTeamFee
       file: ./src/rigs/slotRig.ts
-
-  # ==========================================================================
-  # CONTENT RIG - Content and Collection events
-  # ==========================================================================
-  - kind: ethereum
-    name: ContentRig
-    network: base
-    source:
-      abi: ContentRig
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.9
-      language: wasm/assemblyscript
-      entities:
-        - Rig
-        - ContentRig
-        - Content
-        - Collection
-        - ContentClaim
-        - Account
-        - Unit
-      abis:
-        - name: ContentRig
-          file: ./abis/ContentRig.json
-      eventHandlers:
-        - event: ContentRig__Created(indexed address,indexed address,indexed uint256,string)
-          handler: handleContentCreated
-        - event: ContentRig__Collected(indexed address,indexed address,indexed uint256,uint256,uint256)
-          handler: handleContentCollected
-        - event: ContentRig__Claimed(indexed address,uint256)
-          handler: handleContentClaimed
-      file: ./src/rigs/contentRig.ts
 
   # ==========================================================================
   # CHARITY RIG - Donation events

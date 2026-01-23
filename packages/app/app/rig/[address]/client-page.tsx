@@ -6,7 +6,6 @@ import Link from "next/link";
 import { ArrowLeft, Share2, Copy, Check } from "lucide-react";
 import { NavBar } from "@/components/nav-bar";
 import { MineModal } from "@/components/mine-modal";
-import { ContentModal } from "@/components/content-modal";
 import { TradeModal } from "@/components/trade-modal";
 import { AuctionModal } from "@/components/auction-modal";
 import { LiquidityModal } from "@/components/liquidity-modal";
@@ -76,17 +75,6 @@ const MINE_RIG_CONFIG = {
   epochPeriod: 3600,
   priceMultiplier: 2.0,
   minInitPrice: 0.01,
-};
-
-const CONTENT_RIG_CONFIG = {
-  rigType: "Content Rig",
-  initialUps: 2.0,
-  tailUps: 0.25,
-  halvingPeriod: 604800, // 1 week
-  capacity: 12,
-  epochPeriod: 86400, // 1 day
-  priceMultiplier: 2.0,
-  minInitPrice: 0.001,
 };
 
 // Mock links
@@ -188,18 +176,13 @@ function SimpleChart({
 }
 
 export default function RigDetailPage() {
-  const params = useParams();
-  const rigAddress = (params.address as string) || "";
-
-  // Use ContentRig config if address ends with 'c' or contains 'content'
-  const isContentRig = rigAddress.toLowerCase().endsWith('c') || rigAddress.toLowerCase().includes('content');
-  const MOCK_RIG_CONFIG = isContentRig ? CONTENT_RIG_CONFIG : MINE_RIG_CONFIG;
+  useParams(); // Keep for Next.js routing
+  const MOCK_RIG_CONFIG = MINE_RIG_CONFIG;
 
   const [timeframe, setTimeframe] = useState<Timeframe>("1D");
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [showHeaderPrice, setShowHeaderPrice] = useState(false);
   const [showMineModal, setShowMineModal] = useState(false);
-  const [showContentModal, setShowContentModal] = useState(false);
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [tradeMode, setTradeMode] = useState<"buy" | "sell">("buy");
   const [showAuctionModal, setShowAuctionModal] = useState(false);
@@ -412,7 +395,7 @@ export default function RigDetailPage() {
             {/* Launch parameters */}
             <div className="grid grid-cols-2 gap-y-3 gap-x-8">
               <div>
-                <div className="text-muted-foreground text-[12px] mb-0.5">{isContentRig ? "Items" : "Slots"}</div>
+                <div className="text-muted-foreground text-[12px] mb-0.5">Slots</div>
                 <div className="font-medium text-[13px]">{MOCK_RIG_CONFIG.capacity}</div>
               </div>
               <div>
@@ -423,17 +406,10 @@ export default function RigDetailPage() {
                 <div className="text-muted-foreground text-[12px] mb-0.5">Floor rate</div>
                 <div className="font-medium text-[13px]">{MOCK_RIG_CONFIG.tailUps}/s</div>
               </div>
-              {'halvingAmount' in MOCK_RIG_CONFIG ? (
-                <div>
-                  <div className="text-muted-foreground text-[12px] mb-0.5">Halving at</div>
-                  <div className="font-medium text-[13px]">{formatNumber(MOCK_RIG_CONFIG.halvingAmount)}</div>
-                </div>
-              ) : (
-                <div>
-                  <div className="text-muted-foreground text-[12px] mb-0.5">Halving period</div>
-                  <div className="font-medium text-[13px]">{(MOCK_RIG_CONFIG as typeof CONTENT_RIG_CONFIG).halvingPeriod / 86400}d</div>
-                </div>
-              )}
+              <div>
+                <div className="text-muted-foreground text-[12px] mb-0.5">Halving at</div>
+                <div className="font-medium text-[13px]">{formatNumber(MOCK_RIG_CONFIG.halvingAmount)}</div>
+              </div>
               <div>
                 <div className="text-muted-foreground text-[12px] mb-0.5">Epoch</div>
                 <div className="font-medium text-[13px]">{MOCK_RIG_CONFIG.epochPeriod / 3600}h</div>
@@ -496,11 +472,7 @@ export default function RigDetailPage() {
                   <button
                     onClick={() => {
                       setShowActionMenu(false);
-                      if (isContentRig) {
-                        setShowContentModal(true);
-                      } else {
-                        setShowMineModal(true);
-                      }
+                      setShowMineModal(true);
                     }}
                     className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
                   >
@@ -547,15 +519,6 @@ export default function RigDetailPage() {
         isOpen={showMineModal}
         onClose={() => setShowMineModal(false)}
         tokenSymbol={MOCK_TOKEN.symbol}
-        userBalance={12.45}
-      />
-
-      {/* Content Modal (for ContentRig) */}
-      <ContentModal
-        isOpen={showContentModal}
-        onClose={() => setShowContentModal(false)}
-        tokenSymbol={MOCK_TOKEN.symbol}
-        tokenName={MOCK_TOKEN.name}
         userBalance={12.45}
       />
 

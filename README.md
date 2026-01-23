@@ -10,7 +10,6 @@ A permissionless token launchpad on Base that distributes tokens through gamifie
   - [Seat Rig](#seat-rig)
   - [Spin Rig](#spin-rig)
   - [Charity Rig](#charity-rig)
-  - [Content Rig](#content-rig)
 - [Core Concepts](#core-concepts)
   - [Dutch Auctions](#dutch-auctions)
   - [Token Emissions](#token-emissions)
@@ -110,25 +109,6 @@ Your reward = (your donation / total daily donations) × daily emission
 
 **Emission Schedule**: Halves every 30 days down to a configurable floor.
 
-### Content Rig
-
-**Mechanic**: NFT collection with "steal" mechanics and staking rewards
-
-Users create content NFTs. Other users can "collect" (steal) content by paying the Dutch auction price:
-
-- Price doubles after each collection
-- Collectors earn staking rewards proportional to their purchase price
-- Rewards accumulate in a Rewarder contract based on stake
-
-**Fee Split**:
-- **80%** to previous owner
-- **12%** to Treasury
-- **4%** to Team
-- **3%** to creator
-- **1%** to Protocol
-
-Transfers are disabled - the only way to acquire content is through the collect mechanism.
-
 ## Core Concepts
 
 ### Dutch Auctions
@@ -192,17 +172,17 @@ This provides permanent trading liquidity and prevents rug pulls.
                                     │ (all rig types) │
                                     └────────┬────────┘
                                              │
-        ┌────────────────┬───────────────────┼───────────────────┬────────────────┐
-        │                │                   │                   │                │
-   ┌────▼────┐     ┌─────▼─────┐      ┌──────▼──────┐     ┌──────▼──────┐   ┌─────▼─────┐
-   │SeatCore │     │ SpinCore  │      │CharityCore  │     │ContentCore  │   │  Future   │
-   └────┬────┘     └─────┬─────┘      └──────┬──────┘     └──────┬──────┘   │  Cores    │
-        │                │                   │                   │          └───────────┘
-   ┌────▼────┐     ┌─────▼─────┐      ┌──────▼──────┐     ┌──────▼──────┐
-   │ SeatRig │     │  SpinRig  │      │ CharityRig  │     │ ContentRig  │
-   └────┬────┘     └─────┬─────┘      └──────┬──────┘     └──────┬──────┘
+        ┌────────────────┬───────────────────┼───────────────────┐
         │                │                   │                   │
-        └────────────────┴───────────────────┴───────────────────┘
+   ┌────▼────┐     ┌─────▼─────┐      ┌──────▼──────┐      ┌─────▼─────┐
+   │SeatCore │     │ SpinCore  │      │CharityCore  │      │  Future   │
+   └────┬────┘     └─────┬─────┘      └──────┬──────┘      │  Cores    │
+        │                │                   │             └───────────┘
+   ┌────▼────┐     ┌─────▼─────┐      ┌──────▼──────┐
+   │ SeatRig │     │  SpinRig  │      │ CharityRig  │
+   └────┬────┘     └─────┬─────┘      └──────┬──────┘
+        │                │                   │
+        └────────────────┴───────────────────┘
                                     │
                                ┌────▼────┐
                                │  Unit   │
@@ -220,7 +200,6 @@ This provides permanent trading liquidity and prevents rug pulls.
 | `SeatRig` | Seat-based mining with Dutch auctions and VRF multipliers |
 | `SpinRig` | Slot machine gambling with VRF-determined payouts |
 | `CharityRig` | Daily donation pools with proportional distribution |
-| `ContentRig` | NFT collection with steal mechanics and staking rewards |
 | `*Core` | Factory/launchpad for each rig type |
 | `*Factory` | Creates individual rig/unit/auction contracts |
 
@@ -228,14 +207,13 @@ This provides permanent trading liquidity and prevents rug pulls.
 
 ### Summary by Rig Type
 
-| Recipient | Seat | Spin | Charity | Content |
-|-----------|------|------|---------|---------|
-| Previous Holder | 80% | - | - | 80% |
-| Treasury (remainder) | 15% | 95% | 45% | 12% |
-| Team | 4% | 4% | 4% | 4% |
-| Protocol | 1% | 1% | 1% | 1% |
-| Creator | - | - | - | 3% |
-| Charity Recipient | - | - | 50% | - |
+| Recipient | Seat | Spin | Charity |
+|-----------|------|------|---------|
+| Previous Holder | 80% | - | - |
+| Treasury (remainder) | 15% | 95% | 45% |
+| Team | 4% | 4% | 4% |
+| Protocol | 1% | 1% | 1% |
+| Charity Recipient | - | - | 50% |
 
 All rig types share consistent **4% team** and **1% protocol** fees. Treasury always receives the remainder after other fees.
 
@@ -346,7 +324,6 @@ npx hardhat test                           # Run all tests
 npx hardhat test tests/seat/*              # Run seat rig tests
 npx hardhat test tests/spin/*              # Run spin rig tests
 npx hardhat test tests/charity/*           # Run charity rig tests
-npx hardhat test tests/content/*           # Run content rig tests
 ```
 
 ---
