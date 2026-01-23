@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import { X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NavBar } from "@/components/nav-bar";
+import { Leaderboard } from "@/components/leaderboard";
+import { LeaderboardEntry } from "@/hooks/useRigLeaderboard";
 
 type FundModalProps = {
   isOpen: boolean;
@@ -44,6 +46,16 @@ export function FundModal({
     claimedTokens: 45230,
     claimedUsd: 452.30,
   };
+
+  // Mock leaderboard data
+  const leaderboardEntries: LeaderboardEntry[] = [
+    { rank: 1, address: "0x1234567890abcdef1234567890abcdef12345678", mined: BigInt(892000e18), minedFormatted: "892K", spent: BigInt(0), spentFormatted: "0", earned: BigInt(892000e18), earnedFormatted: "892K", isCurrentUser: false, isFriend: false },
+    { rank: 2, address: "0xabcdef1234567890abcdef1234567890abcdef12", mined: BigInt(654000e18), minedFormatted: "654K", spent: BigInt(0), spentFormatted: "0", earned: BigInt(654000e18), earnedFormatted: "654K", isCurrentUser: false, isFriend: true },
+    { rank: 3, address: "0x9876543210fedcba9876543210fedcba98765432", mined: BigInt(421000e18), minedFormatted: "421K", spent: BigInt(0), spentFormatted: "0", earned: BigInt(421000e18), earnedFormatted: "421K", isCurrentUser: false, isFriend: false },
+    { rank: 4, address: "0xfedcba9876543210fedcba9876543210fedcba98", mined: BigInt(312000e18), minedFormatted: "312K", spent: BigInt(0), spentFormatted: "0", earned: BigInt(312000e18), earnedFormatted: "312K", isCurrentUser: true, isFriend: false },
+    { rank: 5, address: "0x5678901234abcdef5678901234abcdef56789012", mined: BigInt(198000e18), minedFormatted: "198K", spent: BigInt(0), spentFormatted: "0", earned: BigInt(198000e18), earnedFormatted: "198K", isCurrentUser: false, isFriend: false },
+  ];
+  const userRank = 4;
 
   // Mock recipient data
   const recipient = {
@@ -259,6 +271,15 @@ export function FundModal({
               </div>
             </div>
           </div>
+
+          {/* Leaderboard */}
+          <Leaderboard
+            entries={leaderboardEntries}
+            userRank={userRank}
+            tokenSymbol={tokenSymbol}
+            tokenName={tokenName}
+            rigUrl={`https://mineport.xyz/rig/${rigAddress}`}
+          />
 
           {/* Placeholder for remaining sections */}
           <div className="text-center text-zinc-600 py-4">
