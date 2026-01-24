@@ -10,6 +10,7 @@ type SpinHistoryItemProps = {
   spin: {
     id: string;
     spinner: string;
+    uri?: string;
     price: bigint;
     payoutPercent: number;
     won: bigint;
@@ -68,14 +69,24 @@ export const SpinHistoryItem = memo(function SpinHistoryItem({
           </button>
           <span className="text-xs text-zinc-500">{timeAgo(spin.timestamp)}</span>
         </div>
-        <div className="text-xs text-zinc-400 mt-0.5">
-          Won {spin.payoutPercent}% → {formatNumber(won)} {tokenSymbol}
-        </div>
+        {spin.uri && (
+          <div className="text-xs text-zinc-400 mt-0.5 truncate">{spin.uri}</div>
+        )}
       </div>
 
-      <div className="text-right flex-shrink-0">
-        <div className="text-[12px] text-muted-foreground">Paid</div>
-        <div className="text-[13px] font-medium">${price.toFixed(4)}</div>
+      <div className="flex items-center gap-4 flex-shrink-0 text-right">
+        <div>
+          <div className="text-[12px] text-muted-foreground">Spent</div>
+          <div className="text-[13px] font-medium">${price.toFixed(2)}</div>
+        </div>
+        <div>
+          <div className="text-[12px] text-muted-foreground">Result</div>
+          <div className="text-[13px] font-medium">{spin.payoutPercent}%</div>
+        </div>
+        <div>
+          <div className="text-[12px] text-muted-foreground">Mined</div>
+          <div className="text-[13px] font-medium">{formatNumber(won)}</div>
+        </div>
       </div>
     </div>
   );

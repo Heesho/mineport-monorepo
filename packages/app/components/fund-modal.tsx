@@ -29,8 +29,10 @@ export function FundModal({
 
   // Mock data - will be replaced with real data
   const [fundAmount, setFundAmount] = useState("");
+  const [message, setMessage] = useState("");
   const [isFunding, setIsFunding] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
+  const defaultMessage = "for the cause"; // Default message set by rig owner
 
   const pendingClaims = {
     totalTokens: 12456.78,
@@ -61,11 +63,11 @@ export function FundModal({
   // Mock recent donations
   const now = Math.floor(Date.now() / 1000);
   const recentDonations = [
-    { id: "1", donor: "0x1234567890abcdef1234567890abcdef12345678", amount: BigInt(50e6), estimatedTokens: BigInt(2500e18), timestamp: now - 120 },
-    { id: "2", donor: "0xabcdef1234567890abcdef1234567890abcdef12", amount: BigInt(25e6), estimatedTokens: BigInt(1250e18), timestamp: now - 300 },
-    { id: "3", donor: "0x9876543210fedcba9876543210fedcba98765432", amount: BigInt(100e6), estimatedTokens: BigInt(4800e18), timestamp: now - 600 },
-    { id: "4", donor: "0xfedcba9876543210fedcba9876543210fedcba98", amount: BigInt(10e6), estimatedTokens: BigInt(500e18), timestamp: now - 1800 },
-    { id: "5", donor: "0x5678901234abcdef5678901234abcdef56789012", amount: BigInt(75e6), estimatedTokens: BigInt(3600e18), timestamp: now - 3600 },
+    { id: "1", donor: "0x1234567890abcdef1234567890abcdef12345678", uri: "for the oceans", amount: BigInt(50e6), estimatedTokens: BigInt(2500e18), timestamp: now - 120 },
+    { id: "2", donor: "0xabcdef1234567890abcdef1234567890abcdef12", uri: "every bit helps", amount: BigInt(25e6), estimatedTokens: BigInt(1250e18), timestamp: now - 300 },
+    { id: "3", donor: "0x9876543210fedcba9876543210fedcba98765432", uri: "", amount: BigInt(100e6), estimatedTokens: BigInt(4800e18), timestamp: now - 600 },
+    { id: "4", donor: "0xfedcba9876543210fedcba9876543210fedcba98", uri: "love this project", amount: BigInt(10e6), estimatedTokens: BigInt(500e18), timestamp: now - 1800 },
+    { id: "5", donor: "0x5678901234abcdef5678901234abcdef56789012", uri: "wagmi", amount: BigInt(75e6), estimatedTokens: BigInt(3600e18), timestamp: now - 3600 },
   ];
 
   // Time ago helper
@@ -143,7 +145,7 @@ export function FundModal({
           >
             <X className="w-5 h-5" />
           </button>
-          <span className="text-base font-semibold">Fund</span>
+          <span className="text-base font-semibold">Mine</span>
           <div className="w-9" />
         </div>
 
@@ -288,18 +290,9 @@ export function FundModal({
             </div>
           </div>
 
-          {/* Leaderboard */}
-          <Leaderboard
-            entries={leaderboardEntries}
-            userRank={userRank}
-            tokenSymbol={tokenSymbol}
-            tokenName={tokenName}
-            rigUrl={`https://mineport.xyz/rig/${rigAddress}`}
-          />
-
-          {/* Recent Donations */}
-          <div className="mt-6 mb-6">
-            <h2 className="text-[18px] font-semibold mb-3">Recent Funding</h2>
+          {/* Recent Mines */}
+          <div className="mt-6">
+            <h2 className="text-[18px] font-semibold mb-3">Recent Mines</h2>
             <div>
               {recentDonations.map((donation) => (
                 <DonationHistoryItem
@@ -311,6 +304,15 @@ export function FundModal({
               ))}
             </div>
           </div>
+
+          {/* Leaderboard */}
+          <Leaderboard
+            entries={leaderboardEntries}
+            userRank={userRank}
+            tokenSymbol={tokenSymbol}
+            tokenName={tokenName}
+            rigUrl={`https://mineport.xyz/rig/${rigAddress}`}
+          />
         </div>
 
         {/* Bottom Action Bar */}
@@ -318,35 +320,47 @@ export function FundModal({
           className="fixed bottom-0 left-0 right-0 z-50 bg-background flex justify-center"
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 60px)" }}
         >
-          <div className="flex items-center justify-between w-full max-w-[520px] px-4 py-3">
-            <div className="flex items-center gap-6">
-              <div>
-                <div className="text-muted-foreground text-[12px]">Balance</div>
-                <div className="font-semibold text-[17px] tabular-nums">
-                  ${userBalance.toFixed(2)}
+          <div className="w-full max-w-[520px] px-4 pt-3 pb-3">
+            {/* Message Input */}
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder={defaultMessage}
+              maxLength={100}
+              className="w-full bg-zinc-800 rounded-xl px-4 py-3 text-[15px] outline-none placeholder:text-zinc-500 mb-3"
+            />
+            {/* Balance, Amount, Mine Button */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <div>
+                  <div className="text-muted-foreground text-[12px]">Balance</div>
+                  <div className="font-semibold text-[17px] tabular-nums">
+                    ${userBalance.toFixed(2)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground text-[12px]">Amount</div>
+                  <div className="font-semibold text-[17px] tabular-nums">
+                    ${parsedAmount.toFixed(2)}
+                  </div>
                 </div>
               </div>
-              <div>
-                <div className="text-muted-foreground text-[12px]">Amount</div>
-                <div className="font-semibold text-[17px] tabular-nums">
-                  ${parsedAmount.toFixed(2)}
-                </div>
-              </div>
+              <button
+                disabled={isFunding || parsedAmount <= 0 || parsedAmount > userBalance}
+                className={`
+                  w-32 h-10 text-[14px] font-semibold rounded-xl transition-all
+                  ${isFunding
+                    ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
+                    : parsedAmount > 0 && parsedAmount <= userBalance
+                      ? "bg-white text-black hover:bg-zinc-200"
+                      : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                  }
+                `}
+              >
+                {isFunding ? "Mining..." : "Mine"}
+              </button>
             </div>
-            <button
-              disabled={isFunding || parsedAmount <= 0 || parsedAmount > userBalance}
-              className={`
-                w-32 h-10 text-[14px] font-semibold rounded-xl transition-all
-                ${isFunding
-                  ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
-                  : parsedAmount > 0 && parsedAmount <= userBalance
-                    ? "bg-white text-black hover:bg-zinc-200"
-                    : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
-                }
-              `}
-            >
-              {isFunding ? "Funding..." : "Fund"}
-            </button>
           </div>
         </div>
       </div>

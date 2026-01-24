@@ -10,6 +10,7 @@ type DonationHistoryItemProps = {
   donation: {
     id: string;
     donor: string;
+    uri?: string;
     amount: bigint;
     estimatedTokens: bigint;
     timestamp: number;
@@ -67,8 +68,19 @@ export const DonationHistoryItem = memo(function DonationHistoryItem({
           </button>
           <span className="text-xs text-zinc-500">{timeAgo(donation.timestamp)}</span>
         </div>
-        <div className="text-xs text-zinc-400 mt-0.5">
-          Donated ${amount.toFixed(2)} → ~{formatNumber(tokens)} {tokenSymbol}
+        {donation.uri && (
+          <div className="text-xs text-zinc-400 mt-0.5 truncate">{donation.uri}</div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-4 flex-shrink-0 text-right">
+        <div>
+          <div className="text-[12px] text-muted-foreground">Funded</div>
+          <div className="text-[13px] font-medium">${amount.toFixed(2)}</div>
+        </div>
+        <div>
+          <div className="text-[12px] text-muted-foreground">Mined</div>
+          <div className="text-[13px] font-medium">{formatNumber(tokens)}</div>
         </div>
       </div>
     </div>

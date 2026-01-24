@@ -28,30 +28,91 @@ export function SpinModal({
 
   // Mock data - will be replaced with real data
   const [currentPrice, setCurrentPrice] = useState(0.0234);
-  const [isSpinning, setIsSpinning] = useState(false);
+  const [miningState, setMiningState] = useState<"idle" | "mining" | "revealing" | "complete">("idle");
   const [prizePool, setPrizePool] = useState(124532.45);
-  const [lastWinner, setLastWinner] = useState({
-    address: "0x1234567890abcdef1234567890abcdef12345678",
+  const [minedAmount, setMinedAmount] = useState(0);
+  const [displayedAmount, setDisplayedAmount] = useState(0);
+  const [minedPayoutPercent, setMinedPayoutPercent] = useState(0);
+  const [message, setMessage] = useState("");
+  const tokenPrice = 0.01; // USD price per token
+  const defaultMessage = "gm"; // Default message set by rig owner
+
+  // Odds in basis points (e.g., 10 = 0.1%, 8000 = 80%)
+  const odds = [10, 10, 10, 50, 50, 100, 500, 1000, 8000];
+  const minPayoutBps = Math.min(...odds);
+  const maxPayoutBps = Math.max(...odds);
+
+  const maxMine = prizePool * maxPayoutBps / 10000;
+  const minMine = prizePool * minPayoutBps / 10000;
+
+  // Last mine result (shown when idle)
+  const [lastMine, setLastMine] = useState({
     name: "DiamondHands",
-    avatar: "https://api.dicebear.com/7.x/shapes/svg?seed=winner",
-    payoutPercent: 12,
-    won: 14943,
+    avatar: "https://api.dicebear.com/7.x/shapes/svg?seed=diamond",
+    amount: 6227,
+    payoutPercent: 5,
   });
 
-  const odds = [
-    { chance: 50, payout: 1 },
-    { chance: 25, payout: 5 },
-    { chance: 15, payout: 15 },
-    { chance: 8, payout: 35 },
-    { chance: 2, payout: 100 },
-  ];
+
+  // Handle the spin/mine action
+  const handleMine = () => {
+    if (miningState !== "idle" || userBalance < currentPrice) return;
+
+    setMiningState("mining");
+    setDisplayedAmount(0);
+
+    // Simulate mining delay
+    setTimeout(() => {
+      // Pick a random odds outcome
+      const randomOdds = odds[Math.floor(Math.random() * odds.length)];
+      const result = Math.floor(prizePool * randomOdds / 10000);
+      setMinedAmount(result);
+      setMinedPayoutPercent(randomOdds / 100);
+      setMiningState("revealing");
+    }, 1500);
+  };
+
+  // Tick-up animation for revealing mined amount
+  useEffect(() => {
+    if (miningState !== "revealing") return;
+
+    const duration = 1000; // 1 second tick-up
+    const steps = 30;
+    const increment = minedAmount / steps;
+    let current = 0;
+    let step = 0;
+
+    const interval = setInterval(() => {
+      step++;
+      current = Math.min(minedAmount, Math.floor(increment * step));
+      setDisplayedAmount(current);
+
+      if (step >= steps) {
+        clearInterval(interval);
+        setDisplayedAmount(minedAmount);
+        setMiningState("complete");
+
+        // After showing result, save as last mine and go back to idle
+        setTimeout(() => {
+          setLastMine({
+            name: "heesho.eth",
+            avatar: "https://api.dicebear.com/7.x/shapes/svg?seed=heesho",
+            amount: minedAmount,
+            payoutPercent: minedPayoutPercent,
+          });
+          setMiningState("idle");
+        }, 2000);
+      }
+    }, duration / steps);
+
+    return () => clearInterval(interval);
+  }, [miningState, minedAmount, minedPayoutPercent]);
 
   const userStats = {
-    spent: 564.68,
-    won: 45230,
-    wonUsd: 123.45,
+    mined: 45230,
+    minedUsd: 452.30,
     spins: 47,
-    net: -441.23,
+    spent: 564.68,
   };
 
   const rigUrl = typeof window !== "undefined" ? `${window.location.origin}/rig/${rigAddress}` : "";
@@ -76,11 +137,11 @@ export function SpinModal({
   }
 
   const mockSpins = [
-    { id: "1", spinner: "0x1234567890abcdef1234567890abcdef12345678", price: BigInt(2_340_000), payoutPercent: 12, won: BigInt(14943n * 10n**18n), timestamp: Math.floor(Date.now() / 1000) - 120 },
-    { id: "2", spinner: "0xabcdef1234567890abcdef1234567890abcdef12", price: BigInt(1_800_000), payoutPercent: 1, won: BigInt(1203n * 10n**18n), timestamp: Math.floor(Date.now() / 1000) - 340 },
-    { id: "3", spinner: "0x9876543210fedcba9876543210fedcba98765432", price: BigInt(3_200_000), payoutPercent: 35, won: BigInt(41234n * 10n**18n), timestamp: Math.floor(Date.now() / 1000) - 890 },
-    { id: "4", spinner: "0x1111222233334444555566667777888899990000", price: BigInt(950_000), payoutPercent: 5, won: BigInt(5800n * 10n**18n), timestamp: Math.floor(Date.now() / 1000) - 1800 },
-    { id: "5", spinner: "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef", price: BigInt(4_100_000), payoutPercent: 15, won: BigInt(18200n * 10n**18n), timestamp: Math.floor(Date.now() / 1000) - 3600 },
+    { id: "1", spinner: "0x1234567890abcdef1234567890abcdef12345678", uri: "gm frens", price: BigInt(2_340_000), payoutPercent: 12, won: BigInt(14943n * 10n**18n), timestamp: Math.floor(Date.now() / 1000) - 120 },
+    { id: "2", spinner: "0xabcdef1234567890abcdef1234567890abcdef12", uri: "to the moon", price: BigInt(1_800_000), payoutPercent: 1, won: BigInt(1203n * 10n**18n), timestamp: Math.floor(Date.now() / 1000) - 340 },
+    { id: "3", spinner: "0x9876543210fedcba9876543210fedcba98765432", uri: "", price: BigInt(3_200_000), payoutPercent: 35, won: BigInt(41234n * 10n**18n), timestamp: Math.floor(Date.now() / 1000) - 890 },
+    { id: "4", spinner: "0x1111222233334444555566667777888899990000", uri: "wagmi", price: BigInt(950_000), payoutPercent: 5, won: BigInt(5800n * 10n**18n), timestamp: Math.floor(Date.now() / 1000) - 1800 },
+    { id: "5", spinner: "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef", uri: "lfg", price: BigInt(4_100_000), payoutPercent: 15, won: BigInt(18200n * 10n**18n), timestamp: Math.floor(Date.now() / 1000) - 3600 },
   ];
 
   // Prize pool ticking effect
@@ -96,14 +157,14 @@ export function SpinModal({
 
   // Price decay effect
   useEffect(() => {
-    if (!isOpen || isSpinning) return;
+    if (!isOpen || miningState !== "idle") return;
 
     const interval = setInterval(() => {
       setCurrentPrice(prev => Math.max(0.001, prev * 0.9995));
     }, 100);
 
     return () => clearInterval(interval);
-  }, [isOpen, isSpinning]);
+  }, [isOpen, miningState]);
 
   if (!isOpen) return null;
 
@@ -124,126 +185,212 @@ export function SpinModal({
           >
             <X className="w-5 h-5" />
           </button>
-          <span className="text-base font-semibold">Spin</span>
+          <span className="text-base font-semibold">Mine</span>
           <div className="w-9" />
+        </div>
+
+        {/* Sticky Top Section */}
+        <div className="px-4 pb-4">
+          {/* Max Mine & Min Mine */}
+          <div className="flex items-start justify-between mb-4">
+            {/* Max Mine */}
+            <div>
+              <div className="text-[11px] text-muted-foreground mb-0.5">MAX MINE</div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-[10px] font-semibold">
+                  {tokenSymbol.charAt(0)}
+                </div>
+                <span className="text-lg font-bold tabular-nums">
+                  {maxMine.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </span>
+              </div>
+              <div className="text-[12px] text-muted-foreground tabular-nums">
+                ${(maxMine * tokenPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+
+            {/* Min Mine */}
+            <div className="text-right">
+              <div className="text-[11px] text-muted-foreground mb-0.5">MIN MINE</div>
+              <div className="flex items-center justify-end gap-1.5">
+                <span className="text-lg font-bold tabular-nums">
+                  {minMine.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </span>
+                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-[10px] font-semibold">
+                  {tokenSymbol.charAt(0)}
+                </div>
+              </div>
+              <div className="text-[12px] text-muted-foreground tabular-nums">
+                ${(minMine * tokenPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+          </div>
+
+          {/* Mining Result Area */}
+          <div className="py-4">
+            {miningState === "mining" && (
+              <div className="grid grid-cols-[1fr_60px_120px] items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8 shrink-0">
+                    <AvatarImage src="https://api.dicebear.com/7.x/shapes/svg?seed=heesho" alt="heesho.eth" />
+                    <AvatarFallback className="bg-zinc-700 text-[10px]">HE</AvatarFallback>
+                  </Avatar>
+                  <div className="text-[14px] font-medium truncate">heesho.eth</div>
+                </div>
+                <div className="text-xl font-bold text-center text-transparent">
+                  --%
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center justify-end gap-2 h-8">
+                    <div className="w-6 h-6 border-2 border-zinc-700 border-t-white rounded-full animate-spin" />
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      {tokenSymbol.charAt(0)}
+                    </div>
+                  </div>
+                  <div className="text-[12px] text-muted-foreground h-4">
+                    &nbsp;
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {miningState === "revealing" && (
+              <div className="grid grid-cols-[1fr_60px_120px] items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8 shrink-0">
+                    <AvatarImage src="https://api.dicebear.com/7.x/shapes/svg?seed=heesho" alt="heesho.eth" />
+                    <AvatarFallback className="bg-zinc-700 text-[10px]">HE</AvatarFallback>
+                  </Avatar>
+                  <div className="text-[14px] font-medium truncate">heesho.eth</div>
+                </div>
+                <div className="text-xl font-bold text-center text-transparent">
+                  --%
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center justify-end gap-2 h-8">
+                    <span className="text-2xl font-bold tabular-nums">
+                      {displayedAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </span>
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      {tokenSymbol.charAt(0)}
+                    </div>
+                  </div>
+                  <div className="text-[12px] text-muted-foreground tabular-nums h-4">
+                    ${(displayedAmount * tokenPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {miningState === "complete" && (
+              <div className="grid grid-cols-[1fr_60px_120px] items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8 shrink-0">
+                    <AvatarImage src="https://api.dicebear.com/7.x/shapes/svg?seed=heesho" alt="heesho.eth" />
+                    <AvatarFallback className="bg-zinc-700 text-[10px]">HE</AvatarFallback>
+                  </Avatar>
+                  <div className="text-[14px] font-medium truncate">heesho.eth</div>
+                </div>
+                <div className="text-xl font-bold text-center">
+                  {minedPayoutPercent}%
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center justify-end gap-2 h-8">
+                    <span className="text-2xl font-bold tabular-nums">
+                      {displayedAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </span>
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      {tokenSymbol.charAt(0)}
+                    </div>
+                  </div>
+                  <div className="text-[12px] text-muted-foreground tabular-nums h-4">
+                    ${(displayedAmount * tokenPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {miningState === "idle" && (
+              <div className="grid grid-cols-[1fr_60px_120px] items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8 shrink-0">
+                    <AvatarImage src={lastMine.avatar} alt={lastMine.name} />
+                    <AvatarFallback className="bg-zinc-700 text-[10px]">
+                      {lastMine.name.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-[14px] font-medium truncate">{lastMine.name}</div>
+                </div>
+                <div className="text-xl font-bold text-center">
+                  {lastMine.payoutPercent}%
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center justify-end gap-2 h-8">
+                    <span className="text-2xl font-bold tabular-nums">
+                      {lastMine.amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </span>
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      {tokenSymbol.charAt(0)}
+                    </div>
+                  </div>
+                  <div className="text-[12px] text-muted-foreground tabular-nums h-4">
+                    ${(lastMine.amount * tokenPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Scrollable Content */}
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-4">
-          {/* Prize Pool Hero */}
-          <div className="text-center py-4">
-            <div className="text-[12px] text-muted-foreground mb-1">PRIZE POOL</div>
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-sm font-semibold">
-                {tokenSymbol.charAt(0)}
-              </div>
-              <span className="text-3xl font-bold tabular-nums">
-                {prizePool.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-            </div>
-            <div className="text-[13px] text-muted-foreground">
-              ${(prizePool * 0.01).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-          </div>
-
-          {/* Last Winner / Spinning State */}
-          <div className="py-4 mb-2">
-            {isSpinning ? (
-              <div className="flex items-center justify-center py-4">
-                <div className="animate-spin w-12 h-12 border-4 border-zinc-700 border-t-white rounded-full" />
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={lastWinner.avatar} alt={lastWinner.name} />
-                  <AvatarFallback className="bg-zinc-700 text-sm">
-                    {lastWinner.address.slice(2, 4).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[15px] font-medium">{lastWinner.name}</div>
-                  <div className="text-[13px] text-muted-foreground">
-                    Won {lastWinner.payoutPercent}% → {lastWinner.won.toLocaleString()} {tokenSymbol}
-                  </div>
-                </div>
-                <div className="text-[12px] text-muted-foreground">Last spin</div>
-              </div>
-            )}
-          </div>
-
-          {/* Current Price */}
-          <div className="text-center mb-6">
-            <span className="text-[13px] text-muted-foreground">Current price: </span>
-            <span className="text-[13px] font-medium">${currentPrice.toFixed(4)}</span>
-          </div>
-
-          {/* Odds */}
-          <div className="mb-6">
-            <div className="font-semibold text-[18px] mb-3">Odds</div>
-            {/* Header */}
-            <div className="grid grid-cols-3 py-2 text-[12px] text-muted-foreground border-b border-zinc-800">
-              <div>Chance</div>
-              <div>Payout</div>
-              <div className="text-right">Win</div>
-            </div>
-            {/* Rows */}
-            {odds.map((odd, i) => {
-              const winAmount = (prizePool * odd.payout) / 100;
-              const isJackpot = odd.payout === 100;
-              return (
-                <div
-                  key={i}
-                  className={`grid grid-cols-3 py-3 text-[14px] ${
-                    isJackpot ? "bg-zinc-800/30 -mx-4 px-4" : ""
-                  } ${i < odds.length - 1 ? "border-b border-zinc-800/50" : ""}`}
-                >
-                  <div className="font-medium">{odd.chance}%</div>
-                  <div className="text-muted-foreground">{odd.payout}%</div>
-                  <div className="text-right font-medium tabular-nums flex items-center justify-end gap-1">
-                    <span className="w-4 h-4 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[8px] text-white font-bold">
-                      {tokenSymbol.charAt(0)}
-                    </span>
-                    {winAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
 
           {/* Your Position */}
           <div className="mb-6">
             <div className="font-semibold text-[18px] mb-3">Your position</div>
             <div className="grid grid-cols-2 gap-y-4 gap-x-8">
               <div>
-                <div className="text-muted-foreground text-[12px] mb-1">Spent</div>
-                <div className="font-semibold text-[15px] tabular-nums">
-                  ${userStats.spent.toFixed(2)}
-                </div>
-              </div>
-              <div>
-                <div className="text-muted-foreground text-[12px] mb-1">Won</div>
+                <div className="text-muted-foreground text-[12px] mb-1">Mined</div>
                 <div className="font-semibold text-[15px] tabular-nums flex items-center gap-1.5">
                   <span className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[10px] text-white font-semibold">
                     {tokenSymbol.charAt(0)}
                   </span>
-                  {userStats.won.toLocaleString()}
+                  {userStats.mined.toLocaleString()}
                 </div>
-                <div className="text-[12px] text-muted-foreground">${userStats.wonUsd.toFixed(2)}</div>
               </div>
               <div>
-                <div className="text-muted-foreground text-[12px] mb-1">Spins</div>
+                <div className="text-muted-foreground text-[12px] mb-1">Value</div>
+                <div className="font-semibold text-[15px] tabular-nums">
+                  ${userStats.minedUsd.toFixed(2)}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground text-[12px] mb-1">Mines</div>
                 <div className="font-semibold text-[15px] tabular-nums">
                   {userStats.spins}
                 </div>
               </div>
               <div>
-                <div className="text-muted-foreground text-[12px] mb-1">Net</div>
-                <div className={`font-semibold text-[15px] tabular-nums ${
-                  userStats.net >= 0 ? "text-white" : "text-muted-foreground"
-                }`}>
-                  {userStats.net >= 0 ? "+" : ""}${userStats.net.toFixed(2)}
+                <div className="text-muted-foreground text-[12px] mb-1">Spent</div>
+                <div className="font-semibold text-[15px] tabular-nums">
+                  ${userStats.spent.toFixed(2)}
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Recent Mines */}
+          <div className="mb-6">
+            <div className="font-semibold text-[18px] mb-3">Recent Mines</div>
+            <div>
+              {mockSpins.map((spin) => (
+                <SpinHistoryItem
+                  key={spin.id}
+                  spin={spin}
+                  timeAgo={timeAgo}
+                  tokenSymbol={tokenSymbol}
+                />
+              ))}
             </div>
           </div>
 
@@ -256,21 +403,6 @@ export function SpinModal({
             rigUrl={rigUrl}
             isLoading={false}
           />
-
-          {/* Recent Spins */}
-          <div className="mt-6 mb-6">
-            <div className="font-semibold text-[18px] mb-3">Recent Spins</div>
-            <div>
-              {mockSpins.map((spin) => (
-                <SpinHistoryItem
-                  key={spin.id}
-                  spin={spin}
-                  timeAgo={timeAgo}
-                  tokenSymbol={tokenSymbol}
-                />
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Bottom Action Bar */}
@@ -278,35 +410,48 @@ export function SpinModal({
           className="fixed bottom-0 left-0 right-0 z-50 bg-background flex justify-center"
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 60px)" }}
         >
-          <div className="flex items-center justify-between w-full max-w-[520px] px-4 py-3">
-            <div className="flex items-center gap-6">
-              <div>
-                <div className="text-muted-foreground text-[12px]">Price</div>
-                <div className="font-semibold text-[17px] tabular-nums">
-                  ${currentPrice.toFixed(4)}
+          <div className="w-full max-w-[520px] px-4 pt-3 pb-3">
+            {/* Message Input */}
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder={defaultMessage}
+              maxLength={100}
+              className="w-full bg-zinc-800 rounded-xl px-4 py-3 text-[15px] outline-none placeholder:text-zinc-500 mb-3"
+            />
+            {/* Price, Balance, Mine Button */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <div>
+                  <div className="text-muted-foreground text-[12px]">Price</div>
+                  <div className="font-semibold text-[17px] tabular-nums">
+                    ${currentPrice.toFixed(4)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground text-[12px]">Balance</div>
+                  <div className="font-semibold text-[17px] tabular-nums">
+                    ${userBalance.toFixed(2)}
+                  </div>
                 </div>
               </div>
-              <div>
-                <div className="text-muted-foreground text-[12px]">Balance</div>
-                <div className="font-semibold text-[17px] tabular-nums">
-                  ${userBalance.toFixed(2)}
-                </div>
-              </div>
+              <button
+                onClick={handleMine}
+                disabled={miningState !== "idle" || userBalance < currentPrice}
+                className={`
+                  w-32 h-10 text-[14px] font-semibold rounded-xl transition-all
+                  ${miningState !== "idle"
+                    ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
+                    : userBalance >= currentPrice
+                      ? "bg-white text-black hover:bg-zinc-200"
+                      : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                  }
+                `}
+              >
+                {miningState !== "idle" ? "Mining..." : "Mine"}
+              </button>
             </div>
-            <button
-              disabled={isSpinning || userBalance < currentPrice}
-              className={`
-                w-32 h-10 text-[14px] font-semibold rounded-xl transition-all
-                ${isSpinning
-                  ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
-                  : userBalance >= currentPrice
-                    ? "bg-white text-black hover:bg-zinc-200"
-                    : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
-                }
-              `}
-            >
-              {isSpinning ? "Spinning..." : "Spin"}
-            </button>
           </div>
         </div>
       </div>

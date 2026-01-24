@@ -18,6 +18,7 @@ type RigType = "mine" | "spin" | "fund";
 // Mock data for different rig types
 type MineConfig = {
   rigType: "Mine";
+  // Immutable (launch) parameters
   capacity: number;
   initialUps: number;
   tailUps: number;
@@ -25,24 +26,40 @@ type MineConfig = {
   epochPeriod: number;
   priceMultiplier: number;
   minInitPrice: number;
+  // Settable parameters
+  treasury: string;
+  team: string | null;
+  randomnessEnabled: boolean;
+  upsMultipliers: number[]; // In 1e18 scale (1e18 = 1x)
+  upsMultiplierDuration: number;
 };
 
 type SpinConfig = {
   rigType: "Spin";
+  // Immutable (launch) parameters
   initialUps: number;
   tailUps: number;
   halvingPeriod: number;
   epochPeriod: number;
   priceMultiplier: number;
   minInitPrice: number;
+  // Settable parameters
+  treasury: string;
+  team: string | null;
+  odds: number[];
 };
 
 type FundConfig = {
   rigType: "Fund";
+  // Immutable (launch) parameters
   initialEmission: number;
   minEmission: number;
   minDonation: number;
   halvingPeriod: number;
+  // Settable parameters
+  recipient: string | null;
+  treasury: string;
+  team: string | null;
 };
 
 type RigConfig = MineConfig | SpinConfig | FundConfig;
@@ -64,6 +81,7 @@ const RIG_DATA: Record<RigType, {
     },
     config: {
       rigType: "Mine",
+      // Immutable
       capacity: 9,
       initialUps: 4.0,
       tailUps: 0.5,
@@ -71,6 +89,12 @@ const RIG_DATA: Record<RigType, {
       epochPeriod: 3600,
       priceMultiplier: 2.0,
       minInitPrice: 0.01,
+      // Settable
+      treasury: "0x1234...5678",
+      team: "0xabcd...ef01",
+      randomnessEnabled: true,
+      upsMultipliers: [1, 1, 1, 2, 2, 5, 10], // 1x, 1x, 1x, 2x, 2x, 5x, 10x
+      upsMultiplierDuration: 86400, // 24 hours
     },
     stats: {
       marketCap: 234000,
@@ -93,12 +117,17 @@ const RIG_DATA: Record<RigType, {
     },
     config: {
       rigType: "Spin",
+      // Immutable
       initialUps: 2.0,
       tailUps: 0.25,
       halvingPeriod: 604800, // 7 days
       epochPeriod: 1800,
       priceMultiplier: 1.5,
       minInitPrice: 0.05,
+      // Settable
+      treasury: "0x1234...5678",
+      team: "0xabcd...ef01",
+      odds: [10, 10, 10, 50, 50, 100, 500, 1000], // basis points (0.1%, 0.5%, 1%, 5%, 10%)
     },
     stats: {
       marketCap: 345000,
@@ -121,10 +150,15 @@ const RIG_DATA: Record<RigType, {
     },
     config: {
       rigType: "Fund",
+      // Immutable
       initialEmission: 50000,
       minEmission: 5000,
       minDonation: 1.0,
       halvingPeriod: 2592000, // 30 days
+      // Settable
+      recipient: "0x9876...5432",
+      treasury: "0x1234...5678",
+      team: "0xabcd...ef01",
     },
     stats: {
       marketCap: 189000,
@@ -293,8 +327,8 @@ export default function RigDetailPage() {
   const isPositive = token.change24h >= 0;
   const hasPosition = position.balance > 0;
 
-  // Primary action based on rig type
-  const primaryAction = rigType === "spin" ? "Spin" : rigType === "fund" ? "Fund" : "Mine";
+  // Primary action - always "Mine" regardless of rig type
+  const primaryAction = "Mine";
   const showPrimaryModal = () => {
     if (rigType === "spin") setShowSpinModal(true);
     else if (rigType === "fund") setShowFundModal(true);
@@ -497,7 +531,7 @@ export default function RigDetailPage() {
               </button>
             </div>
 
-            {/* Launch parameters - varies by rig type */}
+            {/* Parameters - varies by rig type */}
             <div className="grid grid-cols-2 gap-y-3 gap-x-8">
               {config.rigType === "Mine" && (
                 <>
@@ -529,6 +563,45 @@ export default function RigDetailPage() {
                     <div className="text-muted-foreground text-[12px] mb-0.5">Min price</div>
                     <div className="font-medium text-[13px]">${config.minInitPrice}</div>
                   </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Multiplier duration</div>
+                    <div className="font-medium text-[13px]">{config.upsMultiplierDuration / 3600}h</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Treasury</div>
+                    <div className="font-medium text-[13px] font-mono">{config.treasury}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Team</div>
+                    <div className="font-medium text-[13px] font-mono">{config.team || "None"}</div>
+                  </div>
+                  {config.randomnessEnabled && config.upsMultipliers.length > 0 && (
+                    <div className="col-span-2">
+                      <div className="text-muted-foreground text-[12px] mb-1.5">Multipliers</div>
+                      <div className="flex flex-wrap gap-2">
+                        {(() => {
+                          // Count occurrences of each multiplier
+                          const counts = config.upsMultipliers.reduce((acc, m) => {
+                            acc[m] = (acc[m] || 0) + 1;
+                            return acc;
+                          }, {} as Record<number, number>);
+                          const total = config.upsMultipliers.length;
+                          // Sort by multiplier value
+                          return Object.entries(counts)
+                            .sort(([a], [b]) => Number(a) - Number(b))
+                            .map(([mult, count]) => {
+                              const odds = ((count / total) * 100).toFixed(0);
+                              return (
+                                <div key={mult} className="px-2.5 py-1 rounded-lg bg-secondary text-[12px]">
+                                  <span className="font-medium">{mult}x</span>
+                                  <span className="text-muted-foreground ml-1.5">{odds}%</span>
+                                </div>
+                              );
+                            });
+                        })()}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
               {config.rigType === "Spin" && (
@@ -557,6 +630,42 @@ export default function RigDetailPage() {
                     <div className="text-muted-foreground text-[12px] mb-0.5">Min price</div>
                     <div className="font-medium text-[13px]">${config.minInitPrice}</div>
                   </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Treasury</div>
+                    <div className="font-medium text-[13px] font-mono">{config.treasury}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Team</div>
+                    <div className="font-medium text-[13px] font-mono">{config.team || "None"}</div>
+                  </div>
+                  {config.odds.length > 0 && (
+                    <div className="col-span-2">
+                      <div className="text-muted-foreground text-[12px] mb-1.5">Win Odds</div>
+                      <div className="flex flex-wrap gap-2">
+                        {(() => {
+                          // Count occurrences of each odds value
+                          const counts = config.odds.reduce((acc, o) => {
+                            acc[o] = (acc[o] || 0) + 1;
+                            return acc;
+                          }, {} as Record<number, number>);
+                          const total = config.odds.length;
+                          // Sort by odds value (payout %)
+                          return Object.entries(counts)
+                            .sort(([a], [b]) => Number(a) - Number(b))
+                            .map(([oddsBps, count]) => {
+                              const payout = (Number(oddsBps) / 100).toFixed(1);
+                              const chance = ((count / total) * 100).toFixed(0);
+                              return (
+                                <div key={oddsBps} className="px-2.5 py-1 rounded-lg bg-secondary text-[12px]">
+                                  <span className="font-medium">{payout}%</span>
+                                  <span className="text-muted-foreground ml-1.5">{chance}%</span>
+                                </div>
+                              );
+                            });
+                        })()}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
               {config.rigType === "Fund" && (
@@ -576,6 +685,18 @@ export default function RigDetailPage() {
                   <div>
                     <div className="text-muted-foreground text-[12px] mb-0.5">Halving</div>
                     <div className="font-medium text-[13px]">{config.halvingPeriod / 86400}d</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Recipient</div>
+                    <div className="font-medium text-[13px] font-mono">{config.recipient || "Not set"}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Treasury</div>
+                    <div className="font-medium text-[13px] font-mono">{config.treasury}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-[12px] mb-0.5">Team</div>
+                    <div className="font-medium text-[13px] font-mono">{config.team || "None"}</div>
                   </div>
                 </>
               )}

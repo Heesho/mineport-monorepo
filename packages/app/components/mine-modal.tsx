@@ -213,6 +213,8 @@ export function MineModal({ isOpen, onClose, tokenSymbol = "DONUT", tokenName = 
     return cheapest.index;
   });
   const [flashingSlots, setFlashingSlots] = useState<Set<number>>(new Set());
+  const [message, setMessage] = useState("");
+  const defaultMessage = "gm"; // Default message set by rig owner
 
   // Price decay tick - all prices decay toward 0
   useEffect(() => {
@@ -430,18 +432,8 @@ export function MineModal({ isOpen, onClose, tokenSymbol = "DONUT", tokenName = 
             </div>
           </div>
 
-          {/* Leaderboard Section */}
-          <Leaderboard
-            entries={MOCK_LEADERBOARD}
-            userRank={5}
-            tokenSymbol={tokenSymbol}
-            tokenName={tokenName}
-            rigUrl={rigUrl}
-            isLoading={false}
-          />
-
           {/* Recent Mines */}
-          <div className="mt-6 mb-6">
+          <div className="mt-6">
             <div className="font-semibold text-[18px] mb-3 px-2">Recent Mines</div>
             <div className="px-2">
               {MOCK_MINES.map((mine) => (
@@ -454,37 +446,59 @@ export function MineModal({ isOpen, onClose, tokenSymbol = "DONUT", tokenName = 
               ))}
             </div>
           </div>
+
+          {/* Leaderboard Section */}
+          <Leaderboard
+            entries={MOCK_LEADERBOARD}
+            userRank={5}
+            tokenSymbol={tokenSymbol}
+            tokenName={tokenName}
+            rigUrl={rigUrl}
+            isLoading={false}
+          />
         </div>
 
         {/* Bottom Action Bar - no border */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-background flex justify-center" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 60px)" }}>
-          <div className="flex items-center justify-between w-full max-w-[520px] px-4 py-3">
-            <div className="flex items-center gap-6">
-              <div>
-                <div className="text-muted-foreground text-[12px]">Price</div>
-                <div className="font-semibold text-[17px] tabular-nums">
-                  ${selectedSlotData?.price.toFixed(4) ?? "—"}
+          <div className="w-full max-w-[520px] px-4 pt-3 pb-3">
+            {/* Message Input */}
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder={defaultMessage}
+              maxLength={100}
+              className="w-full bg-zinc-800 rounded-xl px-4 py-3 text-[15px] outline-none placeholder:text-zinc-500 mb-3"
+            />
+            {/* Price, Balance, Mine Button */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <div>
+                  <div className="text-muted-foreground text-[12px]">Price</div>
+                  <div className="font-semibold text-[17px] tabular-nums">
+                    ${selectedSlotData?.price.toFixed(4) ?? "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground text-[12px]">Balance</div>
+                  <div className="font-semibold text-[17px] tabular-nums">
+                    ${userBalance.toFixed(2)}
+                  </div>
                 </div>
               </div>
-              <div>
-                <div className="text-muted-foreground text-[12px]">Balance</div>
-                <div className="font-semibold text-[17px] tabular-nums">
-                  ${userBalance.toFixed(2)}
-                </div>
-              </div>
+              <button
+                disabled={!selectedSlot}
+                className={`
+                  w-32 h-10 text-[14px] font-semibold rounded-xl transition-all
+                  ${selectedSlot
+                    ? "bg-white text-black hover:bg-zinc-200"
+                    : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                  }
+                `}
+              >
+                Mine
+              </button>
             </div>
-            <button
-              disabled={!selectedSlot}
-              className={`
-                w-32 h-10 text-[14px] font-semibold rounded-xl transition-all
-                ${selectedSlot
-                  ? "bg-white text-black hover:bg-zinc-200"
-                  : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
-                }
-              `}
-            >
-              Mine
-            </button>
           </div>
         </div>
       </div>
