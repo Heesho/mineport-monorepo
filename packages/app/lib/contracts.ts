@@ -185,6 +185,8 @@ export const MULTICALL_ABI = [
           { internalType: "uint256", name: "rigEpochPeriod", type: "uint256" },
           { internalType: "uint256", name: "rigPriceMultiplier", type: "uint256" },
           { internalType: "uint256", name: "rigMinInitPrice", type: "uint256" },
+          { internalType: "uint256[]", name: "upsMultipliers", type: "uint256[]" },
+          { internalType: "uint256", name: "upsMultiplierDuration", type: "uint256" },
           { internalType: "uint256", name: "auctionInitPrice", type: "uint256" },
           { internalType: "uint256", name: "auctionEpochPeriod", type: "uint256" },
           { internalType: "uint256", name: "auctionPriceMultiplier", type: "uint256" },
@@ -556,7 +558,7 @@ export const RIG_ABI = [
   },
   {
     inputs: [],
-    name: "isRandomnessEnabled",
+    name: "isMultipliersEnabled",
     outputs: [{ internalType: "bool", name: "", type: "bool" }],
     stateMutability: "view",
     type: "function",
@@ -721,6 +723,8 @@ export type LaunchParams = {
   rigEpochPeriod: bigint;
   rigPriceMultiplier: bigint;
   rigMinInitPrice: bigint;
+  upsMultipliers: bigint[];
+  upsMultiplierDuration: bigint;
   auctionInitPrice: bigint;
   auctionEpochPeriod: bigint;
   auctionPriceMultiplier: bigint;
@@ -738,6 +742,8 @@ export const LAUNCH_DEFAULTS = {
   rigEpochPeriod: BigInt(60 * 60), // 1 hour
   rigPriceMultiplier: BigInt("2000000000000000000"), // 2x (2e18)
   rigMinInitPrice: BigInt("100000"), // 0.1 USDC (6 decimals)
+  upsMultipliers: [] as bigint[], // empty = no multipliers by default
+  upsMultiplierDuration: BigInt(86400), // 24 hours
   auctionInitPrice: BigInt("1000000000000000000000"), // 1000 LP tokens
   auctionEpochPeriod: BigInt(24 * 60 * 60), // 24 hours
   auctionPriceMultiplier: BigInt("1200000000000000000"), // 1.2x (1.2e18)

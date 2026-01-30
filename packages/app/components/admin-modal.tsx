@@ -19,11 +19,7 @@ type AdminModalProps = {
     uri: string;
     // Mine specific
     capacity?: number;
-    randomnessEnabled?: boolean;
-    upsMultipliers?: number[];
-    upsMultiplierDuration?: number;
-    // Spin specific
-    odds?: number[];
+    multipliersEnabled?: boolean;
     // Fund specific
     recipient?: string | null;
   };
@@ -51,12 +47,7 @@ export function AdminModal({
 
   // Mine specific state
   const [capacity, setCapacity] = useState(currentConfig.capacity || 1);
-  const [randomnessEnabled, setRandomnessEnabled] = useState(currentConfig.randomnessEnabled ?? false);
-  const [upsMultipliers, setUpsMultipliers] = useState<number[]>(currentConfig.upsMultipliers || [1]);
-  const [upsMultiplierDuration, setUpsMultiplierDuration] = useState(currentConfig.upsMultiplierDuration || 86400);
-
-  // Spin specific state
-  const [odds, setOdds] = useState<number[]>(currentConfig.odds || [100]);
+  const [multipliersEnabled, setMultipliersEnabled] = useState(currentConfig.multipliersEnabled ?? false);
 
   // Fund specific state
   const [recipient, setRecipient] = useState(currentConfig.recipient || "");
@@ -72,10 +63,7 @@ export function AdminModal({
       setTeam(currentConfig.team || "");
       setUri(currentConfig.uri || "");
       setCapacity(currentConfig.capacity || 1);
-      setRandomnessEnabled(currentConfig.randomnessEnabled ?? false);
-      setUpsMultipliers(currentConfig.upsMultipliers || [1]);
-      setUpsMultiplierDuration(currentConfig.upsMultiplierDuration || 86400);
-      setOdds(currentConfig.odds || [100]);
+      setMultipliersEnabled(currentConfig.multipliersEnabled ?? false);
       setRecipient(currentConfig.recipient || "");
     }
   }, [isOpen, currentConfig]);
@@ -85,21 +73,8 @@ export function AdminModal({
   const isTeamValid = team === "" || isValidAddress(team);
   const isRecipientValid = rigType !== "fund" || isValidAddress(recipient);
 
-  // Check if randomness toggle changed
-  const randomnessChanged = randomnessEnabled !== (currentConfig.randomnessEnabled ?? false);
-
-  // Duration options for multiplier duration
-  const durationOptions = [
-    { value: 3600, label: "1h" },
-    { value: 7200, label: "2h" },
-    { value: 14400, label: "4h" },
-    { value: 28800, label: "8h" },
-    { value: 43200, label: "12h" },
-    { value: 86400, label: "24h" },
-    { value: 172800, label: "2d" },
-    { value: 259200, label: "3d" },
-    { value: 604800, label: "7d" },
-  ];
+  // Check if multipliers toggle changed
+  const multipliersChanged = multipliersEnabled !== (currentConfig.multipliersEnabled ?? false);
 
   // Handle individual field save (mock)
   const handleSave = async (field: string) => {
@@ -126,61 +101,6 @@ export function AdminModal({
     // Can only decrease back to current (not below)
     if (capacity > minCapacity) {
       setCapacity(capacity - 1);
-    }
-  };
-
-  // Multiplier presets
-  const multiplierPresets = [1, 2, 3, 5, 10];
-
-  // Count occurrences of each multiplier
-  const getMultiplierCount = (value: number) => upsMultipliers.filter(m => m === value).length;
-
-  // Add multiplier value to pool
-  const addMultiplier = (value: number) => {
-    if (upsMultipliers.length < 20) {
-      setUpsMultipliers([...upsMultipliers, value].sort((a, b) => a - b));
-    }
-  };
-
-  // Remove one instance of multiplier value from pool
-  const removeMultiplier = (value: number) => {
-    const idx = upsMultipliers.indexOf(value);
-    if (idx !== -1 && upsMultipliers.length > 1) {
-      const newMultipliers = [...upsMultipliers];
-      newMultipliers.splice(idx, 1);
-      setUpsMultipliers(newMultipliers);
-    }
-  };
-
-  // Odds presets in basis points (100 bp = 1%)
-  const oddsPresets = [
-    { value: 10, label: "0.1%" },
-    { value: 50, label: "0.5%" },
-    { value: 100, label: "1%" },
-    { value: 200, label: "2%" },
-    { value: 500, label: "5%" },
-    { value: 1000, label: "10%" },
-    { value: 2500, label: "25%" },
-    { value: 5000, label: "50%" },
-  ];
-
-  // Count occurrences of each odds value
-  const getOddsCount = (value: number) => odds.filter(o => o === value).length;
-
-  // Add odds value to pool
-  const addOdds = (value: number) => {
-    if (odds.length < 20) {
-      setOdds([...odds, value].sort((a, b) => a - b));
-    }
-  };
-
-  // Remove one instance of odds value from pool
-  const removeOdds = (value: number) => {
-    const idx = odds.indexOf(value);
-    if (idx !== -1 && odds.length > 1) {
-      const newOdds = [...odds];
-      newOdds.splice(idx, 1);
-      setOdds(newOdds);
     }
   };
 
@@ -415,10 +335,10 @@ export function AdminModal({
             </div>
           )}
 
-          {/* Mine-specific: Randomness */}
+          {/* Mine-specific: Multipliers Toggle */}
           {rigType === "mine" && (
             <div className="mb-6">
-              <div className="font-semibold text-[18px] mb-3">Randomness</div>
+              <div className="font-semibold text-[18px] mb-3">Multipliers</div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-800/50">
                   <div>
@@ -426,241 +346,38 @@ export function AdminModal({
                     <div className="text-muted-foreground text-[12px]">Use VRF for random UPS multipliers</div>
                   </div>
                   <button
-                    onClick={() => setRandomnessEnabled(!randomnessEnabled)}
+                    onClick={() => setMultipliersEnabled(!multipliersEnabled)}
                     disabled={isSaving}
                     className={`w-12 h-7 rounded-full transition-all relative ${
-                      randomnessEnabled ? "bg-white" : "bg-zinc-700"
+                      multipliersEnabled ? "bg-white" : "bg-zinc-700"
                     }`}
                   >
                     <div
                       className={`absolute w-5 h-5 rounded-full top-1 transition-all ${
-                        randomnessEnabled ? "right-1 bg-black" : "left-1 bg-zinc-500"
+                        multipliersEnabled ? "right-1 bg-black" : "left-1 bg-zinc-500"
                       }`}
                     />
                   </button>
                 </div>
 
                 {/* Save button for toggle change */}
-                {randomnessChanged && (
+                {multipliersChanged && (
                   <button
-                    onClick={() => handleSave("randomness")}
+                    onClick={() => handleSave("multipliers")}
                     disabled={isSaving}
                     className={`w-full py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
-                      isSaving && pendingField === "randomness"
+                      isSaving && pendingField === "multipliers"
                         ? "bg-zinc-700 text-zinc-400"
                         : "bg-white text-black hover:bg-zinc-200"
                     }`}
                   >
-                    {isSaving && pendingField === "randomness"
+                    {isSaving && pendingField === "multipliers"
                       ? "Saving..."
-                      : randomnessEnabled
+                      : multipliersEnabled
                       ? "Enable Multipliers"
                       : "Disable Multipliers"}
                   </button>
                 )}
-
-                {randomnessEnabled && (
-                  <>
-                    <div>
-                      <label className="text-muted-foreground text-[12px] mb-2 block">
-                        Multiplier Duration
-                      </label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {durationOptions.map((opt) => (
-                          <button
-                            key={opt.value}
-                            onClick={() => setUpsMultiplierDuration(opt.value)}
-                            className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all ${
-                              upsMultiplierDuration === opt.value
-                                ? "bg-white text-black"
-                                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => handleSave("multiplierDuration")}
-                        disabled={isSaving || upsMultiplierDuration === currentConfig.upsMultiplierDuration}
-                        className={`mt-2 px-4 py-2 rounded-xl text-[13px] font-semibold transition-all ${
-                          isSaving && pendingField === "multiplierDuration"
-                            ? "bg-zinc-700 text-zinc-400"
-                            : upsMultiplierDuration !== currentConfig.upsMultiplierDuration
-                            ? "bg-white text-black hover:bg-zinc-200"
-                            : "bg-zinc-700 text-zinc-500"
-                        }`}
-                      >
-                        {isSaving && pendingField === "multiplierDuration" ? "Saving..." : "Save Duration"}
-                      </button>
-                    </div>
-
-                    <div>
-                      <label className="text-muted-foreground text-[12px] mb-2 block">
-                        Multiplier Pool ({upsMultipliers.length}/20)
-                      </label>
-                      <p className="text-muted-foreground text-[11px] mb-3">
-                        Tap + to add, - to remove. One is randomly selected when mining.
-                      </p>
-                      <div className="grid grid-cols-5 gap-2 mb-3">
-                        {multiplierPresets.map((mult) => {
-                          const count = getMultiplierCount(mult);
-                          const canAdd = upsMultipliers.length < 20;
-                          const canRemove = count > 0 && upsMultipliers.length > 1;
-                          const probability = upsMultipliers.length > 0
-                            ? Math.round((count / upsMultipliers.length) * 100)
-                            : 0;
-                          return (
-                            <div key={mult} className="flex flex-col items-center gap-1">
-                              <div className="text-[14px] font-semibold">{mult}x</div>
-                              <div className="flex items-center gap-0.5">
-                                <button
-                                  onClick={() => removeMultiplier(mult)}
-                                  disabled={!canRemove}
-                                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                                    canRemove
-                                      ? "bg-zinc-700 text-white hover:bg-zinc-600"
-                                      : "bg-zinc-800 text-zinc-600 cursor-not-allowed"
-                                  }`}
-                                >
-                                  <Minus className="w-3.5 h-3.5" />
-                                </button>
-                                <div className="w-8 text-center text-[14px] font-bold tabular-nums">
-                                  {count}
-                                </div>
-                                <button
-                                  onClick={() => addMultiplier(mult)}
-                                  disabled={!canAdd}
-                                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                                    canAdd
-                                      ? "bg-zinc-700 text-white hover:bg-zinc-600"
-                                      : "bg-zinc-800 text-zinc-600 cursor-not-allowed"
-                                  }`}
-                                >
-                                  <Plus className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                              <div className="text-[11px] text-muted-foreground tabular-nums">
-                                {probability}%
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {/* Visual summary of pool */}
-                      <div className="p-3 rounded-xl bg-zinc-800/50 mb-3">
-                        <div className="text-[11px] text-muted-foreground mb-1">Current pool:</div>
-                        <div className="flex flex-wrap gap-1">
-                          {upsMultipliers.map((mult, i) => (
-                            <span key={i} className="px-2 py-0.5 rounded bg-zinc-700 text-[12px] font-medium">
-                              {mult}x
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleSave("multipliers")}
-                        disabled={isSaving || JSON.stringify(upsMultipliers) === JSON.stringify(currentConfig.upsMultipliers)}
-                        className={`w-full py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
-                          isSaving && pendingField === "multipliers"
-                            ? "bg-zinc-700 text-zinc-400"
-                            : JSON.stringify(upsMultipliers) !== JSON.stringify(currentConfig.upsMultipliers)
-                            ? "bg-white text-black hover:bg-zinc-200"
-                            : "bg-zinc-700 text-zinc-500"
-                        }`}
-                      >
-                        {isSaving && pendingField === "multipliers" ? "Saving..." : "Save Multipliers"}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Spin-specific: Odds */}
-          {rigType === "spin" && (
-            <div className="mb-6">
-              <div className="font-semibold text-[18px] mb-3">Spin Odds</div>
-              <div>
-                <label className="text-muted-foreground text-[12px] mb-2 block">
-                  Payout Pool ({odds.length}/20)
-                </label>
-                <p className="text-muted-foreground text-[11px] mb-3">
-                  Tap + to add, - to remove. One is randomly selected per spin.
-                </p>
-                <div className="grid grid-cols-4 gap-2 mb-3">
-                  {oddsPresets.map((preset) => {
-                    const count = getOddsCount(preset.value);
-                    const canAdd = odds.length < 20;
-                    const canRemove = count > 0 && odds.length > 1;
-                    const probability = odds.length > 0
-                      ? Math.round((count / odds.length) * 100)
-                      : 0;
-                    return (
-                      <div key={preset.value} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-zinc-800/30">
-                        <div className="text-[13px] font-semibold">{preset.label}</div>
-                        <div className="flex items-center gap-0.5">
-                          <button
-                            onClick={() => removeOdds(preset.value)}
-                            disabled={!canRemove}
-                            className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${
-                              canRemove
-                                ? "bg-zinc-700 text-white hover:bg-zinc-600"
-                                : "bg-zinc-800 text-zinc-600 cursor-not-allowed"
-                            }`}
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <div className="w-6 text-center text-[13px] font-bold tabular-nums">
-                            {count}
-                          </div>
-                          <button
-                            onClick={() => addOdds(preset.value)}
-                            disabled={!canAdd}
-                            className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${
-                              canAdd
-                                ? "bg-zinc-700 text-white hover:bg-zinc-600"
-                                : "bg-zinc-800 text-zinc-600 cursor-not-allowed"
-                            }`}
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
-                        <div className="text-[10px] text-muted-foreground tabular-nums">
-                          {probability}%
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {/* Visual summary of pool */}
-                <div className="p-3 rounded-xl bg-zinc-800/50 mb-3">
-                  <div className="text-[11px] text-muted-foreground mb-1">Current pool:</div>
-                  <div className="flex flex-wrap gap-1">
-                    {odds.map((o, i) => {
-                      const preset = oddsPresets.find(p => p.value === o);
-                      return (
-                        <span key={i} className="px-2 py-0.5 rounded bg-zinc-700 text-[12px] font-medium">
-                          {preset ? preset.label : `${(o / 100).toFixed(1)}%`}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleSave("odds")}
-                  disabled={isSaving || JSON.stringify(odds) === JSON.stringify(currentConfig.odds)}
-                  className={`w-full py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
-                    isSaving && pendingField === "odds"
-                      ? "bg-zinc-700 text-zinc-400"
-                      : JSON.stringify(odds) !== JSON.stringify(currentConfig.odds)
-                      ? "bg-white text-black hover:bg-zinc-200"
-                      : "bg-zinc-700 text-zinc-500"
-                  }`}
-                >
-                  {isSaving && pendingField === "odds" ? "Saving..." : "Save Odds"}
-                </button>
               </div>
             </div>
           )}

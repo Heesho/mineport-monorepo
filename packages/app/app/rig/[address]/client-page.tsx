@@ -48,12 +48,12 @@ type MineConfig = {
   epochPeriod: number;
   priceMultiplier: number;
   minInitPrice: number;
+  upsMultipliers: number[]; // Immutable - set at launch
+  upsMultiplierDuration: number; // Immutable - set at launch
   // Settable parameters
   treasury: string;
   team: string | null;
-  randomnessEnabled: boolean;
-  upsMultipliers: number[]; // In 1e18 scale (1e18 = 1x)
-  upsMultiplierDuration: number;
+  multipliersEnabled: boolean;
 };
 
 type SpinConfig = {
@@ -65,10 +65,10 @@ type SpinConfig = {
   epochPeriod: number;
   priceMultiplier: number;
   minInitPrice: number;
+  odds: number[]; // Immutable - set at launch
   // Settable parameters
   treasury: string;
   team: string | null;
-  odds: number[];
 };
 
 type FundConfig = {
@@ -110,12 +110,12 @@ const RIG_DATA: Record<RigType, {
       epochPeriod: 3600,
       priceMultiplier: 2.0,
       minInitPrice: 0.01,
+      upsMultipliers: [1, 1, 1, 2, 2, 5, 10], // Immutable - set at launch
+      upsMultiplierDuration: 86400, // Immutable - set at launch (24 hours)
       // Settable
       treasury: "0x1234567890123456789012345678901234567890",
       team: "0xabcdef0123456789abcdef0123456789abcdef01",
-      randomnessEnabled: true,
-      upsMultipliers: [1, 1, 1, 2, 2, 5, 10], // 1x, 1x, 1x, 2x, 2x, 5x, 10x
-      upsMultiplierDuration: 86400, // 24 hours
+      multipliersEnabled: true,
     },
     stats: {
       marketCap: 234000,
@@ -145,10 +145,10 @@ const RIG_DATA: Record<RigType, {
       epochPeriod: 1800,
       priceMultiplier: 1.5,
       minInitPrice: 0.05,
+      odds: [10, 10, 10, 50, 50, 100, 500, 1000], // Immutable - set at launch
       // Settable
       treasury: "0x1234567890123456789012345678901234567890",
       team: "0xabcdef0123456789abcdef0123456789abcdef01",
-      odds: [10, 10, 10, 50, 50, 100, 500, 1000], // basis points (0.1%, 0.5%, 1%, 5%, 10%)
     },
     stats: {
       marketCap: 345000,
@@ -599,7 +599,7 @@ export default function RigDetailPage() {
                     <div className="text-muted-foreground text-[12px] mb-0.5">Team</div>
                     <div className="font-medium text-[13px] font-mono"><AddressLink address={config.team} /></div>
                   </div>
-                  {config.randomnessEnabled && config.upsMultipliers.length > 0 && (
+                  {config.multipliersEnabled && config.upsMultipliers.length > 0 && (
                     <div className="col-span-2">
                       <div className="text-muted-foreground text-[12px] mb-1.5">Multipliers</div>
                       <div className="flex flex-wrap gap-2">
@@ -897,12 +897,7 @@ export default function RigDetailPage() {
           uri: "", // Not in mock data yet
           ...(config.rigType === "Mine" && {
             capacity: config.capacity,
-            randomnessEnabled: config.randomnessEnabled,
-            upsMultipliers: config.upsMultipliers,
-            upsMultiplierDuration: config.upsMultiplierDuration,
-          }),
-          ...(config.rigType === "Spin" && {
-            odds: config.odds,
+            multipliersEnabled: config.multipliersEnabled,
           }),
           ...(config.rigType === "Fund" && {
             recipient: config.recipient,
