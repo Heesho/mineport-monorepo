@@ -91,6 +91,40 @@ export type SubgraphMineEvent = {
   blockNumber: string;
 };
 
+export type SubgraphSpin = {
+  id: string;
+  spinner: { id: string };
+  epochId: string;
+  price: string;       // BigDecimal (USDC amount)
+  won: boolean;
+  winAmount: string;    // BigDecimal (Unit tokens won)
+  oddsBps: string;
+  timestamp: string;
+  txHash: string;
+};
+
+export type SubgraphDonation = {
+  id: string;
+  donor: { id: string };
+  day: string;
+  amount: string;           // BigDecimal (USDC)
+  recipientAmount: string;  // BigDecimal
+  timestamp: string;
+  txHash: string;
+};
+
+export type SubgraphUnitCandle = {
+  id: string;
+  timestamp: string;
+  open: string;       // BigDecimal price in DONUT
+  high: string;
+  low: string;
+  close: string;
+  volumeUnit: string;
+  volumeDonut: string;
+  txCount: string;
+};
+
 // Queries
 
 // Get global launchpad stats
@@ -500,6 +534,96 @@ export const GET_RECENT_EPOCHS_QUERY = gql`
   }
 `;
 
+// Get spins for a rig (SpinRig activity)
+export const GET_SPINS_QUERY = gql`
+  query GetSpins($rigAddress: String!, $limit: Int!) {
+    spins(
+      where: { spinRig: $rigAddress }
+      orderBy: timestamp
+      orderDirection: desc
+      first: $limit
+    ) {
+      id
+      spinner {
+        id
+      }
+      epochId
+      price
+      won
+      winAmount
+      oddsBps
+      timestamp
+      txHash
+    }
+  }
+`;
+
+// Get donations for a rig (FundRig activity)
+export const GET_DONATIONS_QUERY = gql`
+  query GetDonations($rigAddress: String!, $limit: Int!) {
+    donations(
+      where: { fundRig: $rigAddress }
+      orderBy: timestamp
+      orderDirection: desc
+      first: $limit
+    ) {
+      id
+      donor {
+        id
+      }
+      day
+      amount
+      recipientAmount
+      timestamp
+      txHash
+    }
+  }
+`;
+
+// Get hourly candle data for a unit token
+export const GET_UNIT_HOUR_DATA_QUERY = gql`
+  query GetUnitHourData($unitAddress: String!, $since: BigInt!) {
+    unitHourDatas(
+      where: { unit: $unitAddress, timestamp_gte: $since }
+      orderBy: timestamp
+      orderDirection: asc
+      first: 1000
+    ) {
+      id
+      timestamp
+      open
+      high
+      low
+      close
+      volumeUnit
+      volumeDonut
+      txCount
+    }
+  }
+`;
+
+// Get daily candle data for a unit token
+export const GET_UNIT_DAY_DATA_QUERY = gql`
+  query GetUnitDayData($unitAddress: String!, $since: BigInt!) {
+    unitDayDatas(
+      where: { unit: $unitAddress, timestamp_gte: $since }
+      orderBy: timestamp
+      orderDirection: asc
+      first: 1000
+    ) {
+      id
+      timestamp
+      open
+      high
+      low
+      close
+      volumeUnit
+      volumeDonut
+      txCount
+    }
+  }
+`;
+
 // API Functions
 
 export async function getLaunchpadStats(): Promise<SubgraphLaunchpad | null> {
@@ -791,6 +915,86 @@ export async function getRigLeaderboard(
     return data.rigAccounts ?? [];
   } catch (error) {
     console.error("[getRigLeaderboard] Error:", error);
+    return [];
+  }
+}
+
+// Get spins for a SpinRig
+export async function getSpins(
+  rigAddress: string,
+  limit = 20
+): Promise<SubgraphSpin[]> {
+  try {
+    const data = await client.request<{ spins: SubgraphSpin[] }>(
+      GET_SPINS_QUERY,
+      {
+        rigAddress: rigAddress.toLowerCase(),
+        limit,
+      }
+    );
+    return data.spins ?? [];
+  } catch (error) {
+    console.error("[getSpins] Error:", error);
+    return [];
+  }
+}
+
+// Get donations for a FundRig
+export async function getDonations(
+  rigAddress: string,
+  limit = 20
+): Promise<SubgraphDonation[]> {
+  try {
+    const data = await client.request<{ donations: SubgraphDonation[] }>(
+      GET_DONATIONS_QUERY,
+      {
+        rigAddress: rigAddress.toLowerCase(),
+        limit,
+      }
+    );
+    return data.donations ?? [];
+  } catch (error) {
+    console.error("[getDonations] Error:", error);
+    return [];
+  }
+}
+
+// Get hourly candle data for a unit token
+export async function getUnitHourData(
+  unitAddress: string,
+  since: number
+): Promise<SubgraphUnitCandle[]> {
+  try {
+    const data = await client.request<{ unitHourDatas: SubgraphUnitCandle[] }>(
+      GET_UNIT_HOUR_DATA_QUERY,
+      {
+        unitAddress: unitAddress.toLowerCase(),
+        since: since.toString(),
+      }
+    );
+    return data.unitHourDatas ?? [];
+  } catch (error) {
+    console.error("[getUnitHourData] Error:", error);
+    return [];
+  }
+}
+
+// Get daily candle data for a unit token
+export async function getUnitDayData(
+  unitAddress: string,
+  since: number
+): Promise<SubgraphUnitCandle[]> {
+  try {
+    const data = await client.request<{ unitDayDatas: SubgraphUnitCandle[] }>(
+      GET_UNIT_DAY_DATA_QUERY,
+      {
+        unitAddress: unitAddress.toLowerCase(),
+        since: since.toString(),
+      }
+    );
+    return data.unitDayDatas ?? [];
+  } catch (error) {
+    console.error("[getUnitDayData] Error:", error);
     return [];
   }
 }
