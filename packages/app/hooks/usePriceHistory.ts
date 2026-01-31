@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getEpochs, type SubgraphEpoch } from "@/lib/subgraph-launchpad";
+import { getEpochs, getUnitHourData, getUnitDayData, type SubgraphEpoch, type SubgraphUnitCandle } from "@/lib/subgraph-launchpad";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,7 +46,7 @@ function getTimeframeConfig(timeframe: Timeframe) {
 }
 
 // ---------------------------------------------------------------------------
-// Fetch price history from epochs (mining cost over time)
+// Fetch price history from epochs (mining cost over time) — legacy fallback
 // ---------------------------------------------------------------------------
 
 async function fetchPriceHistory(
@@ -78,18 +78,47 @@ async function fetchPriceHistory(
 }
 
 // ---------------------------------------------------------------------------
+// Fetch price history from LP candle data (works for all rig types)
+// ---------------------------------------------------------------------------
+
+async function fetchCandlePriceHistory(
+  unitAddress: string,
+  timeframe: Timeframe,
+): Promise<ChartDataPoint[]> {
+  const config = getTimeframeConfig(timeframe);
+
+  // Use hourly data for short timeframes, daily for longer ones
+  const useHourly = timeframe === "1H" || timeframe === "1D";
+
+  const candles = useHourly
+    ? await getUnitHourData(unitAddress, config.sinceTimestamp)
+    : await getUnitDayData(unitAddress, config.sinceTimestamp);
+
+  if (!candles || candles.length === 0) return [];
+
+  return candles.map((c: SubgraphUnitCandle) => ({
+    time: new Date(parseInt(c.timestamp) * 1000).toISOString(),
+    price: parseFloat(c.close),
+  }));
+}
+
+// ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
 
 export function usePriceHistory(
   rigAddress: string,
   timeframe: Timeframe,
+  unitAddress?: string,
 ): { data: ChartDataPoint[]; isLoading: boolean } {
   const config = getTimeframeConfig(timeframe);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["priceHistory", rigAddress, timeframe],
-    queryFn: () => fetchPriceHistory(rigAddress.toLowerCase(), timeframe),
+    queryKey: ["priceHistory", rigAddress, timeframe, unitAddress],
+    queryFn: () =>
+      unitAddress
+        ? fetchCandlePriceHistory(unitAddress.toLowerCase(), timeframe)
+        : fetchPriceHistory(rigAddress.toLowerCase(), timeframe),
     enabled: !!rigAddress,
     staleTime: config.refetchInterval,
     refetchInterval: config.refetchInterval,

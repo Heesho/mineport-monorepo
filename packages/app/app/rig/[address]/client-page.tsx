@@ -15,6 +15,9 @@ import { AuctionModal } from "@/components/auction-modal";
 import { LiquidityModal } from "@/components/liquidity-modal";
 import { AdminModal } from "@/components/admin-modal";
 import { useRigState, useRigInfo } from "@/hooks/useRigState";
+import { useRigType } from "@/hooks/useRigType";
+import { useSpinRigState } from "@/hooks/useSpinRigState";
+import { useFundRigState } from "@/hooks/useFundRigState";
 import { usePrices } from "@/hooks/usePrices";
 import { useTokenMetadata } from "@/hooks/useMetadata";
 import { useFarcaster } from "@/hooks/useFarcaster";
@@ -23,6 +26,8 @@ import { usePriceHistory } from "@/hooks/usePriceHistory";
 import {
   CONTRACT_ADDRESSES,
   QUOTE_TOKEN_DECIMALS,
+  getMulticallAddress,
+  type RigType,
 } from "@/lib/contracts";
 import { getRig } from "@/lib/subgraph-launchpad";
 
@@ -264,19 +269,40 @@ export default function RigDetailPage() {
     staleTime: 30_000,
   });
 
-  // Rig type — currently all rigs are MineRig (single core/multicall)
-  const rigType = "mine";
+  // Detect rig type dynamically from on-chain
+  const { rigType, isLoading: isRigTypeLoading } = useRigType(rigAddress);
 
-  // Single multicall/core address (handles all rig types)
-  const multicallAddress = CONTRACT_ADDRESSES.multicall as `0x${string}`;
-  const coreAddress = CONTRACT_ADDRESSES.core as `0x${string}`;
+  // Route to correct multicall/core addresses based on rig type
+  const multicallAddress = rigType
+    ? getMulticallAddress(rigType)
+    : (CONTRACT_ADDRESSES.multicall as `0x${string}`);
+  const coreAddress = rigType === "spin"
+    ? (CONTRACT_ADDRESSES.spinCore as `0x${string}`)
+    : rigType === "fund"
+    ? (CONTRACT_ADDRESSES.fundCore as `0x${string}`)
+    : (CONTRACT_ADDRESSES.mineCore as `0x${string}`);
 
-  // Fetch on-chain rig state (slot 0) via multicall
+  // Fetch on-chain rig state (slot 0) via multicall — only for mine rigs
   const { rigState, isLoading: isRigStateLoading } = useRigState(
     rigAddress,
     account,
     0n,
-    multicallAddress
+    multicallAddress,
+    rigType === "mine" || !rigType  // enabled: run for mine rigs and while rigType is loading
+  );
+
+  // Fetch spin rig state — only for spin rigs
+  const { spinState, isLoading: isSpinLoading } = useSpinRigState(
+    rigAddress,
+    account,
+    rigType === "spin"
+  );
+
+  // Fetch fund rig state — only for fund rigs
+  const { fundState, isLoading: isFundLoading } = useFundRigState(
+    rigAddress,
+    account,
+    rigType === "fund"
   );
 
   // Fetch rig info (unit/auction/LP addresses, token name/symbol, launcher)
@@ -285,17 +311,42 @@ export default function RigDetailPage() {
     coreAddress
   );
 
+  // Normalize fields across rig types
+  const unitPrice = rigType === "mine" ? rigState?.unitPrice
+    : rigType === "spin" ? spinState?.unitPrice
+    : rigType === "fund" ? fundState?.unitPrice
+    : rigState?.unitPrice;  // fallback while loading
+
+  const rigUri = rigType === "mine" ? rigState?.rigUri
+    : rigType === "spin" ? spinState?.rigUri
+    : rigType === "fund" ? fundState?.rigUri
+    : rigState?.rigUri;
+
+  const accountQuoteBalance = rigType === "mine" ? rigState?.accountQuoteBalance
+    : rigType === "spin" ? spinState?.accountQuoteBalance
+    : rigType === "fund" ? fundState?.accountPaymentTokenBalance
+    : rigState?.accountQuoteBalance;
+
+  const accountDonutBalance = rigType === "mine" ? rigState?.accountDonutBalance
+    : rigType === "spin" ? spinState?.accountDonutBalance
+    : rigType === "fund" ? fundState?.accountDonutBalance
+    : rigState?.accountDonutBalance;
+
+  const accountUnitBalance = rigType === "mine" ? rigState?.accountUnitBalance
+    : rigType === "spin" ? spinState?.accountUnitBalance
+    : rigType === "fund" ? fundState?.accountUnitBalance
+    : rigState?.accountUnitBalance;
+
   // Fetch USD prices
   const { donutUsdPrice } = usePrices();
 
   // Fetch token metadata from IPFS
-  const { metadata, logoUrl } = useTokenMetadata(rigState?.rigUri);
+  const { metadata, logoUrl } = useTokenMetadata(rigUri);
 
   // Fetch DexScreener data for liquidity/volume/price change
   const { pairData } = useDexScreener(
     rigAddress,
     rigInfo?.unitAddress,
-    coreAddress
   );
 
   // Derived values
@@ -303,17 +354,17 @@ export default function RigDetailPage() {
   const tokenSymbol = rigInfo?.tokenSymbol || subgraphRig?.tokenSymbol || "--";
 
   // Price in USD = unitPrice (DONUT, 18 dec) x donutUsdPrice
-  const priceUsd = rigState?.unitPrice
-    ? Number(formatEther(rigState.unitPrice)) * donutUsdPrice
+  const priceUsd = unitPrice
+    ? Number(formatEther(unitPrice)) * donutUsdPrice
     : 0;
 
   // Market cap = totalMinted * unitPrice * donutUsdPrice
   // subgraphRig.minted is in raw units (no decimals - stored as string of the raw value)
   const totalMintedRaw = subgraphRig?.minted ? BigInt(subgraphRig.minted) : 0n;
   const marketCapUsd =
-    rigState?.unitPrice && totalMintedRaw > 0n
+    unitPrice && totalMintedRaw > 0n
       ? Number(formatEther(totalMintedRaw)) *
-        Number(formatEther(rigState.unitPrice)) *
+        Number(formatEther(unitPrice)) *
         donutUsdPrice
       : 0;
 
@@ -325,20 +376,20 @@ export default function RigDetailPage() {
   const isPositive = change24h !== null ? change24h >= 0 : true;
 
   // User position
-  const userUnitBalance = rigState?.accountUnitBalance
-    ? Number(formatEther(rigState.accountUnitBalance))
+  const userUnitBalance = accountUnitBalance
+    ? Number(formatEther(accountUnitBalance))
     : 0;
   const positionBalanceUsd = userUnitBalance * priceUsd;
   const hasPosition = userUnitBalance > 0;
 
   // User quote balance (USDC, 6 decimals)
-  const userQuoteBalance = rigState?.accountQuoteBalance
-    ? Number(formatUnits(rigState.accountQuoteBalance, QUOTE_TOKEN_DECIMALS))
+  const userQuoteBalance = accountQuoteBalance
+    ? Number(formatUnits(accountQuoteBalance, QUOTE_TOKEN_DECIMALS))
     : 0;
 
   // User donut balance
-  const userDonutBalance = rigState?.accountDonutBalance
-    ? Number(formatEther(rigState.accountDonutBalance))
+  const userDonutBalance = accountDonutBalance
+    ? Number(formatEther(accountDonutBalance))
     : 0;
 
   // Stats from DexScreener + subgraph
@@ -353,8 +404,8 @@ export default function RigDetailPage() {
     ? Number(formatUnits(BigInt(subgraphRig.teamRevenue), QUOTE_TOKEN_DECIMALS))
     : 0;
 
-  // Capacity from on-chain
-  const capacity = rigState?.capacity ? Number(rigState.capacity) : 0;
+  // Capacity from on-chain — only available for mine rigs
+  const capacity = rigType === "mine" && rigState?.capacity ? Number(rigState.capacity) : 0;
 
   // Rig type display label
   const rigTypeLabel = rigType
@@ -373,7 +424,7 @@ export default function RigDetailPage() {
 
   // Chart data from subgraph price history
   const [timeframe, setTimeframe] = useState<Timeframe>("1D");
-  const { data: chartData } = usePriceHistory(rigAddress, timeframe);
+  const { data: chartData } = usePriceHistory(rigAddress, timeframe, rigInfo?.unitAddress);
 
   // Created date from subgraph
   const createdAt = subgraphRig?.createdAt
@@ -394,8 +445,8 @@ export default function RigDetailPage() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const tokenInfoRef = useRef<HTMLDivElement>(null);
 
-  // Primary action - always "Mine" regardless of rig type
-  const primaryAction = "Mine";
+  // Primary action - label based on rig type
+  const primaryAction = rigType === "spin" ? "Spin" : rigType === "fund" ? "Fund" : "Mine";
   const showPrimaryModal = () => {
     if (rigType === "spin") setShowSpinModal(true);
     else if (rigType === "fund") setShowFundModal(true);
@@ -419,7 +470,12 @@ export default function RigDetailPage() {
   }, []);
 
   // Show loading skeleton while critical data loads
-  const isLoading = isSubgraphLoading || (!!rigType && isRigStateLoading && isRigInfoLoading);
+  const isStateLoading = rigType === "mine" ? isRigStateLoading
+    : rigType === "spin" ? isSpinLoading
+    : rigType === "fund" ? isFundLoading
+    : isRigStateLoading;
+
+  const isLoading = isSubgraphLoading || isRigTypeLoading || (!!address && isStateLoading && isRigInfoLoading);
 
   if (isLoading && !subgraphRig) {
     return <LoadingSkeleton />;
@@ -821,18 +877,18 @@ export default function RigDetailPage() {
       <SpinModal
         isOpen={showSpinModal}
         onClose={() => setShowSpinModal(false)}
+        rigAddress={rigAddress}
         tokenSymbol={tokenSymbol}
         tokenName={tokenName}
-        userBalance={userQuoteBalance}
       />
 
       {/* Fund Modal */}
       <FundModal
         isOpen={showFundModal}
         onClose={() => setShowFundModal(false)}
+        rigAddress={rigAddress}
         tokenSymbol={tokenSymbol}
         tokenName={tokenName}
-        userBalance={userQuoteBalance}
       />
 
       {/* Trade Modal (Buy/Sell) */}
@@ -844,8 +900,8 @@ export default function RigDetailPage() {
         tokenName={tokenName}
         unitAddress={(rigInfo?.unitAddress ?? "0x0") as `0x${string}`}
         marketPrice={priceUsd}
-        userQuoteBalance={rigState?.accountQuoteBalance ?? 0n}
-        userUnitBalance={rigState?.accountUnitBalance ?? 0n}
+        userQuoteBalance={accountQuoteBalance ?? 0n}
+        userUnitBalance={accountUnitBalance ?? 0n}
       />
 
       {/* Auction Modal */}
@@ -880,7 +936,7 @@ export default function RigDetailPage() {
         currentConfig={{
           treasury: launcherAddress ?? "",
           team: null,
-          uri: rigState?.rigUri ?? "",
+          uri: rigUri ?? "",
           ...(rigType === "mine" && {
             capacity,
             multipliersEnabled: false,
