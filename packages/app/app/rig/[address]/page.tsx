@@ -17,8 +17,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Fetch rig info from subgraph
   const rig = await getRig(rigAddress);
 
-  const tokenName = rig?.tokenName || "Rig";
-  const tokenSymbol = rig?.tokenSymbol || "TOKEN";
+  const tokenName = rig?.unit?.name || "Rig";
+  const tokenSymbol = rig?.unit?.symbol || "TOKEN";
   const rigUrl = `${appDomain}/rig/${rigAddress}`;
 
   // Mini app embed with rig-specific URL

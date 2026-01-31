@@ -35,7 +35,7 @@ export function useMineHistory(
   const mines = raw?.map((m) => ({
     miner: m.miner.id,
     price: BigInt(Math.floor(parseFloat(m.price) * 1e6)), // USDC 6 decimals
-    minted: BigInt(Math.floor(parseFloat(m.mined) * 1e18)), // Unit 18 decimals
+    minted: BigInt(Math.floor(parseFloat(m.minted) * 1e18)), // Unit 18 decimals
     timestamp: BigInt(m.timestamp),
   }));
 

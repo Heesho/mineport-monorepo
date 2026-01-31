@@ -350,8 +350,8 @@ export default function RigDetailPage() {
   );
 
   // Derived values
-  const tokenName = rigInfo?.tokenName || subgraphRig?.tokenName || "Loading...";
-  const tokenSymbol = rigInfo?.tokenSymbol || subgraphRig?.tokenSymbol || "--";
+  const tokenName = rigInfo?.tokenName || subgraphRig?.unit?.name || "Loading...";
+  const tokenSymbol = rigInfo?.tokenSymbol || subgraphRig?.unit?.symbol || "--";
 
   // Price in USD = unitPrice (DONUT, 18 dec) x donutUsdPrice
   const priceUsd = unitPrice
@@ -359,8 +359,8 @@ export default function RigDetailPage() {
     : 0;
 
   // Market cap = totalMinted * unitPrice * donutUsdPrice
-  // subgraphRig.minted is in raw units (no decimals - stored as string of the raw value)
-  const totalMintedRaw = subgraphRig?.minted ? BigInt(subgraphRig.minted) : 0n;
+  // subgraphRig.totalMinted is a BigDecimal string
+  const totalMintedRaw = subgraphRig?.totalMinted ? BigInt(Math.floor(parseFloat(subgraphRig.totalMinted) * 1e18)) : 0n;
   const marketCapUsd =
     unitPrice && totalMintedRaw > 0n
       ? Number(formatEther(totalMintedRaw)) *
@@ -396,12 +396,12 @@ export default function RigDetailPage() {
   const liquidityUsd = pairData?.liquidity?.usd ?? 0;
   const volume24h = pairData?.volume?.h24 ?? 0;
 
-  // Revenue from subgraph (raw values in quote token decimals)
-  const treasuryRevenue = subgraphRig?.revenue
-    ? Number(formatUnits(BigInt(subgraphRig.revenue), QUOTE_TOKEN_DECIMALS))
+  // Revenue from subgraph (BigDecimal strings already in quote token units)
+  const treasuryRevenue = subgraphRig?.treasuryRevenue
+    ? parseFloat(subgraphRig.treasuryRevenue)
     : 0;
   const teamRevenue = subgraphRig?.teamRevenue
-    ? Number(formatUnits(BigInt(subgraphRig.teamRevenue), QUOTE_TOKEN_DECIMALS))
+    ? parseFloat(subgraphRig.teamRevenue)
     : 0;
 
   // Capacity from on-chain — only available for mine rigs

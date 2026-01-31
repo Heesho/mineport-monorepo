@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getEpochs, getUnitHourData, getUnitDayData, type SubgraphEpoch, type SubgraphUnitCandle } from "@/lib/subgraph-launchpad";
+import { getUnitHourData, getUnitDayData, type SubgraphUnitCandle } from "@/lib/subgraph-launchpad";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,38 +46,6 @@ function getTimeframeConfig(timeframe: Timeframe) {
 }
 
 // ---------------------------------------------------------------------------
-// Fetch price history from epochs (mining cost over time) — legacy fallback
-// ---------------------------------------------------------------------------
-
-async function fetchPriceHistory(
-  rigAddress: string,
-  timeframe: Timeframe,
-): Promise<ChartDataPoint[]> {
-  const config = getTimeframeConfig(timeframe);
-
-  // Fetch all available epochs (up to 1000)
-  const epochs = await getEpochs(rigAddress, 1000, 0);
-
-  if (!epochs || epochs.length === 0) return [];
-
-  // Epochs come in desc order (newest first) — reverse to chronological
-  const sorted = [...epochs].reverse();
-
-  // Filter by timeframe
-  const filtered =
-    config.sinceTimestamp > 0
-      ? sorted.filter((e) => parseInt(e.startTime) >= config.sinceTimestamp)
-      : sorted;
-
-  if (filtered.length === 0) return [];
-
-  return filtered.map((epoch: SubgraphEpoch) => ({
-    time: new Date(parseInt(epoch.startTime) * 1000).toISOString(),
-    price: parseFloat(epoch.spent),
-  }));
-}
-
-// ---------------------------------------------------------------------------
 // Fetch price history from LP candle data (works for all rig types)
 // ---------------------------------------------------------------------------
 
@@ -118,8 +86,8 @@ export function usePriceHistory(
     queryFn: () =>
       unitAddress
         ? fetchCandlePriceHistory(unitAddress.toLowerCase(), timeframe)
-        : fetchPriceHistory(rigAddress.toLowerCase(), timeframe),
-    enabled: !!rigAddress,
+        : Promise.resolve([]),
+    enabled: !!rigAddress && !!unitAddress,
     staleTime: config.refetchInterval,
     refetchInterval: config.refetchInterval,
     placeholderData: (previousData) => previousData,

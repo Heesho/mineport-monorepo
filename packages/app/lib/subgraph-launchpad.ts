@@ -7,97 +7,111 @@ export const LAUNCHPAD_SUBGRAPH_URL =
 
 const client = new GraphQLClient(LAUNCHPAD_SUBGRAPH_URL);
 
+// =============================================================================
 // Types matching the subgraph schema
+// =============================================================================
+
 export type SubgraphLaunchpad = {
   id: string;
+  totalUnits: string;
   totalRigs: string;
-  totalRevenue: string;
+  totalVolumeDonut: string;
+  totalLiquidityDonut: string;
+  totalTreasuryRevenue: string;
+  totalProtocolRevenue: string;
   totalMinted: string;
-  protocolRevenue: string;
-};
-
-export type SubgraphSlot = {
-  id: string; // {rigAddress}-{slotIndex}
-  index: string;
-  epochId: string;
-  currentMiner: { id: string } | null;
-  uri: string;
-  minted: string;
-  lastMined: string;
 };
 
 export type SubgraphRig = {
-  id: string;
-  launchpad: { id: string };
+  id: string; // Rig contract address
+  unit: {
+    id: string; // Unit token address
+    name: string;
+    symbol: string;
+    lpPair: string; // LP pair address (Bytes)
+    price: string; // BigDecimal (in DONUT)
+    marketCap: string; // BigDecimal (in DONUT)
+    liquidity: string; // BigDecimal (DONUT in LP)
+    totalSupply: string; // BigDecimal
+    totalMinted: string; // BigDecimal
+    lastActivityAt: string; // BigInt timestamp
+    createdAt: string;
+  };
+  rigType: string; // "mine", "spin", "fund"
   launcher: { id: string };
-  unit: string; // Bytes address
-  auction: string; // Bytes address
-  lpToken: string; // Bytes address
-  tokenName: string;
-  tokenSymbol: string;
-  capacity: string; // Number of slots
-  revenue: string;
-  teamRevenue: string;
-  minted: string;
-  lastMined: string;
+  auction: string; // Bytes
+  quoteToken: string; // Bytes
+  uri: string;
+  treasuryRevenue: string; // BigDecimal
+  teamRevenue: string; // BigDecimal
+  protocolRevenue: string; // BigDecimal
+  totalMinted: string; // BigDecimal
+  lastActivityAt: string; // BigInt
   createdAt: string;
   createdAtBlock: string;
-  slots?: SubgraphSlot[];
+  mineRig: { id: string; capacity: string } | null;
+  spinRig: { id: string } | null;
+  fundRig: { id: string } | null;
+};
+
+export type SubgraphUnitListItem = {
+  id: string; // Unit token address
+  name: string;
+  symbol: string;
+  lpPair: string;
+  price: string;
+  priceUSD: string;
+  marketCap: string;
+  marketCapUSD: string;
+  liquidity: string;
+  liquidityUSD: string;
+  volume24h: string;
+  priceChange24h: string;
+  totalMinted: string;
+  lastActivityAt: string;
+  createdAt: string;
+  rig: {
+    id: string; // Rig contract address
+    rigType: string;
+    uri: string;
+    launcher: { id: string };
+    auction: string;
+  };
 };
 
 export type SubgraphAccount = {
   id: string;
-  rigsLaunched: SubgraphRig[];
-  rigAccounts: SubgraphRigAccount[];
+  totalSwapVolume: string;
+  totalRigSpend: string;
+  totalMined: string;
+  totalWon: string;
+  lastActivityAt: string;
 };
 
-export type SubgraphRigAccount = {
-  id: string; // {rigAddress}-{accountAddress}
-  rig: { id: string };
-  account: { id: string };
-  spent: string;
-  earned: string;
-  mined: string;
-};
-
-export type SubgraphEpoch = {
-  id: string; // {rigAddress}-{slotIndex}-{epochId}
-  rig: { id: string };
-  slot: { id: string; index: string };
-  rigAccount: { id: string; account: { id: string } };
-  index: string; // Slot index
-  epochId: string;
-  uri: string;
-  startTime: string;
-  mined: string;
-  spent: string;
-  earned: string;
-};
-
-// Mine event for activity feed (with aggregated data)
+// Mine event for activity feed
 export type SubgraphMineEvent = {
-  id: string; // {rigAddress}-{slotIndex}-{epochId}
-  rig: { id: string };
+  id: string;
+  mineRig: { id: string };
   miner: { id: string };
   prevMiner: { id: string } | null;
   slotIndex: string;
   epochId: string;
   uri: string;
   price: string; // What new miner paid
-  mined: string; // Tokens minted for prev miner
+  minted: string; // Tokens minted for prev miner
   earned: string; // Fee earned by prev miner
-  upsMultiplier: string | null;
   timestamp: string;
   blockNumber: string;
+  txHash: string;
 };
 
 export type SubgraphSpin = {
   id: string;
   spinner: { id: string };
   epochId: string;
-  price: string;       // BigDecimal (USDC amount)
+  price: string; // BigDecimal (USDC amount)
   won: boolean;
-  winAmount: string;    // BigDecimal (Unit tokens won)
+  winAmount: string; // BigDecimal (Unit tokens won)
   oddsBps: string;
   timestamp: string;
   txHash: string;
@@ -107,8 +121,8 @@ export type SubgraphDonation = {
   id: string;
   donor: { id: string };
   day: string;
-  amount: string;           // BigDecimal (USDC)
-  recipientAmount: string;  // BigDecimal
+  amount: string; // BigDecimal (USDC)
+  recipientAmount: string; // BigDecimal
   timestamp: string;
   txHash: string;
 };
@@ -116,7 +130,7 @@ export type SubgraphDonation = {
 export type SubgraphUnitCandle = {
   id: string;
   timestamp: string;
-  open: string;       // BigDecimal price in DONUT
+  open: string; // BigDecimal price in DONUT
   high: string;
   low: string;
   close: string;
@@ -125,17 +139,83 @@ export type SubgraphUnitCandle = {
   txCount: string;
 };
 
-// Queries
+// =============================================================================
+// GraphQL field fragments (reusable field sets)
+// =============================================================================
 
-// Get global launchpad stats
+const RIG_FIELDS = `
+  id
+  unit {
+    id
+    name
+    symbol
+    lpPair
+    price
+    marketCap
+    liquidity
+    totalSupply
+    totalMinted
+    lastActivityAt
+    createdAt
+  }
+  rigType
+  launcher { id }
+  auction
+  quoteToken
+  uri
+  treasuryRevenue
+  teamRevenue
+  protocolRevenue
+  totalMinted
+  lastActivityAt
+  createdAt
+  createdAtBlock
+  mineRig { id capacity }
+  spinRig { id }
+  fundRig { id }
+`;
+
+const UNIT_LIST_FIELDS = `
+  id
+  name
+  symbol
+  lpPair
+  price
+  priceUSD
+  marketCap
+  marketCapUSD
+  liquidity
+  liquidityUSD
+  volume24h
+  priceChange24h
+  totalMinted
+  lastActivityAt
+  createdAt
+  rig {
+    id
+    rigType
+    uri
+    launcher { id }
+    auction
+  }
+`;
+
+// =============================================================================
+// Queries
+// =============================================================================
+
+// Get global protocol stats
 export const GET_LAUNCHPAD_STATS_QUERY = gql`
-  query GetLaunchpadStats {
-    launchpad(id: "launchpad") {
+  query GetProtocolStats {
+    protocol(id: "farplace") {
       id
+      totalUnits
       totalRigs
-      totalRevenue
+      totalVolumeDonut
+      totalLiquidityDonut
+      totalTreasuryRevenue
+      totalProtocolRevenue
       totalMinted
-      protocolRevenue
     }
   }
 `;
@@ -154,63 +234,47 @@ export const GET_RIGS_QUERY = gql`
       orderBy: $orderBy
       orderDirection: $orderDirection
     ) {
-      id
-      launchpad {
-        id
-      }
-      launcher {
-        id
-      }
-      unit
-      auction
-      lpToken
-      tokenName
-      tokenSymbol
-      capacity
-      revenue
-      teamRevenue
-      minted
-      lastMined
-      createdAt
-      createdAtBlock
+      ${RIG_FIELDS}
     }
   }
 `;
 
-// Search rigs by name or symbol
+// Search units by name or symbol
 export const SEARCH_RIGS_QUERY = gql`
   query SearchRigs($search: String!, $first: Int!) {
-    rigs(
+    units(
       first: $first
       where: {
         or: [
-          { tokenName_contains_nocase: $search }
-          { tokenSymbol_contains_nocase: $search }
-          { id_contains_nocase: $search }
+          { name_contains_nocase: $search }
+          { symbol_contains_nocase: $search }
         ]
       }
-      orderBy: minted
+      orderBy: marketCap
       orderDirection: desc
     ) {
       id
-      launchpad {
-        id
-      }
-      launcher {
-        id
-      }
-      unit
-      auction
-      lpToken
-      tokenName
-      tokenSymbol
-      capacity
-      revenue
-      teamRevenue
-      minted
-      lastMined
+      name
+      symbol
+      lpPair
+      price
+      priceUSD
+      marketCap
+      marketCapUSD
+      liquidity
+      liquidityUSD
+      volume24h
+      priceChange24h
+      totalMinted
+      lastActivityAt
       createdAt
-      createdAtBlock
+      rig {
+        id
+        rigType
+        uri
+        launcher { id }
+        auction
+      }
     }
   }
 `;
@@ -219,322 +283,97 @@ export const SEARCH_RIGS_QUERY = gql`
 export const GET_RIG_QUERY = gql`
   query GetRig($id: ID!) {
     rig(id: $id) {
-      id
-      launchpad {
-        id
-      }
-      launcher {
-        id
-      }
-      unit
-      auction
-      lpToken
-      tokenName
-      tokenSymbol
-      capacity
-      revenue
-      teamRevenue
-      minted
-      lastMined
-      createdAt
-      createdAtBlock
-      slots {
-        id
-        index
-        epochId
-        currentMiner {
-          id
-        }
-        uri
-        minted
-        lastMined
-      }
+      ${RIG_FIELDS}
     }
   }
 `;
 
-// Get epochs (mining history) for a rig
-export const GET_EPOCHS_QUERY = gql`
-  query GetEpochs($rigId: String!, $first: Int!, $skip: Int!) {
-    epochs(
-      where: { rig_: { id: $rigId } }
-      orderBy: startTime
-      orderDirection: desc
-      first: $first
-      skip: $skip
-    ) {
-      id
-      rig {
-        id
-      }
-      slot {
-        id
-        index
-      }
-      rigAccount {
-        id
-        account {
-          id
-        }
-      }
-      index
-      epochId
-      uri
-      startTime
-      mined
-      spent
-      earned
+// Get trending rigs (most recently active)
+export const GET_TRENDING_RIGS_QUERY = gql`
+  query GetTrendingRigs($first: Int!) {
+    rigs(first: $first, orderBy: lastActivityAt, orderDirection: desc) {
+      ${RIG_FIELDS}
     }
   }
 `;
 
-// Get all recent epochs (for debugging/general feed)
-export const GET_ALL_EPOCHS_QUERY = gql`
-  query GetAllEpochs($first: Int!, $skip: Int!) {
-    epochs(
-      orderBy: startTime
-      orderDirection: desc
-      first: $first
-      skip: $skip
-    ) {
-      id
-      rig {
-        id
-      }
-      slot {
-        id
-        index
-      }
-      rigAccount {
-        id
-        account {
-          id
-        }
-      }
-      index
-      epochId
-      uri
-      startTime
-      mined
-      spent
-      earned
+// Get top rigs by treasury revenue
+export const GET_TOP_RIGS_QUERY = gql`
+  query GetTopRigs($first: Int!) {
+    rigs(first: $first, orderBy: treasuryRevenue, orderDirection: desc) {
+      ${RIG_FIELDS}
     }
   }
 `;
 
-// Get mine events for a rig (activity feed with aggregated data)
+// Get mine actions for a rig (activity feed)
 export const GET_MINES_QUERY = gql`
   query GetMines($rigId: String!, $first: Int!, $skip: Int!) {
-    mines(
-      where: { rig_: { id: $rigId } }
+    mineActions(
+      where: { mineRig_: { id: $rigId } }
       orderBy: timestamp
       orderDirection: desc
       first: $first
       skip: $skip
     ) {
       id
-      rig {
-        id
-      }
-      miner {
-        id
-      }
-      prevMiner {
-        id
-      }
+      mineRig { id }
+      miner { id }
+      prevMiner { id }
       slotIndex
       epochId
       uri
       price
-      mined
+      minted
       earned
-      upsMultiplier
       timestamp
       blockNumber
+      txHash
     }
   }
 `;
 
-// Get all recent mines (global activity feed)
+// Get all recent mine actions (global activity feed)
 export const GET_ALL_MINES_QUERY = gql`
   query GetAllMines($first: Int!, $skip: Int!) {
-    mines(
+    mineActions(
       orderBy: timestamp
       orderDirection: desc
       first: $first
       skip: $skip
     ) {
       id
-      rig {
-        id
-      }
-      miner {
-        id
-      }
-      prevMiner {
-        id
-      }
+      mineRig { id }
+      miner { id }
+      prevMiner { id }
       slotIndex
       epochId
       uri
       price
-      mined
+      minted
       earned
-      upsMultiplier
       timestamp
       blockNumber
+      txHash
     }
   }
 `;
 
-// Get user's stats for a specific rig
-export const GET_RIG_ACCOUNT_QUERY = gql`
-  query GetRigAccount($id: ID!) {
-    rigAccount(id: $id) {
-      id
-      rig {
-        id
-      }
-      account {
-        id
-      }
-      spent
-      earned
-      mined
-    }
-  }
-`;
-
-// Get all RigAccounts for a user
-export const GET_USER_RIG_ACCOUNTS_QUERY = gql`
-  query GetUserRigAccounts($accountId: String!, $first: Int!) {
-    rigAccounts(where: { account_: { id: $accountId } }, first: $first) {
-      id
-      rig {
-        id
-      }
-      account {
-        id
-      }
-      spent
-      earned
-      mined
-    }
-  }
-`;
-
-// Get account with all their data
+// Get account stats
 export const GET_ACCOUNT_QUERY = gql`
   query GetAccount($id: ID!) {
     account(id: $id) {
       id
-      rigsLaunched {
-        id
-        tokenName
-        tokenSymbol
-        minted
-        revenue
-      }
-      rigAccounts {
-        id
-        rig {
-          id
-        }
-        spent
-        earned
-        mined
-      }
+      totalSwapVolume
+      totalRigSpend
+      totalMined
+      totalWon
+      lastActivityAt
     }
   }
 `;
 
-// Get trending rigs (most recently mined)
-export const GET_TRENDING_RIGS_QUERY = gql`
-  query GetTrendingRigs($first: Int!) {
-    rigs(first: $first, orderBy: lastMined, orderDirection: desc) {
-      id
-      launchpad {
-        id
-      }
-      launcher {
-        id
-      }
-      unit
-      auction
-      lpToken
-      tokenName
-      tokenSymbol
-      capacity
-      revenue
-      teamRevenue
-      minted
-      lastMined
-      createdAt
-      createdAtBlock
-    }
-  }
-`;
-
-// Get top rigs by revenue (total spent)
-export const GET_TOP_RIGS_QUERY = gql`
-  query GetTopRigs($first: Int!) {
-    rigs(first: $first, orderBy: revenue, orderDirection: desc) {
-      id
-      launchpad {
-        id
-      }
-      launcher {
-        id
-      }
-      unit
-      auction
-      lpToken
-      tokenName
-      tokenSymbol
-      capacity
-      revenue
-      teamRevenue
-      minted
-      lastMined
-      createdAt
-      createdAtBlock
-    }
-  }
-`;
-
-// Get recent epochs (for top rigs by latest epoch spent)
-export const GET_RECENT_EPOCHS_QUERY = gql`
-  query GetRecentEpochs($first: Int!) {
-    epochs(first: $first, orderBy: startTime, orderDirection: desc) {
-      id
-      rig {
-        id
-        launchpad {
-          id
-        }
-        launcher {
-          id
-        }
-        unit
-        auction
-        lpToken
-        tokenName
-        tokenSymbol
-        capacity
-        revenue
-        teamRevenue
-        minted
-        lastMined
-        createdAt
-        createdAtBlock
-      }
-      spent
-      startTime
-    }
-  }
-`;
-
-// Get spins for a rig (SpinRig activity)
+// Get spins for a SpinRig
 export const GET_SPINS_QUERY = gql`
   query GetSpins($rigAddress: String!, $limit: Int!) {
     spins(
@@ -558,7 +397,7 @@ export const GET_SPINS_QUERY = gql`
   }
 `;
 
-// Get donations for a rig (FundRig activity)
+// Get donations for a FundRig
 export const GET_DONATIONS_QUERY = gql`
   query GetDonations($rigAddress: String!, $limit: Int!) {
     donations(
@@ -624,14 +463,47 @@ export const GET_UNIT_DAY_DATA_QUERY = gql`
   }
 `;
 
+// =============================================================================
+// Unit listing queries (for explore page)
+// =============================================================================
+
+// Get units sorted by lastActivityAt (bump order)
+export const GET_UNITS_BY_ACTIVITY_QUERY = gql`
+  query GetUnitsByActivity($first: Int!) {
+    units(first: $first, orderBy: lastActivityAt, orderDirection: desc) {
+      ${UNIT_LIST_FIELDS}
+    }
+  }
+`;
+
+// Get units sorted by marketCap (top order)
+export const GET_UNITS_BY_MARKET_CAP_QUERY = gql`
+  query GetUnitsByMarketCap($first: Int!) {
+    units(first: $first, orderBy: marketCap, orderDirection: desc) {
+      ${UNIT_LIST_FIELDS}
+    }
+  }
+`;
+
+// Get units sorted by createdAt (new order)
+export const GET_UNITS_BY_CREATED_AT_QUERY = gql`
+  query GetUnitsByCreatedAt($first: Int!) {
+    units(first: $first, orderBy: createdAt, orderDirection: desc) {
+      ${UNIT_LIST_FIELDS}
+    }
+  }
+`;
+
+// =============================================================================
 // API Functions
+// =============================================================================
 
 export async function getLaunchpadStats(): Promise<SubgraphLaunchpad | null> {
   try {
-    const data = await client.request<{ launchpad: SubgraphLaunchpad | null }>(
-      GET_LAUNCHPAD_STATS_QUERY
-    );
-    return data.launchpad;
+    const data = await client.request<{
+      protocol: SubgraphLaunchpad | null;
+    }>(GET_LAUNCHPAD_STATS_QUERY);
+    return data.protocol;
   } catch {
     return null;
   }
@@ -640,7 +512,11 @@ export async function getLaunchpadStats(): Promise<SubgraphLaunchpad | null> {
 export async function getRigs(
   first = 20,
   skip = 0,
-  orderBy: "minted" | "createdAt" | "lastMined" | "revenue" = "minted",
+  orderBy:
+    | "totalMinted"
+    | "createdAt"
+    | "lastActivityAt"
+    | "treasuryRevenue" = "totalMinted",
   orderDirection: "asc" | "desc" = "desc"
 ): Promise<SubgraphRig[]> {
   try {
@@ -659,16 +535,16 @@ export async function getRigs(
 export async function searchRigs(
   search: string,
   first = 20
-): Promise<SubgraphRig[]> {
+): Promise<SubgraphUnitListItem[]> {
   try {
-    const data = await client.request<{ rigs: SubgraphRig[] }>(
+    const data = await client.request<{ units: SubgraphUnitListItem[] }>(
       SEARCH_RIGS_QUERY,
       {
         search,
         first,
       }
     );
-    return data.rigs;
+    return data.units;
   } catch {
     return [];
   }
@@ -688,53 +564,14 @@ export async function getRig(id: string): Promise<SubgraphRig | null> {
   }
 }
 
-export async function getEpochs(
-  rigId: string,
-  first = 50,
-  skip = 0
-): Promise<SubgraphEpoch[]> {
-  try {
-    const data = await client.request<{ epochs: SubgraphEpoch[] }>(
-      GET_EPOCHS_QUERY,
-      {
-        rigId: rigId.toLowerCase(),
-        first,
-        skip,
-      }
-    );
-    return data.epochs ?? [];
-  } catch (error) {
-    console.error("[getEpochs] Error:", error);
-    return [];
-  }
-}
-
-export async function getAllEpochs(
-  first = 50,
-  skip = 0
-): Promise<SubgraphEpoch[]> {
-  try {
-    const data = await client.request<{ epochs: SubgraphEpoch[] }>(
-      GET_ALL_EPOCHS_QUERY,
-      {
-        first,
-        skip,
-      }
-    );
-    return data.epochs ?? [];
-  } catch {
-    return [];
-  }
-}
-
-// Get mine events for a rig (simple activity feed)
+// Get mine actions for a rig (activity feed)
 export async function getMines(
   rigId: string,
   first = 50,
   skip = 0
 ): Promise<SubgraphMineEvent[]> {
   try {
-    const data = await client.request<{ mines: SubgraphMineEvent[] }>(
+    const data = await client.request<{ mineActions: SubgraphMineEvent[] }>(
       GET_MINES_QUERY,
       {
         rigId: rigId.toLowerCase(),
@@ -742,63 +579,29 @@ export async function getMines(
         skip,
       }
     );
-    return data.mines ?? [];
+    return data.mineActions ?? [];
   } catch (error) {
     console.error("[getMines] Error:", error);
     return [];
   }
 }
 
-// Get all recent mines (global activity feed)
+// Get all recent mine actions (global activity feed)
 export async function getAllMines(
   first = 50,
   skip = 0
 ): Promise<SubgraphMineEvent[]> {
   try {
-    const data = await client.request<{ mines: SubgraphMineEvent[] }>(
+    const data = await client.request<{ mineActions: SubgraphMineEvent[] }>(
       GET_ALL_MINES_QUERY,
       {
         first,
         skip,
       }
     );
-    return data.mines ?? [];
+    return data.mineActions ?? [];
   } catch (error) {
     console.error("[getAllMines] Error:", error);
-    return [];
-  }
-}
-
-export async function getRigAccount(
-  rigId: string,
-  accountId: string
-): Promise<SubgraphRigAccount | null> {
-  try {
-    // ID format is {rigAddress}-{accountAddress}
-    const id = `${rigId.toLowerCase()}-${accountId.toLowerCase()}`;
-    const data = await client.request<{
-      rigAccount: SubgraphRigAccount | null;
-    }>(GET_RIG_ACCOUNT_QUERY, { id });
-    return data.rigAccount;
-  } catch {
-    return null;
-  }
-}
-
-export async function getUserRigAccounts(
-  accountId: string,
-  first = 100
-): Promise<SubgraphRigAccount[]> {
-  try {
-    const data = await client.request<{ rigAccounts: SubgraphRigAccount[] }>(
-      GET_USER_RIG_ACCOUNTS_QUERY,
-      {
-        accountId: accountId.toLowerCase(),
-        first,
-      }
-    );
-    return data.rigAccounts;
-  } catch {
     return [];
   }
 }
@@ -830,44 +633,62 @@ export async function getTrendingRigs(first = 20): Promise<SubgraphRig[]> {
   }
 }
 
-type EpochWithRig = {
-  id: string;
-  rig: SubgraphRig;
-  spent: string;
-  startTime: string;
-};
-
 export async function getTopRigs(first = 20): Promise<SubgraphRig[]> {
   try {
-    // Fetch epochs sorted by startTime (most recent first)
-    // We fetch more epochs than needed to ensure we get enough unique rigs
-    const data = await client.request<{ epochs: EpochWithRig[] }>(
-      GET_RECENT_EPOCHS_QUERY,
-      { first: first * 10 }
+    const data = await client.request<{ rigs: SubgraphRig[] }>(
+      GET_TOP_RIGS_QUERY,
+      { first }
     );
-
-    // Deduplicate by rig, keeping only the FIRST (latest) epoch for each rig
-    const rigMap = new Map<string, { rig: SubgraphRig; spent: number }>();
-
-    for (const epoch of data.epochs) {
-      const rigId = epoch.rig.id.toLowerCase();
-      const spentAmount = parseFloat(epoch.spent);
-
-      // Only keep the first occurrence (latest epoch) for each rig
-      if (!rigMap.has(rigId)) {
-        rigMap.set(rigId, { rig: epoch.rig, spent: spentAmount });
-      }
-    }
-
-    // Sort by latest epoch's spent amount (descending) and return rigs
-    const sortedRigs = Array.from(rigMap.values())
-      .sort((a, b) => b.spent - a.spent)
-      .slice(0, first)
-      .map((item) => item.rig);
-
-    return sortedRigs;
+    return data.rigs;
   } catch (error) {
     console.error("[getTopRigs] Error:", error);
+    return [];
+  }
+}
+
+// Unit listing functions (for explore page)
+
+export async function getUnitsByActivity(
+  first = 20
+): Promise<SubgraphUnitListItem[]> {
+  try {
+    const data = await client.request<{ units: SubgraphUnitListItem[] }>(
+      GET_UNITS_BY_ACTIVITY_QUERY,
+      { first }
+    );
+    return data.units ?? [];
+  } catch (error) {
+    console.error("[getUnitsByActivity] Error:", error);
+    return [];
+  }
+}
+
+export async function getUnitsByMarketCap(
+  first = 20
+): Promise<SubgraphUnitListItem[]> {
+  try {
+    const data = await client.request<{ units: SubgraphUnitListItem[] }>(
+      GET_UNITS_BY_MARKET_CAP_QUERY,
+      { first }
+    );
+    return data.units ?? [];
+  } catch (error) {
+    console.error("[getUnitsByMarketCap] Error:", error);
+    return [];
+  }
+}
+
+export async function getUnitsByCreatedAt(
+  first = 20
+): Promise<SubgraphUnitListItem[]> {
+  try {
+    const data = await client.request<{ units: SubgraphUnitListItem[] }>(
+      GET_UNITS_BY_CREATED_AT_QUERY,
+      { first }
+    );
+    return data.units ?? [];
+  } catch (error) {
+    console.error("[getUnitsByCreatedAt] Error:", error);
     return [];
   }
 }
@@ -875,48 +696,6 @@ export async function getTopRigs(first = 20): Promise<SubgraphRig[]> {
 // Helper to format subgraph address
 export function formatSubgraphAddress(address: string): `0x${string}` {
   return address.toLowerCase() as `0x${string}`;
-}
-
-// Get top miners for a specific rig (leaderboard)
-export const GET_RIG_LEADERBOARD_QUERY = gql`
-  query GetRigLeaderboard($rigId: String!, $first: Int!) {
-    rigAccounts(
-      where: { rig_: { id: $rigId }, mined_gt: "0" }
-      orderBy: mined
-      orderDirection: desc
-      first: $first
-    ) {
-      id
-      rig {
-        id
-      }
-      account {
-        id
-      }
-      spent
-      earned
-      mined
-    }
-  }
-`;
-
-export async function getRigLeaderboard(
-  rigId: string,
-  first = 20
-): Promise<SubgraphRigAccount[]> {
-  try {
-    const data = await client.request<{ rigAccounts: SubgraphRigAccount[] }>(
-      GET_RIG_LEADERBOARD_QUERY,
-      {
-        rigId: rigId.toLowerCase(),
-        first,
-      }
-    );
-    return data.rigAccounts ?? [];
-  } catch (error) {
-    console.error("[getRigLeaderboard] Error:", error);
-    return [];
-  }
 }
 
 // Get spins for a SpinRig
@@ -998,12 +777,3 @@ export async function getUnitDayData(
     return [];
   }
 }
-
-// Legacy compatibility - maps old function names to new ones
-export const getMineHistory = getEpochs;
-export const getUserRigStats = getRigAccount;
-export const getUserAllStats = getUserRigAccounts;
-
-// Legacy type aliases
-export type SubgraphMine = SubgraphEpoch;
-export type SubgraphUserRigStats = SubgraphRigAccount;

@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-  getRigAccount,
-  getUserRigAccounts,
-  type SubgraphRigAccount,
+  getAccount,
+  type SubgraphAccount,
 } from "@/lib/subgraph-launchpad";
 
 export type UserRigStats = {
@@ -11,54 +10,58 @@ export type UserRigStats = {
   totalEarned: bigint;
 };
 
-function parseRigAccountStats(stats: SubgraphRigAccount): UserRigStats {
+function parseAccountStats(account: SubgraphAccount): UserRigStats {
   return {
-    totalMined: BigInt(Math.floor(parseFloat(stats.mined) * 1e18)),
-    totalSpent: BigInt(Math.floor(parseFloat(stats.spent) * 1e18)),
-    totalEarned: BigInt(Math.floor(parseFloat(stats.earned) * 1e18)),
+    totalMined: BigInt(Math.floor(parseFloat(account.totalMined) * 1e18)),
+    totalSpent: BigInt(Math.floor(parseFloat(account.totalRigSpend) * 1e18)),
+    totalEarned: BigInt(Math.floor(parseFloat(account.totalWon) * 1e18)),
   };
 }
 
+/**
+ * Get user stats for a specific rig.
+ *
+ * Note: The RigAccount entity was removed in the schema migration.
+ * Per-rig stats are no longer available. This hook now returns null
+ * (the per-rig breakdown is not queryable from the subgraph).
+ */
 export function useUserRigStats(
   userAddress: `0x${string}` | undefined,
   rigAddress: `0x${string}` | undefined
 ) {
-  const { data: stats, isLoading, error, refetch } = useQuery({
-    queryKey: ["userRigStats", userAddress, rigAddress],
-    queryFn: async () => {
-      if (!userAddress || !rigAddress) return null;
-      const rawStats = await getRigAccount(rigAddress, userAddress);
-      return rawStats ? parseRigAccountStats(rawStats) : null;
-    },
-    enabled: !!userAddress && !!rigAddress,
-    staleTime: 15_000,
-    refetchInterval: 15_000,
-    retry: false,
-  });
-
+  // RigAccount entity no longer exists -- return null
   return {
-    stats,
-    isLoading,
-    error,
-    refetch,
+    stats: null as UserRigStats | null,
+    isLoading: false,
+    error: null,
+    refetch: () => Promise.resolve({ data: null, error: null }),
   };
 }
 
+/**
+ * Get aggregate stats across all rigs for a user.
+ *
+ * Previously used getUserRigAccounts (RigAccount entity).
+ * Now uses the Account entity which has aggregate totals.
+ */
 export function useUserAllStats(userAddress: `0x${string}` | undefined) {
-  const { data: allStats, isLoading, error, refetch } = useQuery({
+  const { data: account, isLoading, error, refetch } = useQuery({
     queryKey: ["userAllStats", userAddress],
     queryFn: async () => {
-      if (!userAddress) return [];
-      const rawStats = await getUserRigAccounts(userAddress);
-      return rawStats.map(parseRigAccountStats);
+      if (!userAddress) return null;
+      return getAccount(userAddress);
     },
     enabled: !!userAddress,
     staleTime: 30_000,
     retry: false,
   });
 
+  const allStats: UserRigStats[] = account
+    ? [parseAccountStats(account)]
+    : [];
+
   return {
-    allStats: allStats ?? [],
+    allStats,
     isLoading,
     error,
     refetch,

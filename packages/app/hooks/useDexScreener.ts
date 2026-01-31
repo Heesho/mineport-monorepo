@@ -132,3 +132,4 @@ export function useDexScreener(
     isLoading: isLoadingLp || (!!lpAddress && isLoadingPair),
   };
 }
+

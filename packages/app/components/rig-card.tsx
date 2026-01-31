@@ -2,23 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { formatUnits, formatEther } from "viem";
 import type { RigListItem } from "@/hooks/useAllRigs";
 import { cn } from "@/lib/utils";
 import { ipfsToHttp } from "@/lib/constants";
-import { QUOTE_TOKEN_DECIMALS } from "@/lib/contracts";
-
-// Format quote token (USDC - 6 decimals)
-const formatQuote = (value: bigint, maximumFractionDigits = 2) => {
-  if (value === 0n) return "0";
-  const asNumber = Number(formatUnits(value, QUOTE_TOKEN_DECIMALS));
-  if (!Number.isFinite(asNumber)) {
-    return formatUnits(value, QUOTE_TOKEN_DECIMALS);
-  }
-  return asNumber.toLocaleString(undefined, {
-    maximumFractionDigits,
-  });
-};
 
 type RigCardProps = {
   rig: RigListItem;
@@ -35,10 +21,8 @@ const formatUsd = (value: number) => {
 };
 
 export function RigCard({ rig, donutUsdPrice = 0.01, isTopBump = false, isNewBump = false }: RigCardProps) {
-  // Calculate market cap: totalMinted * unitPrice (in DONUT) * donutUsdPrice
-  const marketCapUsd = rig.unitPrice > 0n
-    ? Number(formatEther(rig.totalMinted)) * Number(formatEther(rig.unitPrice)) * donutUsdPrice
-    : 0;
+  // Market cap comes directly from subgraph as USD
+  const marketCapUsd = rig.marketCapUsd;
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   // Fetch metadata to get image URL
@@ -92,9 +76,9 @@ export function RigCard({ rig, donutUsdPrice = 0.01, isTopBump = false, isNewBum
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             <span className="text-[13px] text-muted-foreground truncate">{rig.tokenName}</span>
-            {rig.capacity > 1n && (
+            {rig.rigType && (
               <span className="text-[11px] text-zinc-500 bg-zinc-800 rounded-full px-1.5 py-0.5">
-                {Number(rig.capacity)} slots
+                {rig.rigType}
               </span>
             )}
           </div>
@@ -103,7 +87,7 @@ export function RigCard({ rig, donutUsdPrice = 0.01, isTopBump = false, isNewBum
         {/* Price & Market Cap */}
         <div className="flex-shrink-0 text-right">
           <div className="text-[15px] font-medium tabular-nums">
-            ${formatQuote(rig.price)}
+            {formatUsd(rig.priceUsd)}
           </div>
           <div className="text-[13px] text-muted-foreground mt-0.5">
             {formatUsd(marketCapUsd)}
