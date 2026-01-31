@@ -41,7 +41,8 @@ export function AuctionModal({
 
   const { auctionState, isLoading, refetch: refetchAuction } = useAuctionState(
     rigAddress,
-    account
+    account,
+    multicallAddr
   );
 
   const { execute, status, txHash, error, reset } = useBatchedTransaction();

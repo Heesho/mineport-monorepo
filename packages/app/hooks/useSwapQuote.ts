@@ -35,6 +35,14 @@ export type SwapQuote = {
     gas: string;
     gasPrice: string;
   };
+  // Second transaction (multi-hop swaps)
+  transaction2?: {
+    to: string;
+    data: string;
+    value: string;
+    gas?: string;
+    gasPrice?: string;
+  };
   // Allowance info
   issues?: {
     allowance?: {
@@ -42,7 +50,14 @@ export type SwapQuote = {
       actual: string;
       expected: string;
     };
+    allowance2?: {
+      spender: string;
+      actual: string;
+      expected: string;
+    };
   };
+  // Intermediate amount for multi-hop swaps
+  intermediateAmount?: string;
   // Liquidity sources used
   route?: {
     fills: Array<{

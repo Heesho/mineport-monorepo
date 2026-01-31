@@ -54,8 +54,8 @@ export function handleSpin(event: SpinEvent): void {
   spinner.lastActivityAt = event.block.timestamp
   spinner.save()
 
-  // Create Spin entity
-  let spinId = event.transaction.hash.toHexString() + '-' + event.logIndex.toString()
+  // Create Spin entity (ID = rigAddress-epochId so handleWin can look it up)
+  let spinId = rigAddress + '-' + epochId.toString()
   let spin = new Spin(spinId)
   spin.spinRig = spinRig.id
   spin.spinner = spinner.id
@@ -113,10 +113,15 @@ export function handleWin(event: WinEvent): void {
   spinRig.totalWonAmount = spinRig.totalWonAmount.plus(amount)
   spinRig.save()
 
-  // Note: We can't easily link back to the original Spin entity without
-  // tracking the sequenceNumber -> spinId mapping. The Win event happens
-  // in a different transaction (VRF callback).
-  // For now, we just update aggregate stats.
+  // Update the original Spin entity with win results
+  let spinId = rigAddress + '-' + epochId.toString()
+  let spin = Spin.load(spinId)
+  if (spin !== null) {
+    spin.won = true
+    spin.winAmount = amount
+    spin.oddsBps = oddsBps
+    spin.save()
+  }
 }
 
 export function handleSpinTreasuryFee(event: TreasuryFeeEvent): void {

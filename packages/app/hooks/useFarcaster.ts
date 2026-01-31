@@ -26,12 +26,17 @@ const AUTO_CONNECT_KEY = "farcaster_auto_connect_attempted";
 export function useFarcaster() {
   const readyRef = useRef(false);
   const [context, setContext] = useState<FarcasterContext | null>(null);
+  const [isInFrame, setIsInFrame] = useState<boolean | null>(null); // null = still detecting
 
   const { address, isConnected } = useAccount();
   const { connectors, connectAsync, isPending: isConnecting } = useConnect();
-  const primaryConnector = connectors[0];
 
-  // Fetch Farcaster context
+  // Find connectors by type
+  const farcasterConnector = connectors.find(c => c.id === 'farcasterMiniApp');
+  const injectedConnector = connectors.find(c => c.id === 'injected');
+  const primaryConnector = isInFrame ? farcasterConnector : injectedConnector;
+
+  // Fetch Farcaster context and detect frame environment
   useEffect(() => {
     let cancelled = false;
     const hydrateContext = async () => {
@@ -40,10 +45,16 @@ export function useFarcaster() {
           context: Promise<FarcasterContext> | FarcasterContext;
         }).context) as FarcasterContext;
         if (!cancelled) {
-          setContext(ctx);
+          // Only consider us "in frame" if context has a real user with a fid
+          const hasUser = !!(ctx?.user?.fid);
+          setContext(hasUser ? ctx : null);
+          setIsInFrame(hasUser);
         }
       } catch {
-        if (!cancelled) setContext(null);
+        if (!cancelled) {
+          setContext(null);
+          setIsInFrame(false);
+        }
       }
     };
     hydrateContext();
@@ -63,15 +74,21 @@ export function useFarcaster() {
     return () => clearTimeout(timeout);
   }, []);
 
-  // Auto-connect wallet (only once per session)
+  // Auto-connect wallet (only once per session, only in Farcaster frame)
   useEffect(() => {
+    // Wait until frame detection is complete
+    if (isInFrame === null) return;
+
+    // Only auto-connect when inside a Farcaster frame
+    if (!isInFrame) return;
+
     // Check if we already attempted this session
     const alreadyAttempted = typeof window !== "undefined" && sessionStorage.getItem(AUTO_CONNECT_KEY);
 
     if (
       alreadyAttempted ||
       isConnected ||
-      !primaryConnector ||
+      !farcasterConnector ||
       isConnecting
     ) {
       return;
@@ -83,10 +100,10 @@ export function useFarcaster() {
     }
 
     connectAsync({
-      connector: primaryConnector,
+      connector: farcasterConnector,
       chainId: base.id,
     }).catch(() => {});
-  }, [connectAsync, isConnected, isConnecting, primaryConnector]);
+  }, [connectAsync, isConnected, isConnecting, farcasterConnector, isInFrame]);
 
   // Connect wallet manually
   const connect = useCallback(async () => {
@@ -106,6 +123,7 @@ export function useFarcaster() {
     address,
     isConnected,
     isConnecting,
+    isInFrame,
     connect,
     primaryConnector,
   };

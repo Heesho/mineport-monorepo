@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Upload, ChevronDown, ChevronUp, ChevronLeft, Pickaxe, Dices, Heart, Plus, Minus } from "lucide-react";
+import { useFarcaster } from "@/hooks/useFarcaster";
 
 // DONUT token icon - pink circle with black center (donut shape)
 function DonutIcon({ size = 20 }: { size?: number }) {
@@ -379,6 +380,8 @@ function Slider({
 }
 
 export default function LaunchPage() {
+  const { address: account, isConnected, isInFrame, isConnecting, connect } = useFarcaster();
+
   // Rig type selection
   const [rigType, setRigType] = useState<RigType>(null);
 
@@ -532,7 +535,24 @@ export default function LaunchPage() {
         {/* Header */}
         <div className="px-4 pb-4">
           {rigType === null ? (
-            <h1 className="text-2xl font-semibold tracking-tight">Launch</h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-semibold tracking-tight">Launch</h1>
+              {isConnected && account ? (
+                <div className="px-3 py-1.5 rounded-full bg-secondary text-[13px] text-muted-foreground font-mono">
+                  {account.slice(0, 6)}...{account.slice(-4)}
+                </div>
+              ) : (
+                !isInFrame && (
+                  <button
+                    onClick={() => connect()}
+                    disabled={isConnecting}
+                    className="px-4 py-2 rounded-xl bg-white text-black text-[13px] font-semibold hover:bg-zinc-200 transition-colors disabled:opacity-50"
+                  >
+                    {isConnecting ? "Connecting..." : "Connect Wallet"}
+                  </button>
+                )
+              )}
+            </div>
           ) : (
             <div className="flex items-center gap-3">
               <button
@@ -1123,10 +1143,10 @@ export default function LaunchPage() {
         {/* Bottom Action Bar (only show when rig type selected) */}
         {rigType !== null && (
           <div
-            className="fixed bottom-0 left-0 right-0 z-50 bg-background flex justify-center"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-800 flex justify-center"
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 60px)" }}
           >
-            <div className="flex items-center justify-between w-full max-w-[520px] px-4 py-3">
+            <div className="flex items-center justify-between w-full max-w-[520px] px-4 py-3 bg-background">
               <div className="flex items-center gap-5">
                 <div>
                   <div className="text-muted-foreground text-[11px]">Amount</div>

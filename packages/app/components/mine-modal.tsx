@@ -108,10 +108,10 @@ export function MineModal({
 
   // Fetch all slots for the overview
   const {
-    slots,
-    activeCount,
+    slotStates: slots,
+    activeSlotCount: activeCount,
     isLoading: isSlotsLoading,
-  } = useMultiSlotState(rigAddress, capacity, account, multicallAddr);
+  } = useMultiSlotState(rigAddress, Number(capacity), account);
 
   // Leaderboard
   const {

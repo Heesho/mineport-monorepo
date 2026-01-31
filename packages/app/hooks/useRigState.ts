@@ -23,16 +23,18 @@ export type RigInfo = {
 export function useRigState(
   rigAddress: `0x${string}` | undefined,
   account: `0x${string}` | undefined,
-  slotIndex: bigint = 0n // Default to slot 0 for single-slot rigs
+  slotIndex: bigint = 0n, // Default to slot 0 for single-slot rigs
+  multicallAddress?: `0x${string}`,
+  enabled: boolean = true,
 ) {
   const { data: rawRigState, refetch, isLoading, error } = useReadContract({
-    address: CONTRACT_ADDRESSES.multicall as `0x${string}`,
+    address: multicallAddress ?? CONTRACT_ADDRESSES.multicall as `0x${string}`,
     abi: MULTICALL_ABI,
     functionName: "getRig",
     args: rigAddress ? [rigAddress, slotIndex, account ?? zeroAddress] : undefined,
     chainId: base.id,
     query: {
-      enabled: !!rigAddress,
+      enabled: !!rigAddress && enabled,
       refetchInterval: 15_000,
       refetchOnWindowFocus: false,
     },
@@ -48,10 +50,15 @@ export function useRigState(
   };
 }
 
-export function useRigInfo(rigAddress: `0x${string}` | undefined) {
+export function useRigInfo(
+  rigAddress: `0x${string}` | undefined,
+  coreAddress?: `0x${string}`,
+) {
+  const resolvedCore = coreAddress ?? CONTRACT_ADDRESSES.core as `0x${string}`;
+
   // Get unit token address
   const { data: unitAddress } = useReadContract({
-    address: CONTRACT_ADDRESSES.core as `0x${string}`,
+    address: resolvedCore,
     abi: CORE_ABI,
     functionName: "rigToUnit",
     args: rigAddress ? [rigAddress] : undefined,
@@ -63,7 +70,7 @@ export function useRigInfo(rigAddress: `0x${string}` | undefined) {
 
   // Get auction address
   const { data: auctionAddress } = useReadContract({
-    address: CONTRACT_ADDRESSES.core as `0x${string}`,
+    address: resolvedCore,
     abi: CORE_ABI,
     functionName: "rigToAuction",
     args: rigAddress ? [rigAddress] : undefined,
@@ -75,7 +82,7 @@ export function useRigInfo(rigAddress: `0x${string}` | undefined) {
 
   // Get LP token address
   const { data: lpAddress } = useReadContract({
-    address: CONTRACT_ADDRESSES.core as `0x${string}`,
+    address: resolvedCore,
     abi: CORE_ABI,
     functionName: "rigToLP",
     args: rigAddress ? [rigAddress] : undefined,
@@ -87,7 +94,7 @@ export function useRigInfo(rigAddress: `0x${string}` | undefined) {
 
   // Get quote token address
   const { data: quoteAddress } = useReadContract({
-    address: CONTRACT_ADDRESSES.core as `0x${string}`,
+    address: resolvedCore,
     abi: CORE_ABI,
     functionName: "rigToQuote",
     args: rigAddress ? [rigAddress] : undefined,
@@ -99,7 +106,7 @@ export function useRigInfo(rigAddress: `0x${string}` | undefined) {
 
   // Get launcher address
   const { data: launcher } = useReadContract({
-    address: CONTRACT_ADDRESSES.core as `0x${string}`,
+    address: resolvedCore,
     abi: CORE_ABI,
     functionName: "rigToLauncher",
     args: rigAddress ? [rigAddress] : undefined,

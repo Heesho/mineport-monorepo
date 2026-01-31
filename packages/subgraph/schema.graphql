@@ -356,8 +356,8 @@ type SpinRig @entity(immutable: false) {
   spins: [Spin!]! @derivedFrom(field: "spinRig")
 }
 
-type Spin @entity(immutable: true) {
-  id: ID!                              # {txHash}-{logIndex}
+type Spin @entity(immutable: false) {
+  id: ID!                              # {rigAddress}-{epochId}
   spinRig: SpinRig!
   spinner: Account!
 

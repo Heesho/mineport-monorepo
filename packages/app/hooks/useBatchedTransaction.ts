@@ -23,7 +23,8 @@ type BatchedTransactionState = "idle" | "pending" | "confirming" | "success" | "
 
 type UseBatchedTransactionReturn = {
   execute: (calls: Call[]) => Promise<void>;
-  state: BatchedTransactionState;
+  status: BatchedTransactionState;
+  txHash: string | undefined;
   error: Error | null;
   reset: () => void;
   reportsCapability: boolean;
@@ -179,6 +180,10 @@ export function useBatchedTransaction(): UseBatchedTransactionReturn {
     }
   }, [isBatchPending, isSeqPending, isSeqConfirming]);
 
+  // Derive txHash from sequential or batch mode
+  const txHash: string | undefined =
+    seqTxHash ?? (callsStatus as any)?.receipts?.[0]?.transactionHash ?? undefined;
+
   const execute = useCallback(
     async (calls: Call[]) => {
       if (calls.length === 0) return;
@@ -228,7 +233,8 @@ export function useBatchedTransaction(): UseBatchedTransactionReturn {
 
   return {
     execute,
-    state,
+    status: state,
+    txHash,
     error,
     reset,
     // Reports whether capability was detected (not whether batching will work)

@@ -259,7 +259,7 @@ export default function RigDetailPage() {
   const rigAddress = address as `0x${string}`;
 
   // Farcaster context for connected wallet
-  const { address: account } = useFarcaster();
+  const { address: account, isConnected, isInFrame, isConnecting, connect } = useFarcaster();
 
   // Fetch rig data from subgraph
   const { data: subgraphRig, isLoading: isSubgraphLoading } = useQuery({
@@ -784,79 +784,91 @@ export default function RigDetailPage() {
               </div>
             </div>
             <div className="relative">
-              {/* Action Menu Popup - appears above button */}
-              {showActionMenu && (
-                <div className="absolute bottom-full right-0 mb-2 flex flex-col gap-1.5">
-                  <button
-                    onClick={() => {
-                      setShowActionMenu(false);
-                      setTradeMode("buy");
-                      setShowTradeModal(true);
-                    }}
-                    className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
-                  >
-                    Buy
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowActionMenu(false);
-                      setTradeMode("sell");
-                      setShowTradeModal(true);
-                    }}
-                    className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
-                  >
-                    Sell
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowActionMenu(false);
-                      showPrimaryModal();
-                    }}
-                    className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
-                  >
-                    {primaryAction}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowActionMenu(false);
-                      setShowAuctionModal(true);
-                    }}
-                    className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
-                  >
-                    Auction
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowActionMenu(false);
-                      setShowLiquidityModal(true);
-                    }}
-                    className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
-                  >
-                    Liquidity
-                  </button>
-                  {isOwner && (
-                    <button
-                      onClick={() => {
-                        setShowActionMenu(false);
-                        setShowAdminModal(true);
-                      }}
-                      className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
-                    >
-                      Admin
-                    </button>
+              {isConnected ? (
+                <>
+                  {/* Action Menu Popup - appears above button */}
+                  {showActionMenu && (
+                    <div className="absolute bottom-full right-0 mb-2 flex flex-col gap-1.5">
+                      <button
+                        onClick={() => {
+                          setShowActionMenu(false);
+                          setTradeMode("buy");
+                          setShowTradeModal(true);
+                        }}
+                        className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
+                      >
+                        Buy
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowActionMenu(false);
+                          setTradeMode("sell");
+                          setShowTradeModal(true);
+                        }}
+                        className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
+                      >
+                        Sell
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowActionMenu(false);
+                          showPrimaryModal();
+                        }}
+                        className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
+                      >
+                        {primaryAction}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowActionMenu(false);
+                          setShowAuctionModal(true);
+                        }}
+                        className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
+                      >
+                        Auction
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowActionMenu(false);
+                          setShowLiquidityModal(true);
+                        }}
+                        className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
+                      >
+                        Liquidity
+                      </button>
+                      {isOwner && (
+                        <button
+                          onClick={() => {
+                            setShowActionMenu(false);
+                            setShowAdminModal(true);
+                          }}
+                          className="w-32 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-[14px] transition-colors"
+                        >
+                          Admin
+                        </button>
+                      )}
+                    </div>
                   )}
-                </div>
+                  <button
+                    onClick={() => setShowActionMenu(!showActionMenu)}
+                    className={`w-32 h-10 text-[14px] font-semibold rounded-xl transition-all ${
+                      showActionMenu
+                        ? "bg-black border-2 border-white text-white"
+                        : "bg-white text-black"
+                    }`}
+                  >
+                    {showActionMenu ? "\u2715" : "Actions"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => connect()}
+                  disabled={isConnecting || isInFrame === true}
+                  className="w-40 h-10 text-[14px] font-semibold rounded-xl bg-white text-black hover:bg-zinc-200 transition-colors disabled:opacity-50"
+                >
+                  {isConnecting ? "Connecting..." : "Connect Wallet"}
+                </button>
               )}
-              <button
-                onClick={() => setShowActionMenu(!showActionMenu)}
-                className={`w-32 h-10 text-[14px] font-semibold rounded-xl transition-all ${
-                  showActionMenu
-                    ? "bg-black border-2 border-white text-white"
-                    : "bg-white text-black"
-                }`}
-              >
-                {showActionMenu ? "\u2715" : "Actions"}
-              </button>
             </div>
           </div>
         </div>

@@ -9,10 +9,11 @@ import {
 
 export function useAuctionState(
   rigAddress: `0x${string}` | undefined,
-  account: `0x${string}` | undefined
+  account: `0x${string}` | undefined,
+  multicallAddress?: `0x${string}`,
 ) {
   const { data: rawAuctionState, refetch, isLoading, error } = useReadContract({
-    address: CONTRACT_ADDRESSES.multicall as `0x${string}`,
+    address: multicallAddress ?? CONTRACT_ADDRESSES.multicall as `0x${string}`,
     abi: MULTICALL_ABI,
     functionName: "getAuction",
     args: rigAddress ? [rigAddress, account ?? zeroAddress] : undefined,
@@ -43,10 +44,12 @@ export type AuctionListItem = {
 
 export function useAllAuctionStates(
   rigAddresses: `0x${string}`[],
-  account: `0x${string}` | undefined
+  account: `0x${string}` | undefined,
+  multicallAddress?: `0x${string}`,
 ) {
+  const resolvedMulticall = multicallAddress ?? CONTRACT_ADDRESSES.multicall as `0x${string}`;
   const contracts = rigAddresses.map((address) => ({
-    address: CONTRACT_ADDRESSES.multicall as `0x${string}`,
+    address: resolvedMulticall,
     abi: MULTICALL_ABI,
     functionName: "getAuction" as const,
     args: [address, account ?? zeroAddress] as const,

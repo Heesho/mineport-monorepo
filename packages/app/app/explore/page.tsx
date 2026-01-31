@@ -111,7 +111,7 @@ function SkeletonRow() {
 export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("bump");
-  const { address: account } = useFarcaster();
+  const { address: account, isConnected, isInFrame, isConnecting, connect } = useFarcaster();
 
   const { rigs, isLoading } = useExploreRigs(sortBy, searchQuery, account);
 
@@ -133,7 +133,24 @@ export default function ExplorePage() {
       >
         {/* Header */}
         <div className="px-4 pb-2">
-          <h1 className="text-2xl font-semibold tracking-tight mb-4">Explore</h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-semibold tracking-tight">Explore</h1>
+            {isConnected && account ? (
+              <div className="px-3 py-1.5 rounded-full bg-secondary text-[13px] text-muted-foreground font-mono">
+                {account.slice(0, 6)}...{account.slice(-4)}
+              </div>
+            ) : (
+              !isInFrame && (
+                <button
+                  onClick={() => connect()}
+                  disabled={isConnecting}
+                  className="px-4 py-2 rounded-xl bg-white text-black text-[13px] font-semibold hover:bg-zinc-200 transition-colors disabled:opacity-50"
+                >
+                  {isConnecting ? "Connecting..." : "Connect Wallet"}
+                </button>
+              )
+            )}
+          </div>
 
           {/* Search Bar */}
           <div className="relative">

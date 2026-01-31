@@ -32,9 +32,8 @@ const baseTransports = BASE_RPC_ENDPOINTS.map((url) =>
   })
 );
 
-// Use injected connector for local dev, farcaster for production
-const isLocalDev = process.env.NODE_ENV === "development";
-const connectors = isLocalDev ? [injected()] : [farcasterMiniApp()];
+// Always include both connectors - wagmi picks the right one at runtime
+const connectors = [farcasterMiniApp(), injected()];
 
 export const wagmiConfig = createConfig({
   chains: [base],
