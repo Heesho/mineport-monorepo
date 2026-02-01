@@ -21,7 +21,7 @@ const INFO_SECTIONS = [
     bullets: [
       "Launch in minutes with full customization",
       "Liquidity is locked forever - no rug pulls possible",
-      "All tokens paired with DONUT for deep liquidity",
+      "All tokens paired with USDC for deep liquidity",
     ],
   },
   {

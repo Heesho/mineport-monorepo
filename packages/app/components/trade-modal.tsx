@@ -198,7 +198,7 @@ export function TradeModal({
       const calls: Call[] = [];
 
       if (isBuy) {
-        // Buy: USDC -> Unit (possibly via DONUT intermediate)
+        // Buy: USDC -> Unit (possibly via intermediate token)
         if (quote.issues?.allowance) {
           calls.push(
             encodeApproveCall(
@@ -219,7 +219,7 @@ export function TradeModal({
           if (quote.issues?.allowance2) {
             calls.push(
               encodeApproveCall(
-                CONTRACT_ADDRESSES.donut as `0x${string}`,
+                CONTRACT_ADDRESSES.usdc as `0x${string}`,
                 quote.issues.allowance2.spender as `0x${string}`,
                 BigInt(quote.intermediateAmount || "0")
               )
@@ -232,7 +232,7 @@ export function TradeModal({
           });
         }
       } else {
-        // Sell: Unit -> USDC (possibly via DONUT intermediate)
+        // Sell: Unit -> USDC (possibly via intermediate token)
         if (quote.issues?.allowance) {
           calls.push(
             encodeApproveCall(
@@ -253,7 +253,7 @@ export function TradeModal({
           if (quote.issues?.allowance2) {
             calls.push(
               encodeApproveCall(
-                CONTRACT_ADDRESSES.donut as `0x${string}`,
+                CONTRACT_ADDRESSES.usdc as `0x${string}`,
                 quote.issues.allowance2.spender as `0x${string}`,
                 BigInt(quote.intermediateAmount || "0")
               )

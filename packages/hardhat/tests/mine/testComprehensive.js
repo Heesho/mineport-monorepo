@@ -4,7 +4,7 @@ const { ethers, network } = require("hardhat");
 const convert = (amount, decimals = 18) => ethers.utils.parseUnits(amount.toString(), decimals);
 
 describe("Comprehensive Security Tests", function () {
-    let WETH, DONUT, registry, uniFactory, uniRouter, rigFactory, auctionFactory, core, multicall;
+    let WETH, USDC, registry, uniFactory, uniRouter, rigFactory, auctionFactory, core, multicall;
     let owner, user0, user1, user2, user3, attacker, treasury, team;
 
     const PRECISION = ethers.BigNumber.from("1000000000000000000");
@@ -40,9 +40,9 @@ describe("Comprehensive Security Tests", function () {
         WETH = await WETH9.deploy();
         await WETH.deployed();
 
-        const DONUT_ERC20 = await ethers.getContractFactory("MockWETH");
-        DONUT = await DONUT_ERC20.deploy();
-        await DONUT.deployed();
+        const USDC_ERC20 = await ethers.getContractFactory("MockUSDC");
+        USDC = await USDC_ERC20.deploy();
+        await USDC.deployed();
 
         const UniFactory = await ethers.getContractFactory("MockUniswapV2Factory");
         uniFactory = await UniFactory.deploy();
@@ -77,7 +77,7 @@ describe("Comprehensive Security Tests", function () {
         const Core = await ethers.getContractFactory("MineCore");
         core = await Core.deploy(
             registry.address,
-            DONUT.address,
+            USDC.address,
             uniFactory.address,
             uniRouter.address,
             unitFactory.address,
@@ -85,7 +85,7 @@ describe("Comprehensive Security Tests", function () {
             auctionFactory.address,
             entropy.address,
             owner.address,
-            convert("100", 18)
+            convert("100", 6)
         );
         await core.deployed();
 
@@ -93,13 +93,13 @@ describe("Comprehensive Security Tests", function () {
         await registry.setFactoryApproval(core.address, true);
 
         const Multicall = await ethers.getContractFactory("MineMulticall");
-        multicall = await Multicall.deploy(core.address, DONUT.address);
+        multicall = await Multicall.deploy(core.address, USDC.address);
         await multicall.deployed();
 
         // Fund all users
         for (const user of [user0, user1, user2, user3, attacker]) {
             await WETH.connect(user).deposit({ value: convert("100", 18) });
-            await DONUT.connect(user).deposit({ value: convert("1000", 18) });
+            await USDC.mint(user.address, convert("1000", 6));
         }
     });
 
@@ -110,7 +110,7 @@ describe("Comprehensive Security Tests", function () {
             tokenName: "Test Unit",
             tokenSymbol: "TUNIT",
             uri: "",
-            donutAmount: convert("150", 18),
+            usdcAmount: convert("150", 6),
             unitAmount: convert("1000000", 18),
             initialUps: convert("4", 18),
             tailUps: convert("0.01", 18),
@@ -128,12 +128,12 @@ describe("Comprehensive Security Tests", function () {
 
         const params = { ...defaults, ...options };
 
-        const donutBal = await DONUT.balanceOf(launcher.address);
-        if (donutBal.lt(params.donutAmount)) {
-            await DONUT.connect(launcher).deposit({ value: params.donutAmount });
+        const usdcBal = await USDC.balanceOf(launcher.address);
+        if (usdcBal.lt(params.usdcAmount)) {
+            await USDC.mint(launcher.address, params.usdcAmount);
         }
 
-        await DONUT.connect(launcher).approve(core.address, params.donutAmount);
+        await USDC.connect(launcher).approve(core.address, params.usdcAmount);
         const tx = await core.connect(launcher).launch(params);
         const receipt = await tx.wait();
         const launchEvent = receipt.events.find(e => e.event === "MineCore__Launched");

@@ -16,7 +16,7 @@ export function DuneDashboardButton({
   size = "default",
 }: DuneDashboardButtonProps) {
   const handleOpenDune = () => {
-    window.open("https://dune.com/xyk/donut-company", "_blank", "noopener,noreferrer");
+    window.open("https://dune.com/xyk/farplace", "_blank", "noopener,noreferrer");
   };
 
   return (

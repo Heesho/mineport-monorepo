@@ -2,12 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { formatEther, formatUnits, parseEther, parseUnits } from "viem";
+import { formatEther, formatUnits, parseUnits } from "viem";
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { NavBar } from "@/components/nav-bar";
 import { useFarcaster } from "@/hooks/useFarcaster";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { usePrices } from "@/hooks/usePrices";
 import { useTokenMetadata } from "@/hooks/useMetadata";
 import { CONTRACT_ADDRESSES, ERC20_ABI, MOCK_MINT_ABI, QUOTE_TOKEN_DECIMALS } from "@/lib/contracts";
 import type { UserRigData, UserLaunchedRig } from "@/hooks/useUserProfile";
@@ -35,21 +34,6 @@ function formatUsd(value: number): string {
 // ---------------------------------------------------------------------------
 // Token icons
 // ---------------------------------------------------------------------------
-
-// DONUT token icon - pink circle with black center (donut shape)
-function DonutIcon({ size = 40 }: { size?: number }) {
-  return (
-    <div
-      className="rounded-full bg-pink-500 flex items-center justify-center flex-shrink-0"
-      style={{ width: size, height: size }}
-    >
-      <div
-        className="rounded-full bg-black"
-        style={{ width: size * 0.4, height: size * 0.4 }}
-      />
-    </div>
-  );
-}
 
 // USDC token icon - blue circle with $ sign
 function UsdcIcon({ size = 40 }: { size?: number }) {
@@ -112,10 +96,8 @@ function TokenLogo({
 
 function HoldingRow({
   rig,
-  donutUsdPrice,
 }: {
   rig: UserRigData;
-  donutUsdPrice: number;
 }) {
   const { logoUrl } = useTokenMetadata(rig.rigUri);
 
@@ -123,8 +105,9 @@ function HoldingRow({
   const userSpent = Number(formatEther(rig.userSpent));
   const userEarned = Number(formatEther(rig.userEarned));
   const price = Number(formatEther(rig.price));
-  const estimatedValueUsd = userMined * price * donutUsdPrice;
-  const netDonut = userEarned - userSpent;
+  // Price is in USDC (~$1), so value = mined * price directly
+  const estimatedValueUsd = userMined * price;
+  const netUsdc = userEarned - userSpent;
 
   return (
     <Link href={`/rig/${rig.address}`} className="block">
@@ -146,11 +129,11 @@ function HoldingRow({
           </div>
           <div
             className={`text-[12px] tabular-nums ${
-              netDonut >= 0 ? "text-zinc-300" : "text-zinc-500"
+              netUsdc >= 0 ? "text-zinc-300" : "text-zinc-500"
             }`}
           >
-            {netDonut >= 0 ? "+" : ""}
-            {formatNumber(netDonut)} DONUT
+            {netUsdc >= 0 ? "+" : ""}
+            {formatNumber(netUsdc)} USDC
           </div>
         </div>
       </div>
@@ -164,18 +147,17 @@ function HoldingRow({
 
 function LaunchedRow({
   rig,
-  donutUsdPrice,
 }: {
   rig: UserLaunchedRig;
-  donutUsdPrice: number;
 }) {
   const { logoUrl } = useTokenMetadata(rig.rigUri);
 
   const totalMinted = Number(formatEther(rig.totalMinted));
   const unitPrice = Number(formatEther(rig.unitPrice));
   const revenue = Number(formatEther(rig.revenue));
-  const marketCapUsd = totalMinted * unitPrice * donutUsdPrice;
-  const revenueUsd = revenue * donutUsdPrice;
+  // Price is in USDC (~$1), so value = minted * price directly
+  const marketCapUsd = totalMinted * unitPrice;
+  const revenueUsd = revenue; // revenue is already in USDC
 
   return (
     <Link href={`/rig/${rig.address}`} className="block">
@@ -196,7 +178,7 @@ function LaunchedRow({
             {marketCapUsd > 0 ? formatUsd(marketCapUsd) : "--"}
           </div>
           <div className="text-[12px] text-muted-foreground tabular-nums">
-            {revenue > 0 ? `${formatNumber(revenue)} DONUT earned` : "No revenue yet"}
+            {revenue > 0 ? `$${formatNumber(revenueUsd)} earned` : "No revenue yet"}
           </div>
         </div>
       </div>
@@ -333,17 +315,8 @@ export default function ProfilePage() {
   // Data hooks
   const { user, address } = useFarcaster();
   const { minedRigs, launchedRigs, isLoading } = useUserProfile(address);
-  const { donutUsdPrice } = usePrices();
 
   // Token balance reads
-  const { data: donutBalance, refetch: refetchDonut } = useReadContract({
-    address: CONTRACT_ADDRESSES.donut as `0x${string}`,
-    abi: ERC20_ABI,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    query: { enabled: !!address },
-  });
-
   const { data: usdcBalance, refetch: refetchUsdc } = useReadContract({
     address: CONTRACT_ADDRESSES.usdc as `0x${string}`,
     abi: ERC20_ABI,
@@ -354,33 +327,16 @@ export default function ProfilePage() {
 
   // Mint transactions
   const {
-    writeContract: mintDonut,
-    data: donutTxHash,
-    isPending: isDonutMintPending,
-    reset: resetDonutMint,
-  } = useWriteContract();
-
-  const {
     writeContract: mintUsdc,
     data: usdcTxHash,
     isPending: isUsdcMintPending,
     reset: resetUsdcMint,
   } = useWriteContract();
 
-  const { isLoading: isDonutTxConfirming, isSuccess: isDonutTxSuccess } =
-    useWaitForTransactionReceipt({ hash: donutTxHash });
-
   const { isLoading: isUsdcTxConfirming, isSuccess: isUsdcTxSuccess } =
     useWaitForTransactionReceipt({ hash: usdcTxHash });
 
   // Refetch balances after tx confirmation
-  useEffect(() => {
-    if (isDonutTxSuccess) {
-      refetchDonut();
-      resetDonutMint();
-    }
-  }, [isDonutTxSuccess, refetchDonut, resetDonutMint]);
-
   useEffect(() => {
     if (isUsdcTxSuccess) {
       refetchUsdc();
@@ -399,26 +355,21 @@ export default function ProfilePage() {
   }
 
   // Format token balances + USD values
-  const donutNum = donutBalance != null ? Number(formatEther(donutBalance as bigint)) : 0;
   const usdcNum = usdcBalance != null ? Number(formatUnits(usdcBalance as bigint, QUOTE_TOKEN_DECIMALS)) : 0;
-  const formattedDonut = donutBalance != null
-    ? donutNum.toLocaleString(undefined, { maximumFractionDigits: 2 })
-    : "--";
   const formattedUsdc = usdcBalance != null
     ? usdcNum.toLocaleString(undefined, { maximumFractionDigits: 2 })
     : "--";
-  const donutValueUsd = donutNum * donutUsdPrice;
   const usdcValueUsd = usdcNum; // USDC is 1:1 USD
 
   // Calculate total portfolio value (wallet balances + mined token holdings)
+  // Price is in USDC (~$1), so value = mined * price directly
   const minedValueUsd = minedRigs.reduce((sum, rig) => {
     const mined = Number(formatEther(rig.userMined));
     const price = Number(formatEther(rig.price));
-    return sum + mined * price * donutUsdPrice;
+    return sum + mined * price;
   }, 0);
-  const totalValueUsd = donutValueUsd + usdcValueUsd + minedValueUsd;
+  const totalValueUsd = usdcValueUsd + minedValueUsd;
 
-  const isDonutMinting = isDonutMintPending || isDonutTxConfirming;
   const isUsdcMinting = isUsdcMintPending || isUsdcTxConfirming;
 
   // Display values
@@ -516,39 +467,6 @@ export default function ProfilePage() {
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-4">
           {activeTab === "holdings" && (
             <div className="py-1">
-              {/* DONUT balance row */}
-              <div className="flex items-center justify-between py-3 -mx-4 px-4 rounded-lg">
-                <div className="flex items-center gap-3 min-w-0">
-                  <DonutIcon size={40} />
-                  <div className="min-w-0">
-                    <div className="text-[15px] font-medium truncate">DONUT</div>
-                    <div className="text-[12px] text-muted-foreground">DonutDAO</div>
-                  </div>
-                </div>
-                <button
-                  onClick={() =>
-                    mintDonut({
-                      address: CONTRACT_ADDRESSES.donut as `0x${string}`,
-                      abi: MOCK_MINT_ABI,
-                      functionName: "mint",
-                      args: [address!, parseEther("1000")],
-                    })
-                  }
-                  disabled={isDonutMinting}
-                  className="text-[12px] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 shrink-0"
-                >
-                  {isDonutMinting ? "Minting..." : "Mint 1000"}
-                </button>
-                <div className="text-right shrink-0 ml-3">
-                  <div className="text-[15px] font-semibold tabular-nums">
-                    {formatUsd(donutValueUsd)}
-                  </div>
-                  <div className="text-[12px] text-muted-foreground tabular-nums">
-                    {formattedDonut} DONUT
-                  </div>
-                </div>
-              </div>
-
               {/* USDC balance row */}
               <div className="flex items-center justify-between py-3 -mx-4 px-4 rounded-lg">
                 <div className="flex items-center gap-3 min-w-0">
@@ -587,7 +505,6 @@ export default function ProfilePage() {
                 <HoldingRow
                   key={rig.address}
                   rig={rig}
-                  donutUsdPrice={donutUsdPrice}
                 />
               ))}
 
@@ -632,8 +549,7 @@ export default function ProfilePage() {
                     <LaunchedRow
                       key={rig.address}
                       rig={rig}
-                      donutUsdPrice={donutUsdPrice}
-                    />
+                        />
                   ))}
                 </div>
               )}

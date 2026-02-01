@@ -7,7 +7,7 @@ const divDec = (amount, decimals = 18) => amount / 10 ** decimals;
 const AddressZero = "0x0000000000000000000000000000000000000000";
 
 describe("Multicall-Only Tests (Frontend Simulation)", function () {
-    let weth, donut, registry, core, multicall;
+    let weth, usdc, registry, core, multicall;
     let rigFactory, auctionFactory, unitFactory;
     let uniswapFactory, uniswapRouter;
     let owner, protocol, team, user0, user1, user2, user3;
@@ -46,7 +46,8 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
         // Deploy base tokens
         const MockWETH = await ethers.getContractFactory("MockWETH");
         weth = await MockWETH.deploy();
-        donut = await MockWETH.deploy();
+        const MockUSDC = await ethers.getContractFactory("MockUSDC");
+        usdc = await MockUSDC.deploy();
 
         // Deploy Uniswap mocks
         const MockFactory = await ethers.getContractFactory("MockUniswapV2Factory");
@@ -77,7 +78,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
         const Core = await ethers.getContractFactory("MineCore");
         core = await Core.deploy(
             registry.address,
-            donut.address,
+            usdc.address,
             uniswapFactory.address,
             uniswapRouter.address,
             unitFactory.address,
@@ -85,7 +86,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
             auctionFactory.address,
             entropy.address,
             protocol.address,
-            convert("100", 18)
+            convert("100", 6)
         );
 
         // Approve MineCore as factory in Registry
@@ -93,11 +94,11 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
 
         // Deploy Multicall
         const Multicall = await ethers.getContractFactory("MineMulticall");
-        multicall = await Multicall.deploy(core.address, donut.address);
+        multicall = await Multicall.deploy(core.address, usdc.address);
 
-        // Give users DONUT tokens (more for multiple launches)
+        // Give users USDC tokens (more for multiple launches)
         for (const user of [user0, user1, user2, user3]) {
-            await donut.connect(user).deposit({ value: convert("5000", 18) });
+            await usdc.mint(user.address, convert("5000", 6));
         }
 
         // Give users WETH/USDC for mining
@@ -117,7 +118,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 tokenName: "Multicall Unit",
                 tokenSymbol: "MUNIT",
                 uri: "",
-                donutAmount: convert("500", 18),
+                usdcAmount: convert("500", 6),
                 unitAmount: convert("1000000", 18),
                 initialUps: convert("4", 18),
                 tailUps: convert("0.01", 18),
@@ -133,8 +134,8 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 auctionMinInitPrice: convert("0.001", 18),
             };
 
-            // Approve DONUT to Multicall
-            await donut.connect(user0).approve(multicall.address, launchParams.donutAmount);
+            // Approve USDC to Multicall
+            await usdc.connect(user0).approve(multicall.address, launchParams.usdcAmount);
 
             // Launch via Multicall
             const tx = await multicall.connect(user0).launch(launchParams);
@@ -164,7 +165,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 tokenName: "Override Test",
                 tokenSymbol: "OVRD",
                 uri: "",
-                donutAmount: convert("200", 18),
+                usdcAmount: convert("200", 6),
                 unitAmount: convert("1000000", 18),
                 initialUps: convert("1", 18),
                 tailUps: convert("0.01", 18),
@@ -180,7 +181,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 auctionMinInitPrice: convert("0.001", 18),
             };
 
-            await donut.connect(user1).approve(multicall.address, launchParams.donutAmount);
+            await usdc.connect(user1).approve(multicall.address, launchParams.usdcAmount);
             const tx = await multicall.connect(user1).launch(launchParams);
             const receipt = await tx.wait();
 
@@ -192,14 +193,14 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
             expect(await core.rigToLauncher(launchEvent.args.rig)).to.equal(user1.address);
         });
 
-        it("Reverts if DONUT not approved", async function () {
+        it("Reverts if USDC not approved", async function () {
             const launchParams = {
                 launcher: AddressZero,
                 quoteToken: weth.address,
                 tokenName: "No Approve",
                 tokenSymbol: "NOAP",
                 uri: "",
-                donutAmount: convert("200", 18),
+                usdcAmount: convert("200", 6),
                 unitAmount: convert("1000000", 18),
                 initialUps: convert("1", 18),
                 tailUps: convert("0.01", 18),
@@ -221,14 +222,14 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
             ).to.be.reverted;
         });
 
-        it("Reverts with insufficient DONUT balance", async function () {
+        it("Reverts with insufficient USDC balance", async function () {
             const launchParams = {
                 launcher: AddressZero,
                 quoteToken: weth.address,
                 tokenName: "No Balance",
                 tokenSymbol: "NOBAL",
                 uri: "",
-                donutAmount: convert("10000", 18), // More than user has
+                usdcAmount: convert("10000", 6), // More than user has
                 initialUps: convert("1", 18),
                 tailUps: convert("0.01", 18),
                 halvingAmount: convert("10000000", 18),
@@ -243,7 +244,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 auctionMinInitPrice: convert("0.001", 18),
             };
 
-            await donut.connect(user2).approve(multicall.address, launchParams.donutAmount);
+            await usdc.connect(user2).approve(multicall.address, launchParams.usdcAmount);
             await expect(
                 multicall.connect(user2).launch(launchParams)
             ).to.be.reverted;
@@ -264,7 +265,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 tokenName: "Mining Test Unit",
                 tokenSymbol: "MTEST",
                 uri: "",
-                donutAmount: convert("300", 18),
+                usdcAmount: convert("300", 6),
                 unitAmount: convert("1000000", 18),
                 initialUps: convert("10", 18),
                 tailUps: convert("0.1", 18),
@@ -280,7 +281,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 auctionMinInitPrice: convert("0.01", 18),
             };
 
-            await donut.connect(user0).approve(multicall.address, launchParams.donutAmount);
+            await usdc.connect(user0).approve(multicall.address, launchParams.usdcAmount);
             const tx = await multicall.connect(user0).launch(launchParams);
             const receipt = await tx.wait();
 
@@ -508,7 +509,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 tokenName: "State Test Unit",
                 tokenSymbol: "STATE",
                 uri: "",
-                donutAmount: convert("400", 18),
+                usdcAmount: convert("400", 6),
                 unitAmount: convert("1000000", 18),
                 initialUps: convert("5", 18),
                 tailUps: convert("0.05", 18),
@@ -524,7 +525,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 auctionMinInitPrice: convert("0.005", 18),
             };
 
-            await donut.connect(user0).approve(multicall.address, launchParams.donutAmount);
+            await usdc.connect(user0).approve(multicall.address, launchParams.usdcAmount);
             const tx = await multicall.connect(user0).launch(launchParams);
             const receipt = await tx.wait();
 
@@ -551,7 +552,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
             const state = await multicall.getRig(rig.address, 0, user1.address);
 
             expect(state.accountQuoteBalance).to.equal(await weth.balanceOf(user1.address));
-            expect(state.accountDonutBalance).to.equal(await donut.balanceOf(user1.address));
+            expect(state.accountUsdcBalance).to.equal(await usdc.balanceOf(user1.address));
             expect(state.accountUnitBalance).to.equal(await unit.balanceOf(user1.address));
         });
 
@@ -559,7 +560,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
             const state = await multicall.getRig(rig.address, 0, AddressZero);
 
             expect(state.accountQuoteBalance).to.equal(0);
-            expect(state.accountDonutBalance).to.equal(0);
+            expect(state.accountUsdcBalance).to.equal(0);
             expect(state.accountUnitBalance).to.equal(0);
             expect(state.accountClaimable).to.equal(0);
         });
@@ -686,12 +687,12 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
         it("getRig unitPrice calculated from LP reserves", async function () {
             const state = await multicall.getRig(rig.address, 0, user1.address);
 
-            // unitPrice = donutInLP * 1e18 / unitInLP
-            const donutInLP = await donut.balanceOf(lpToken.address);
+            // unitPrice = usdcInLP * 1e30 / unitInLP
+            const usdcInLP = await usdc.balanceOf(lpToken.address);
             const unitInLP = await unit.balanceOf(lpToken.address);
 
             if (unitInLP.gt(0)) {
-                const expectedPrice = donutInLP.mul(convert("1", 18)).div(unitInLP);
+                const expectedPrice = usdcInLP.mul(convert("1", 30)).div(unitInLP);
                 expect(state.unitPrice).to.be.closeTo(expectedPrice, expectedPrice.div(100));
             }
         });
@@ -699,12 +700,12 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
         it("getAuction paymentTokenPrice calculated correctly", async function () {
             const state = await multicall.getAuction(rig.address, user1.address);
 
-            // paymentTokenPrice = donutInLP * 2e18 / lpTotalSupply
-            const donutInLP = await donut.balanceOf(lpToken.address);
+            // paymentTokenPrice = usdcInLP * 2e30 / lpTotalSupply
+            const usdcInLP = await usdc.balanceOf(lpToken.address);
             const lpTotalSupply = await lpToken.totalSupply();
 
             if (lpTotalSupply.gt(0)) {
-                const expectedPrice = donutInLP.mul(2).mul(convert("1", 18)).div(lpTotalSupply);
+                const expectedPrice = usdcInLP.mul(2).mul(convert("1", 30)).div(lpTotalSupply);
                 expect(state.paymentTokenPrice).to.be.closeTo(expectedPrice, expectedPrice.div(100));
             }
         });
@@ -724,7 +725,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 tokenName: "Buy Test Unit",
                 tokenSymbol: "BUYTEST",
                 uri: "",
-                donutAmount: convert("300", 18),
+                usdcAmount: convert("300", 6),
                 unitAmount: convert("1000000", 18),
                 initialUps: convert("5", 18),
                 tailUps: convert("0.05", 18),
@@ -740,7 +741,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 auctionMinInitPrice: convert("0.01", 18),
             };
 
-            await donut.connect(user0).approve(multicall.address, launchParams.donutAmount);
+            await usdc.connect(user0).approve(multicall.address, launchParams.usdcAmount);
             const tx = await multicall.connect(user0).launch(launchParams);
             const receipt = await tx.wait();
 
@@ -866,7 +867,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 tokenName: "Lifecycle Test",
                 tokenSymbol: "LIFE",
                 uri: "",
-                donutAmount: convert("500", 18),
+                usdcAmount: convert("500", 6),
                 unitAmount: convert("1000000", 18),
                 initialUps: convert("100", 18),
                 tailUps: convert("1", 18),
@@ -882,7 +883,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 auctionMinInitPrice: convert("0.001", 18),
             };
 
-            await donut.connect(user0).approve(multicall.address, launchParams.donutAmount);
+            await usdc.connect(user0).approve(multicall.address, launchParams.usdcAmount);
             const launchTx = await multicall.connect(user0).launch(launchParams);
             const launchReceipt = await launchTx.wait();
             const launchEvent = await parseLaunchEvent(launchReceipt);
@@ -967,7 +968,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 tokenName: "Multi User Test",
                 tokenSymbol: "MULTI",
                 uri: "",
-                donutAmount: convert("300", 18),
+                usdcAmount: convert("300", 6),
                 unitAmount: convert("1000000", 18),
                 initialUps: convert("50", 18),
                 tailUps: convert("0.5", 18),
@@ -983,7 +984,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 auctionMinInitPrice: convert("0.001", 18),
             };
 
-            await donut.connect(user0).approve(multicall.address, launchParams.donutAmount);
+            await usdc.connect(user0).approve(multicall.address, launchParams.usdcAmount);
             const tx = await multicall.connect(user0).launch(launchParams);
             const receipt = await tx.wait();
             const launchEvent = await parseLaunchEvent(receipt);
@@ -1033,7 +1034,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 tokenName: "Frontend Sim",
                 tokenSymbol: "FRONT",
                 uri: "",
-                donutAmount: convert("200", 18),
+                usdcAmount: convert("200", 6),
                 unitAmount: convert("1000000", 18),
                 initialUps: convert("10", 18),
                 tailUps: convert("0.1", 18),
@@ -1049,7 +1050,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 auctionMinInitPrice: convert("0.001", 18),
             };
 
-            await donut.connect(user1).approve(multicall.address, launchParams.donutAmount);
+            await usdc.connect(user1).approve(multicall.address, launchParams.usdcAmount);
             const tx = await multicall.connect(user1).launch(launchParams);
             const receipt = await tx.wait();
             const launchEvent = await parseLaunchEvent(receipt);
@@ -1106,7 +1107,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 tokenName: "Edge Case Test",
                 tokenSymbol: "EDGE",
                 uri: "",
-                donutAmount: convert("200", 18),
+                usdcAmount: convert("200", 6),
                 unitAmount: convert("1000000", 18),
                 initialUps: convert("5", 18),
                 tailUps: convert("0.05", 18),
@@ -1122,7 +1123,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 auctionMinInitPrice: convert("0.001", 18),
             };
 
-            await donut.connect(user0).approve(multicall.address, launchParams.donutAmount);
+            await usdc.connect(user0).approve(multicall.address, launchParams.usdcAmount);
             const tx = await multicall.connect(user0).launch(launchParams);
             const receipt = await tx.wait();
             const launchEvent = await parseLaunchEvent(receipt);
@@ -1230,7 +1231,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 tokenName: "Gas Test",
                 tokenSymbol: "GAS",
                 uri: "",
-                donutAmount: convert("200", 18),
+                usdcAmount: convert("200", 6),
                 unitAmount: convert("1000000", 18),
                 initialUps: convert("1", 18),
                 tailUps: convert("0.01", 18),
@@ -1246,7 +1247,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
                 auctionMinInitPrice: convert("0.001", 18),
             };
 
-            await donut.connect(user3).approve(multicall.address, launchParams.donutAmount);
+            await usdc.connect(user3).approve(multicall.address, launchParams.usdcAmount);
             const tx = await multicall.connect(user3).launch(launchParams);
             const receipt = await tx.wait();
 

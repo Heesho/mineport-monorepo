@@ -38,7 +38,7 @@ export function useAuctionState(
 export type AuctionListItem = {
   rigAddress: `0x${string}`;
   auctionState: AuctionState;
-  profitLoss: bigint; // Quote value - LP cost in DONUT equivalent
+  profitLoss: bigint; // Quote value - LP cost in USDC equivalent
   isProfitable: boolean;
 };
 

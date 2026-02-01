@@ -3,7 +3,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_donutToken",
+        "name": "_usdcToken",
         "type": "address"
       },
       {
@@ -43,7 +43,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "_minDonutForLaunch",
+        "name": "_minUsdcForLaunch",
         "type": "uint256"
       }
     ],
@@ -82,7 +82,7 @@
   },
   {
     "inputs": [],
-    "name": "Core__InsufficientDonut",
+    "name": "Core__InsufficientUsdc",
     "type": "error"
   },
   {
@@ -195,7 +195,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "donutAmount",
+        "name": "usdcAmount",
         "type": "uint256"
       },
       {
@@ -274,11 +274,11 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "minDonutForLaunch",
+        "name": "minUsdcForLaunch",
         "type": "uint256"
       }
     ],
-    "name": "Core__MinDonutForLaunchSet",
+    "name": "Core__MinUsdcForLaunchSet",
     "type": "event"
   },
   {
@@ -555,7 +555,7 @@
   },
   {
     "inputs": [],
-    "name": "donutToken",
+    "name": "usdcToken",
     "outputs": [
       {
         "internalType": "address",
@@ -629,7 +629,7 @@
           },
           {
             "internalType": "uint256",
-            "name": "donutAmount",
+            "name": "usdcAmount",
             "type": "uint256"
           },
           {
@@ -721,7 +721,7 @@
   },
   {
     "inputs": [],
-    "name": "minDonutForLaunch",
+    "name": "minUsdcForLaunch",
     "outputs": [
       {
         "internalType": "uint256",
@@ -877,11 +877,11 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_minDonutForLaunch",
+        "name": "_minUsdcForLaunch",
         "type": "uint256"
       }
     ],
-    "name": "setMinDonutForLaunch",
+    "name": "setMinUsdcForLaunch",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

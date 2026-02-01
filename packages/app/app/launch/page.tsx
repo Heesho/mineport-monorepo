@@ -4,17 +4,19 @@ import { useState } from "react";
 import { Upload, ChevronDown, ChevronUp, ChevronLeft, Pickaxe, Dices, Heart, Plus, Minus } from "lucide-react";
 import { useFarcaster } from "@/hooks/useFarcaster";
 
-// DONUT token icon - pink circle with black center (donut shape)
-function DonutIcon({ size = 20 }: { size?: number }) {
+// USDC token icon - blue circle with $ sign
+function UsdcIcon({ size = 20 }: { size?: number }) {
   return (
     <div
-      className="rounded-full bg-pink-500 flex items-center justify-center flex-shrink-0"
+      className="rounded-full bg-[#2775CA] flex items-center justify-center flex-shrink-0"
       style={{ width: size, height: size }}
     >
-      <div
-        className="rounded-full bg-black"
-        style={{ width: size * 0.4, height: size * 0.4 }}
-      />
+      <span
+        className="font-bold text-white"
+        style={{ fontSize: size * 0.5 }}
+      >
+        $
+      </span>
     </div>
   );
 }
@@ -49,7 +51,7 @@ const BOUNDS = {
 // Default values per rig type (all based on 21M total supply)
 const DEFAULTS = {
   mine: {
-    donutAmount: 1000,
+    usdcAmount: 1000,
     unitAmount: 1000000,
     initialUps: 10, // 10 tokens/sec
     tailUps: 0.1, // 0.1 token/sec floor
@@ -61,7 +63,7 @@ const DEFAULTS = {
     upsMultiplierDuration: 86400, // 24h
   },
   spin: {
-    donutAmount: 1000,
+    usdcAmount: 1000,
     unitAmount: 1000000,
     initialUps: 10, // 10 tokens/sec
     tailUps: 0.1, // 0.1 token/sec floor
@@ -72,7 +74,7 @@ const DEFAULTS = {
     odds: [10] as number[], // 0.1% single entry
   },
   fund: {
-    donutAmount: 1000,
+    usdcAmount: 1000,
     unitAmount: 1000000,
     initialUps: 50000, // 50,000 tokens/day (expressed as daily)
     tailUps: 5000, // 5,000 tokens/day floor
@@ -305,19 +307,19 @@ function SimpleModeSummary({ rigType }: { rigType: "mine" | "spin" | "fund" }) {
   const summaries = {
     mine: [
       "21M total supply",
-      "1,000 DONUT liquidity",
+      "1,000 USDC liquidity",
       "Halving every 1M tokens mined",
       "1 hour epochs, 2x price multiplier",
     ],
     spin: [
       "21M total supply",
-      "1,000 DONUT liquidity",
+      "1,000 USDC liquidity",
       "Halving every 30 days",
       "95% of spins go to prize pool",
     ],
     fund: [
       "21M total supply",
-      "1,000 DONUT liquidity",
+      "1,000 USDC liquidity",
       "Configurable halving period (7-365 days)",
       "50% of funds go to recipient",
     ],
@@ -400,7 +402,7 @@ export default function LaunchPage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Liquidity
-  const [donutAmount, setDonutAmount] = useState(DEFAULTS.mine.donutAmount);
+  const [usdcAmount, setUsdcAmount] = useState(DEFAULTS.mine.usdcAmount);
   const [unitAmount, setUnitAmount] = useState(DEFAULTS.mine.unitAmount);
 
   // Emission
@@ -438,7 +440,7 @@ export default function LaunchPage() {
     // Reset to defaults for selected rig type
     if (type === "mine") {
       const defaults = DEFAULTS.mine;
-      setDonutAmount(defaults.donutAmount);
+      setUsdcAmount(defaults.usdcAmount);
       setUnitAmount(defaults.unitAmount);
       setInitialUps(defaults.initialUps);
       setTailUps(defaults.tailUps);
@@ -450,7 +452,7 @@ export default function LaunchPage() {
       setUpsMultiplierDuration(defaults.upsMultiplierDuration);
     } else if (type === "spin") {
       const defaults = DEFAULTS.spin;
-      setDonutAmount(defaults.donutAmount);
+      setUsdcAmount(defaults.usdcAmount);
       setUnitAmount(defaults.unitAmount);
       setInitialUps(defaults.initialUps);
       setTailUps(defaults.tailUps);
@@ -461,7 +463,7 @@ export default function LaunchPage() {
       setOdds([...defaults.odds]);
     } else if (type === "fund") {
       const defaults = DEFAULTS.fund;
-      setDonutAmount(defaults.donutAmount);
+      setUsdcAmount(defaults.usdcAmount);
       setUnitAmount(defaults.unitAmount);
       setInitialUps(defaults.initialUps);
       setTailUps(defaults.tailUps);
@@ -704,14 +706,14 @@ export default function LaunchPage() {
                   <div>
                     <h3 className="text-[13px] font-semibold text-foreground mb-1">Liquidity</h3>
                     <Slider
-                      label="DONUT for LP"
-                      value={donutAmount}
-                      onChange={setDonutAmount}
+                      label="USDC for LP"
+                      value={usdcAmount}
+                      onChange={setUsdcAmount}
                       min={1000}
                       max={100000}
                       step={1000}
                       formatValue={formatNumber}
-                      description="DONUT provided for initial liquidity"
+                      description="USDC provided for initial liquidity"
                     />
                     <Slider
                       label="Initial Token Supply"
@@ -725,10 +727,10 @@ export default function LaunchPage() {
                     />
                     {/* Initial LP Summary */}
                     {(() => {
-                      const donutPriceUsd = 0.001; // TODO: Fetch real DONUT price
-                      const initialPriceDonut = donutAmount / unitAmount;
-                      const initialPriceUsd = initialPriceDonut * donutPriceUsd;
-                      const liquidityUsd = donutAmount * donutPriceUsd * 2; // Both sides of LP
+                      // USDC = $1, so price in USD = usdcAmount / unitAmount
+                      const initialPriceUsdc = usdcAmount / unitAmount;
+                      const initialPriceUsd = initialPriceUsdc; // USDC = $1
+                      const liquidityUsd = usdcAmount * 2; // Both sides of LP (USDC = $1)
                       const marketCapUsd = unitAmount * initialPriceUsd;
 
                       const formatUsd = (n: number) => {
@@ -745,9 +747,9 @@ export default function LaunchPage() {
                             <span className="text-[12px] text-zinc-500">Initial Price</span>
                             <div className="text-right">
                               <div className="flex items-center justify-end gap-1">
-                                <DonutIcon size={12} />
+                                <UsdcIcon size={12} />
                                 <span className="text-[12px] font-medium tabular-nums">
-                                  {initialPriceDonut.toFixed(6)}
+                                  {initialPriceUsdc.toFixed(6)}
                                 </span>
                               </div>
                               <span className="text-[11px] text-zinc-500">{formatUsd(initialPriceUsd)}</span>
@@ -757,9 +759,9 @@ export default function LaunchPage() {
                             <span className="text-[12px] text-zinc-500">Initial Liquidity</span>
                             <div className="text-right">
                               <div className="flex items-center justify-end gap-1">
-                                <DonutIcon size={12} />
+                                <UsdcIcon size={12} />
                                 <span className="text-[12px] font-medium tabular-nums">
-                                  {formatNumber(donutAmount)} + {formatNumber(unitAmount)} tokens
+                                  {formatNumber(usdcAmount)} + {formatNumber(unitAmount)} tokens
                                 </span>
                               </div>
                               <span className="text-[11px] text-zinc-500">{formatUsd(liquidityUsd)} TVL</span>
@@ -1151,14 +1153,14 @@ export default function LaunchPage() {
                 <div>
                   <div className="text-muted-foreground text-[11px]">Amount</div>
                   <div className="font-semibold text-[15px] tabular-nums flex items-center gap-1">
-                    <DonutIcon size={16} />
-                    {formatNumber(donutAmount)}
+                    <UsdcIcon size={16} />
+                    {formatNumber(usdcAmount)}
                   </div>
                 </div>
                 <div>
                   <div className="text-muted-foreground text-[11px]">Balance</div>
                   <div className="font-semibold text-[15px] tabular-nums flex items-center gap-1">
-                    <DonutIcon size={16} />
+                    <UsdcIcon size={16} />
                     {formatNumber(10000)} {/* TODO: Replace with actual user balance */}
                   </div>
                 </div>

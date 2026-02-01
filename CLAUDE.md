@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Farplace is a token launchpad on Base that distributes tokens through gamified mechanisms instead of traditional token sales. Anyone can launch a token by pairing it with DONUT, and initial liquidity is permanently locked (LP tokens burned to dead address). The platform runs as a Farcaster mini-app.
+Farplace is a token launchpad on Base that distributes tokens through gamified mechanisms instead of traditional token sales. Anyone can launch a token by pairing it with USDC, and initial liquidity is permanently locked (LP tokens burned to dead address). The platform runs as a Farcaster mini-app.
 
 Each token launch creates a **Rig** (the distribution mechanism), a **Unit** (the ERC20 token), and an **Auction** (for treasury sales). There are three rig types, each with a different distribution model.
 
@@ -21,7 +21,7 @@ Optionally, Pyth Entropy VRF can assign a random UPS multiplier (1x-10x) to a sl
 **Launch parameters (immutable):**
 - `quoteToken` -- ERC20 used for slot payments (e.g. USDC)
 - `tokenName`, `tokenSymbol` -- Unit token identity
-- `donutAmount` -- DONUT provided for initial LP
+- `usdcAmount` -- USDC provided for initial LP
 - `unitAmount` -- Unit tokens minted for initial LP
 - `initialUps` -- starting units per second (max 1e24)
 - `tailUps` -- minimum UPS floor after halvings
@@ -55,7 +55,7 @@ Emissions are time-based rather than supply-based: UPS halves every `halvingPeri
 **Launch parameters (immutable):**
 - `quoteToken` -- ERC20 used for spin payments
 - `tokenName`, `tokenSymbol` -- Unit token identity
-- `donutAmount` -- DONUT provided for initial LP
+- `usdcAmount` -- USDC provided for initial LP
 - `unitAmount` -- Unit tokens minted for initial LP
 - `initialUps` -- starting units per second
 - `tailUps` -- minimum UPS floor after halvings
@@ -87,7 +87,7 @@ Claims are per-day: you must call `claim(account, day)` for each day individuall
 - `quoteToken` -- ERC20 accepted for donations
 - `recipient` -- address receiving 50% of all donations (required, non-zero)
 - `tokenName`, `tokenSymbol` -- Unit token identity
-- `donutAmount` -- DONUT provided for initial LP
+- `usdcAmount` -- USDC provided for initial LP
 - `unitAmount` -- Unit tokens minted for initial LP
 - `initialEmission` -- Unit tokens emitted per day (1e18 - 1e30)
 - `minEmission` -- minimum daily emission floor
@@ -175,9 +175,9 @@ cd packages/subgraph && yarn deploy
 
 ## Development Notes
 
-- Payments are in USDC (configurable quote token per rig), tokens are paired with DONUT for LP
+- Payments are in USDC (configurable quote token per rig), tokens are paired with USDC for LP
 - Initial LP tokens are burned (sent to dead address) - liquidity cannot be pulled
-- Launchers must hold a minimum amount of DONUT to create a rig
+- Launchers must provide a minimum amount of USDC to create a rig
 - All rig types use Dutch auction-style pricing that decays over each epoch
 - Emission rates halve on a schedule until hitting a configurable floor
 - Fee splits go to: treasury, team (optional), and protocol

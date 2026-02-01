@@ -22,7 +22,6 @@ export const DEFAULT_CHAIN_ID = base.id;
 
 // Default price fallbacks (USD)
 export const DEFAULT_ETH_PRICE_USD = 3500;
-export const DEFAULT_DONUT_PRICE_USD = 0.001;
 
 // IPFS/Pinata
 export const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY || "https://glazecorp.mypinata.cloud";

@@ -29,7 +29,7 @@ contract SpinMulticall {
     /*----------  IMMUTABLES  -------------------------------------------*/
 
     address public immutable core;
-    address public immutable donut;
+    address public immutable usdc;
 
     /*----------  STRUCTS  ----------------------------------------------*/
 
@@ -51,7 +51,7 @@ contract SpinMulticall {
         string rigUri;
         // User balances
         uint256 accountQuoteBalance;
-        uint256 accountDonutBalance;
+        uint256 accountUsdcBalance;
         uint256 accountUnitBalance;
     }
 
@@ -75,12 +75,12 @@ contract SpinMulticall {
     /**
      * @notice Deploy the Multicall helper contract.
      * @param _core SpinCore contract address
-     * @param _donut DONUT token address
+     * @param _usdc USDC token address
      */
-    constructor(address _core, address _donut) {
-        if (_core == address(0) || _donut == address(0)) revert SpinMulticall__ZeroAddress();
+    constructor(address _core, address _usdc) {
+        if (_core == address(0) || _usdc == address(0)) revert SpinMulticall__ZeroAddress();
         core = _core;
-        donut = _donut;
+        usdc = _usdc;
     }
 
     /*----------  EXTERNAL FUNCTIONS  -----------------------------------*/
@@ -149,21 +149,21 @@ contract SpinMulticall {
 
     /**
      * @notice Launch a new rig via Core.
-     * @dev Transfers DONUT from caller, approves Core, and calls launch with caller as launcher.
+     * @dev Transfers USDC from caller, approves Core, and calls launch with caller as launcher.
      * @param params Launch parameters (launcher field is overwritten with msg.sender)
      * @return unit Address of deployed Unit token
      * @return rig Address of deployed Rig contract
      * @return auction Address of deployed Auction contract
-     * @return lpToken Address of Unit/DONUT LP token
+     * @return lpToken Address of Unit/USDC LP token
      */
     function launch(ISpinCore.LaunchParams calldata params)
         external
         returns (address unit, address rig, address auction, address lpToken)
     {
-        // Transfer DONUT from user
-        IERC20(donut).safeTransferFrom(msg.sender, address(this), params.donutAmount);
-        IERC20(donut).safeApprove(core, 0);
-        IERC20(donut).safeApprove(core, params.donutAmount);
+        // Transfer USDC from user
+        IERC20(usdc).safeTransferFrom(msg.sender, address(this), params.usdcAmount);
+        IERC20(usdc).safeApprove(core, 0);
+        IERC20(usdc).safeApprove(core, params.usdcAmount);
 
         // Build params with msg.sender as launcher
         ISpinCore.LaunchParams memory launchParams = ISpinCore.LaunchParams({
@@ -171,7 +171,7 @@ contract SpinMulticall {
             quoteToken: params.quoteToken,
             tokenName: params.tokenName,
             tokenSymbol: params.tokenSymbol,
-            donutAmount: params.donutAmount,
+            usdcAmount: params.usdcAmount,
             unitAmount: params.unitAmount,
             initialUps: params.initialUps,
             tailUps: params.tailUps,
@@ -210,12 +210,13 @@ contract SpinMulticall {
         address unitToken = ISpinRig(rig).unit();
         address auction = ISpinCore(core).rigToAuction(rig);
 
-        // Calculate Unit price in DONUT from LP reserves
+        // Calculate Unit price in USDC from LP reserves
+        // USDC has 6 decimals, Unit has 18. Multiply by 1e30 (= 1e12 normalization * 1e18 precision)
         if (auction != address(0)) {
             address lpToken = IAuction(auction).paymentToken();
-            uint256 donutInLP = IERC20(donut).balanceOf(lpToken);
+            uint256 usdcInLP = IERC20(usdc).balanceOf(lpToken);
             uint256 unitInLP = IERC20(unitToken).balanceOf(lpToken);
-            state.unitPrice = unitInLP == 0 ? 0 : donutInLP * 1e18 / unitInLP;
+            state.unitPrice = unitInLP == 0 ? 0 : usdcInLP * 1e30 / unitInLP;
         }
 
         // Rig metadata
@@ -224,7 +225,7 @@ contract SpinMulticall {
         // User balances
         address quoteToken = ISpinRig(rig).quote();
         state.accountQuoteBalance = account == address(0) ? 0 : IERC20(quoteToken).balanceOf(account);
-        state.accountDonutBalance = account == address(0) ? 0 : IERC20(donut).balanceOf(account);
+        state.accountUsdcBalance = account == address(0) ? 0 : IERC20(usdc).balanceOf(account);
         state.accountUnitBalance = account == address(0) ? 0 : IERC20(unitToken).balanceOf(account);
 
         return state;
@@ -245,10 +246,11 @@ contract SpinMulticall {
         state.paymentToken = IAuction(auction).paymentToken();
         state.price = IAuction(auction).getPrice();
 
-        // LP price in DONUT = (DONUT in LP * 2) / LP total supply
+        // LP price in USDC = (USDC in LP * 2) / LP total supply
+        // USDC has 6 decimals, LP has 18. Multiply by 2e30 (= 2 * 1e12 normalization * 1e18 precision)
         uint256 lpTotalSupply = IERC20(state.paymentToken).totalSupply();
         state.paymentTokenPrice =
-            lpTotalSupply == 0 ? 0 : IERC20(donut).balanceOf(state.paymentToken) * 2e18 / lpTotalSupply;
+            lpTotalSupply == 0 ? 0 : IERC20(usdc).balanceOf(state.paymentToken) * 2e30 / lpTotalSupply;
 
         address quoteToken = ISpinRig(rig).quote();
         state.quoteAccumulated = IERC20(quoteToken).balanceOf(auction);

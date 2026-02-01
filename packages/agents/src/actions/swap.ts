@@ -6,24 +6,6 @@ import { ensureApproval, deadline } from "./utils";
 // Mock token minting
 // ---------------------------------------------------------------------------
 
-/** Mint mock DONUT tokens to the agent's address. */
-export async function mintDonut(
-  walletClient: WalletClient,
-  publicClient: PublicClient,
-  amount: bigint,
-): Promise<`0x${string}`> {
-  const hash = await walletClient.writeContract({
-    chain: walletClient.chain,
-    account: walletClient.account!,
-    address: ADDRESSES.donut as `0x${string}`,
-    abi: MOCK_TOKEN_ABI,
-    functionName: "mint",
-    args: [walletClient.account!.address, amount],
-  });
-  await publicClient.waitForTransactionReceipt({ hash });
-  return hash;
-}
-
 /** Mint mock USDC tokens to the agent's address. */
 export async function mintUsdc(
   walletClient: WalletClient,
@@ -47,9 +29,9 @@ export async function mintUsdc(
 // ---------------------------------------------------------------------------
 
 /**
- * Buy Unit tokens by swapping DONUT -> Unit on the Uniswap V2 LP.
+ * Buy Unit tokens by swapping USDC -> Unit on the Uniswap V2 LP.
  *
- * 1. Approve DONUT to UniV2Router
+ * 1. Approve USDC to UniV2Router
  * 2. Get expected output via getAmountsOut
  * 3. Apply 2 % slippage tolerance
  * 4. Execute swapExactTokensForTokens
@@ -58,22 +40,22 @@ export async function executeBuy(
   walletClient: WalletClient,
   publicClient: PublicClient,
   unitAddress: `0x${string}`,
-  donutAmountIn: bigint,
+  usdcAmountIn: bigint,
 ): Promise<`0x${string}`> {
   const router = ADDRESSES.uniV2Router as `0x${string}`;
-  const donut = ADDRESSES.donut as `0x${string}`;
+  const usdc = ADDRESSES.usdc as `0x${string}`;
   const agentAddress = walletClient.account!.address;
 
-  // 1. Ensure DONUT approval to router
-  await ensureApproval(walletClient, publicClient, donut, router, donutAmountIn);
+  // 1. Ensure USDC approval to router
+  await ensureApproval(walletClient, publicClient, usdc, router, usdcAmountIn);
 
   // 2. Get expected output amount
-  const path: readonly `0x${string}`[] = [donut, unitAddress];
+  const path: readonly `0x${string}`[] = [usdc, unitAddress];
   const amounts = await publicClient.readContract({
     address: router,
     abi: UNIV2_SWAP_ABI,
     functionName: "getAmountsOut",
-    args: [donutAmountIn, path as unknown as readonly `0x${string}`[]],
+    args: [usdcAmountIn, path as unknown as readonly `0x${string}`[]],
   });
   const expectedOut = amounts[1];
 
@@ -88,7 +70,7 @@ export async function executeBuy(
     abi: UNIV2_SWAP_ABI,
     functionName: "swapExactTokensForTokens",
     args: [
-      donutAmountIn,
+      usdcAmountIn,
       amountOutMin,
       path as unknown as readonly `0x${string}`[],
       agentAddress,
@@ -100,7 +82,7 @@ export async function executeBuy(
 }
 
 /**
- * Sell Unit tokens by swapping Unit -> DONUT on the Uniswap V2 LP.
+ * Sell Unit tokens by swapping Unit -> USDC on the Uniswap V2 LP.
  *
  * 1. Approve Unit to UniV2Router
  * 2. Get expected output via getAmountsOut
@@ -114,14 +96,14 @@ export async function executeSell(
   unitAmountIn: bigint,
 ): Promise<`0x${string}`> {
   const router = ADDRESSES.uniV2Router as `0x${string}`;
-  const donut = ADDRESSES.donut as `0x${string}`;
+  const usdc = ADDRESSES.usdc as `0x${string}`;
   const agentAddress = walletClient.account!.address;
 
   // 1. Ensure Unit approval to router
   await ensureApproval(walletClient, publicClient, unitAddress, router, unitAmountIn);
 
   // 2. Get expected output amount
-  const path: readonly `0x${string}`[] = [unitAddress, donut];
+  const path: readonly `0x${string}`[] = [unitAddress, usdc];
   const amounts = await publicClient.readContract({
     address: router,
     abi: UNIV2_SWAP_ABI,

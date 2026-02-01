@@ -10,9 +10,8 @@ type LiquidityModalProps = {
   tokenSymbol?: string;
   tokenName?: string;
   tokenBalance?: number;
-  donutBalance?: number;
+  usdcBalance?: number;
   tokenPrice?: number; // Token price in USD
-  donutPrice?: number; // DONUT price in USD
 };
 
 // Number pad button component
@@ -38,12 +37,11 @@ function NumPadButton({
 export function LiquidityModal({
   isOpen,
   onClose,
-  tokenSymbol = "DONUT",
-  tokenName = "Donut",
+  tokenSymbol = "TOKEN",
+  tokenName = "Token",
   tokenBalance = 25000,
-  donutBalance = 1186.38,
+  usdcBalance = 1186.38,
   tokenPrice = 0.00234,
-  donutPrice = 0.001,
 }: LiquidityModalProps) {
   const [tokenAmount, setTokenAmount] = useState("0");
 
@@ -89,16 +87,16 @@ export function LiquidityModal({
   // Calculate values
   const tokenInputAmount = parseFloat(tokenAmount) || 0;
 
-  // Required DONUT is calculated based on token amount and price ratio
-  const requiredDonut = (tokenInputAmount * tokenPrice) / donutPrice;
+  // Required USDC is calculated based on token amount and price (USDC ~= $1)
+  const requiredUsdc = tokenInputAmount * tokenPrice;
 
   // LP tokens received (simplified calculation)
-  const lpTokensReceived = Math.sqrt(tokenInputAmount * requiredDonut);
+  const lpTokensReceived = Math.sqrt(tokenInputAmount * requiredUsdc);
 
   // Check if user has enough balance
   const hasEnoughToken = tokenInputAmount <= tokenBalance;
-  const hasEnoughDonut = requiredDonut <= donutBalance;
-  const canCreate = tokenInputAmount > 0 && hasEnoughToken && hasEnoughDonut;
+  const hasEnoughUsdc = requiredUsdc <= usdcBalance;
+  const canCreate = tokenInputAmount > 0 && hasEnoughToken && hasEnoughUsdc;
 
   if (!isOpen) return null;
 
@@ -128,7 +126,7 @@ export function LiquidityModal({
           <div className="mt-4 mb-6">
             <h1 className="text-2xl font-semibold tracking-tight">Add Liquidity</h1>
             <p className="text-[13px] text-muted-foreground mt-1">
-              Provide {tokenSymbol} and DONUT to get LP tokens
+              Provide {tokenSymbol} and USDC to get LP tokens
             </p>
           </div>
 
@@ -156,30 +154,30 @@ export function LiquidityModal({
             </div>
           </div>
 
-          {/* Required DONUT */}
+          {/* Required USDC */}
           <div className="py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[13px] text-muted-foreground">Required DONUT</span>
+              <span className="text-[13px] text-muted-foreground">Required USDC</span>
               <button
                 onClick={() => {
-                  // Calculate max token amount based on donut balance
-                  const maxTokenFromDonut = (donutBalance * donutPrice) / tokenPrice;
-                  setTokenAmount(Math.min(tokenBalance, maxTokenFromDonut).toFixed(2));
+                  // Calculate max token amount based on USDC balance
+                  const maxTokenFromUsdc = usdcBalance / tokenPrice;
+                  setTokenAmount(Math.min(tokenBalance, maxTokenFromUsdc).toFixed(2));
                 }}
                 className="text-[11px] text-muted-foreground hover:text-zinc-300 transition-colors"
               >
-                Balance: {donutBalance.toLocaleString()}
+                Balance: {usdcBalance.toLocaleString()}
               </button>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-2xl font-semibold tabular-nums">
-                {requiredDonut.toFixed(2)}
+                {requiredUsdc.toFixed(2)}
               </span>
               <div className="flex items-center gap-2 bg-zinc-800 rounded-full px-3 py-1.5">
-                <div className="w-5 h-5 rounded-full bg-zinc-600 flex items-center justify-center text-[10px] font-semibold">
-                  D
+                <div className="w-5 h-5 rounded-full bg-[#2775CA] flex items-center justify-center text-[10px] font-bold text-white">
+                  $
                 </div>
-                <span className="text-sm font-medium">DONUT</span>
+                <span className="text-sm font-medium">USDC</span>
               </div>
             </div>
           </div>
@@ -203,7 +201,7 @@ export function LiquidityModal({
                 : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
             }`}
           >
-            {!hasEnoughDonut && tokenInputAmount > 0 ? "Insufficient DONUT" : "Create LP"}
+            {!hasEnoughUsdc && tokenInputAmount > 0 ? "Insufficient USDC" : "Create LP"}
           </button>
 
           {/* Number pad */}

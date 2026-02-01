@@ -48,7 +48,7 @@ const PRECISION = ethers.BigNumber.from("1000000000000000000"); // 1e18
 // ============================================================================
 describe("FUZZ Category 1: Random Prices - Fee Split Correctness", function () {
   let owner, protocol, team, user0, user1, user2, user3;
-  let weth, donut, registry, core, entropy;
+  let weth, usdc, registry, core, entropy;
   let rig, rigContract, auction, unit, unitContract;
 
   before("Deploy contracts", async function () {
@@ -58,7 +58,10 @@ describe("FUZZ Category 1: Random Prices - Fee Split Correctness", function () {
 
     const mockWethArtifact = await ethers.getContractFactory("MockWETH");
     weth = await mockWethArtifact.deploy();
-    donut = await mockWethArtifact.deploy();
+
+    // Deploy MockUSDC (6 decimals)
+    const mockUsdcArtifact = await ethers.getContractFactory("MockUSDC");
+    usdc = await mockUsdcArtifact.deploy();
 
     const entropyArtifact = await ethers.getContractFactory("MockEntropy");
     entropy = await entropyArtifact.deploy();
@@ -81,7 +84,7 @@ describe("FUZZ Category 1: Random Prices - Fee Split Correctness", function () {
     const coreArtifact = await ethers.getContractFactory("MineCore");
     core = await coreArtifact.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
@@ -89,13 +92,13 @@ describe("FUZZ Category 1: Random Prices - Fee Split Correctness", function () {
       auctionFactory.address,
       entropy.address,
       protocol.address,
-      convert("100", 18)
+      convert("100", 6)
     );
 
     await registry.setFactoryApproval(core.address, true);
 
     // Fund users generously
-    await donut.connect(user0).deposit({ value: convert("5000", 18) });
+    await usdc.mint(user0.address, convert("5000", 6));
     await weth.connect(user1).deposit({ value: convert("5000", 18) });
     await weth.connect(user2).deposit({ value: convert("5000", 18) });
     await weth.connect(user3).deposit({ value: convert("5000", 18) });
@@ -106,7 +109,7 @@ describe("FUZZ Category 1: Random Prices - Fee Split Correctness", function () {
       tokenName: "Fuzz Test Unit",
       tokenSymbol: "FUZZ",
       uri: "",
-      donutAmount: convert("1000", 18),
+      usdcAmount: convert("1000", 6),
       unitAmount: convert("1000000", 18),
       initialUps: convert("10", 18),
       tailUps: convert("0.01", 18),
@@ -122,7 +125,7 @@ describe("FUZZ Category 1: Random Prices - Fee Split Correctness", function () {
       auctionMinInitPrice: convert("0.01", 18),
     };
 
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
     const tx = await core.connect(user0).launch(launchParams);
     const receipt = await tx.wait();
 
@@ -280,7 +283,7 @@ describe("FUZZ Category 1: Random Prices - Fee Split Correctness", function () {
 // ============================================================================
 describe("FUZZ Category 2: Random totalMinted - Halving UPS Correctness", function () {
   let owner, protocol, team, user0, user1, user2, user3;
-  let weth, donut, registry, core, entropy;
+  let weth, usdc, registry, core, entropy;
   let rig, rigContract, unitContract;
 
   const INITIAL_UPS = convert("100", 18); // 100 tokens/second
@@ -294,7 +297,10 @@ describe("FUZZ Category 2: Random totalMinted - Halving UPS Correctness", functi
 
     const mockWethArtifact = await ethers.getContractFactory("MockWETH");
     weth = await mockWethArtifact.deploy();
-    donut = await mockWethArtifact.deploy();
+
+    // Deploy MockUSDC (6 decimals)
+    const mockUsdcArtifact = await ethers.getContractFactory("MockUSDC");
+    usdc = await mockUsdcArtifact.deploy();
 
     const entropyArtifact = await ethers.getContractFactory("MockEntropy");
     entropy = await entropyArtifact.deploy();
@@ -317,7 +323,7 @@ describe("FUZZ Category 2: Random totalMinted - Halving UPS Correctness", functi
     const coreArtifact = await ethers.getContractFactory("MineCore");
     core = await coreArtifact.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
@@ -325,12 +331,12 @@ describe("FUZZ Category 2: Random totalMinted - Halving UPS Correctness", functi
       auctionFactory.address,
       entropy.address,
       protocol.address,
-      convert("100", 18)
+      convert("100", 6)
     );
 
     await registry.setFactoryApproval(core.address, true);
 
-    await donut.connect(user0).deposit({ value: convert("5000", 18) });
+    await usdc.mint(user0.address, convert("5000", 6));
     await weth.connect(user1).deposit({ value: convert("5000", 18) });
     await weth.connect(user2).deposit({ value: convert("5000", 18) });
 
@@ -340,7 +346,7 @@ describe("FUZZ Category 2: Random totalMinted - Halving UPS Correctness", functi
       tokenName: "Halving Fuzz Unit",
       tokenSymbol: "HFUZZ",
       uri: "",
-      donutAmount: convert("1000", 18),
+      usdcAmount: convert("1000", 6),
       unitAmount: convert("1000000", 18),
       initialUps: INITIAL_UPS,
       tailUps: TAIL_UPS,
@@ -356,7 +362,7 @@ describe("FUZZ Category 2: Random totalMinted - Halving UPS Correctness", functi
       auctionMinInitPrice: convert("0.01", 18),
     };
 
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
     const tx = await core.connect(user0).launch(launchParams);
     const receipt = await tx.wait();
 
@@ -618,7 +624,7 @@ describe("FUZZ Category 3: Random Timestamps - Time-Based Halving Emissions", fu
 describe("FUZZ Category 4: Random Time Points - Dutch Auction Price Decay", function () {
   describe("MineRig price decay", function () {
     let owner, protocol, team, user0, user1, user2;
-    let weth, donut, registry, core, entropy;
+    let weth, usdc, registry, core, entropy;
     let rig, rigContract;
 
     before("Deploy contracts", async function () {
@@ -628,7 +634,10 @@ describe("FUZZ Category 4: Random Time Points - Dutch Auction Price Decay", func
 
       const mockWethArtifact = await ethers.getContractFactory("MockWETH");
       weth = await mockWethArtifact.deploy();
-      donut = await mockWethArtifact.deploy();
+
+      // Deploy MockUSDC (6 decimals)
+      const mockUsdcArtifact = await ethers.getContractFactory("MockUSDC");
+      usdc = await mockUsdcArtifact.deploy();
 
       const entropyArtifact = await ethers.getContractFactory("MockEntropy");
       entropy = await entropyArtifact.deploy();
@@ -651,7 +660,7 @@ describe("FUZZ Category 4: Random Time Points - Dutch Auction Price Decay", func
       const coreArtifact = await ethers.getContractFactory("MineCore");
       core = await coreArtifact.deploy(
         registry.address,
-        donut.address,
+        usdc.address,
         uniswapFactory.address,
         uniswapRouter.address,
         unitFactory.address,
@@ -659,12 +668,12 @@ describe("FUZZ Category 4: Random Time Points - Dutch Auction Price Decay", func
         auctionFactory.address,
         entropy.address,
         protocol.address,
-        convert("100", 18)
+        convert("100", 6)
       );
 
       await registry.setFactoryApproval(core.address, true);
 
-      await donut.connect(user0).deposit({ value: convert("5000", 18) });
+      await usdc.mint(user0.address, convert("5000", 6));
       await weth.connect(user1).deposit({ value: convert("5000", 18) });
       await weth.connect(user2).deposit({ value: convert("5000", 18) });
 
@@ -674,7 +683,7 @@ describe("FUZZ Category 4: Random Time Points - Dutch Auction Price Decay", func
         tokenName: "Decay Fuzz Unit",
         tokenSymbol: "DFUZZ",
         uri: "",
-        donutAmount: convert("1000", 18),
+        usdcAmount: convert("1000", 6),
         unitAmount: convert("1000000", 18),
         initialUps: convert("10", 18),
         tailUps: convert("0.01", 18),
@@ -690,7 +699,7 @@ describe("FUZZ Category 4: Random Time Points - Dutch Auction Price Decay", func
         auctionMinInitPrice: convert("0.01", 18),
       };
 
-      await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+      await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
       const tx = await core.connect(user0).launch(launchParams);
       const receipt = await tx.wait();
 
@@ -986,7 +995,7 @@ describe("FUZZ Category 6: Random bytes32 - Odds Drawing (SpinRig)", function ()
 // ============================================================================
 describe("FUZZ Category 7: Random Capacity Values - UPS Division", function () {
   let owner, protocol, team, user0, user1, user2;
-  let weth, donut, registry, core, entropy;
+  let weth, usdc, registry, core, entropy;
   let rig, rigContract;
 
   before("Deploy contracts", async function () {
@@ -996,7 +1005,10 @@ describe("FUZZ Category 7: Random Capacity Values - UPS Division", function () {
 
     const mockWethArtifact = await ethers.getContractFactory("MockWETH");
     weth = await mockWethArtifact.deploy();
-    donut = await mockWethArtifact.deploy();
+
+    // Deploy MockUSDC (6 decimals)
+    const mockUsdcArtifact = await ethers.getContractFactory("MockUSDC");
+    usdc = await mockUsdcArtifact.deploy();
 
     const entropyArtifact = await ethers.getContractFactory("MockEntropy");
     entropy = await entropyArtifact.deploy();
@@ -1019,7 +1031,7 @@ describe("FUZZ Category 7: Random Capacity Values - UPS Division", function () {
     const coreArtifact = await ethers.getContractFactory("MineCore");
     core = await coreArtifact.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
@@ -1027,12 +1039,12 @@ describe("FUZZ Category 7: Random Capacity Values - UPS Division", function () {
       auctionFactory.address,
       entropy.address,
       protocol.address,
-      convert("100", 18)
+      convert("100", 6)
     );
 
     await registry.setFactoryApproval(core.address, true);
 
-    await donut.connect(user0).deposit({ value: convert("5000", 18) });
+    await usdc.mint(user0.address, convert("5000", 6));
     await weth.connect(user1).deposit({ value: convert("5000", 18) });
     await weth.connect(user2).deposit({ value: convert("5000", 18) });
 
@@ -1042,7 +1054,7 @@ describe("FUZZ Category 7: Random Capacity Values - UPS Division", function () {
       tokenName: "Capacity Fuzz Unit",
       tokenSymbol: "CAPFUZZ",
       uri: "",
-      donutAmount: convert("1000", 18),
+      usdcAmount: convert("1000", 6),
       unitAmount: convert("1000000", 18),
       initialUps: convert("256", 18), // Divisible by many capacity values
       tailUps: convert("0.01", 18),
@@ -1058,7 +1070,7 @@ describe("FUZZ Category 7: Random Capacity Values - UPS Division", function () {
       auctionMinInitPrice: convert("0.01", 18),
     };
 
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
     const tx = await core.connect(user0).launch(launchParams);
     const receipt = await tx.wait();
 

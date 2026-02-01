@@ -18,7 +18,6 @@ import { useRigState, useRigInfo } from "@/hooks/useRigState";
 import { useRigType } from "@/hooks/useRigType";
 import { useSpinRigState } from "@/hooks/useSpinRigState";
 import { useFundRigState } from "@/hooks/useFundRigState";
-import { usePrices } from "@/hooks/usePrices";
 import { useTokenMetadata } from "@/hooks/useMetadata";
 import { useFarcaster } from "@/hooks/useFarcaster";
 import { useDexScreener } from "@/hooks/useDexScreener";
@@ -327,18 +326,17 @@ export default function RigDetailPage() {
     : rigType === "fund" ? fundState?.accountPaymentTokenBalance
     : rigState?.accountQuoteBalance;
 
-  const accountDonutBalance = rigType === "mine" ? rigState?.accountDonutBalance
-    : rigType === "spin" ? spinState?.accountDonutBalance
-    : rigType === "fund" ? fundState?.accountDonutBalance
-    : rigState?.accountDonutBalance;
+  const accountUsdcBalance = rigType === "mine" ? rigState?.accountUsdcBalance
+    : rigType === "spin" ? spinState?.accountUsdcBalance
+    : rigType === "fund" ? fundState?.accountUsdcBalance
+    : rigState?.accountUsdcBalance;
 
   const accountUnitBalance = rigType === "mine" ? rigState?.accountUnitBalance
     : rigType === "spin" ? spinState?.accountUnitBalance
     : rigType === "fund" ? fundState?.accountUnitBalance
     : rigState?.accountUnitBalance;
 
-  // Fetch USD prices
-  const { donutUsdPrice } = usePrices();
+  // USDC is pegged to $1, no price fetch needed for it
 
   // Fetch token metadata from IPFS
   const { metadata, logoUrl } = useTokenMetadata(rigUri);
@@ -353,19 +351,18 @@ export default function RigDetailPage() {
   const tokenName = rigInfo?.tokenName || subgraphRig?.unit?.name || "Loading...";
   const tokenSymbol = rigInfo?.tokenSymbol || subgraphRig?.unit?.symbol || "--";
 
-  // Price in USD = unitPrice (DONUT, 18 dec) x donutUsdPrice
+  // Price in USD = unitPrice (USDC, 18 dec) -- USDC ~= $1
   const priceUsd = unitPrice
-    ? Number(formatEther(unitPrice)) * donutUsdPrice
+    ? Number(formatEther(unitPrice))
     : 0;
 
-  // Market cap = totalMinted * unitPrice * donutUsdPrice
+  // Market cap = totalMinted * unitPrice (USDC ~= $1)
   // subgraphRig.totalMinted is a BigDecimal string
   const totalMintedRaw = subgraphRig?.totalMinted ? BigInt(Math.floor(parseFloat(subgraphRig.totalMinted) * 1e18)) : 0n;
   const marketCapUsd =
     unitPrice && totalMintedRaw > 0n
       ? Number(formatEther(totalMintedRaw)) *
-        Number(formatEther(unitPrice)) *
-        donutUsdPrice
+        Number(formatEther(unitPrice))
       : 0;
 
   // Total supply from subgraph
@@ -387,9 +384,9 @@ export default function RigDetailPage() {
     ? Number(formatUnits(accountQuoteBalance, QUOTE_TOKEN_DECIMALS))
     : 0;
 
-  // User donut balance
-  const userDonutBalance = accountDonutBalance
-    ? Number(formatEther(accountDonutBalance))
+  // User USDC balance (6 decimals)
+  const userUsdcBalance = accountUsdcBalance
+    ? Number(formatUnits(accountUsdcBalance, QUOTE_TOKEN_DECIMALS))
     : 0;
 
   // Stats from DexScreener + subgraph
@@ -671,7 +668,7 @@ export default function RigDetailPage() {
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-[12px] text-muted-foreground hover:bg-secondary/80 transition-colors"
               >
-                {tokenSymbol}-DONUT LP
+                {tokenSymbol}-USDC LP
                 <Copy className="w-3 h-3" />
               </button>
             </div>
@@ -933,9 +930,8 @@ export default function RigDetailPage() {
         tokenSymbol={tokenSymbol}
         tokenName={tokenName}
         tokenBalance={userUnitBalance}
-        donutBalance={userDonutBalance}
+        usdcBalance={userUsdcBalance}
         tokenPrice={priceUsd}
-        donutPrice={donutUsdPrice}
       />
 
       {/* Admin Modal */}

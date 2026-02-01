@@ -413,7 +413,7 @@ export function MineModal({
                       <div className="flex justify-between text-[12px]">
                         <span className="text-muted-foreground">Token Price</span>
                         <span className="tabular-nums">
-                          {formatTokenAmount(rigState.unitPrice)} DONUT
+                          {formatTokenAmount(rigState.unitPrice)} USDC
                         </span>
                       </div>
                       {rigState.needsEntropy && (

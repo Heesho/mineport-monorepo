@@ -34,7 +34,7 @@ export function handleSpinCoreLaunched(event: SpinCoreLaunchedEvent): void {
 
   // Event params for SpinCore:
   // launcher (indexed), rig (indexed), unit (indexed), auction, lpToken, quoteToken,
-  // tokenName, tokenSymbol, donutAmount, unitAmount, initialUps, tailUps, halvingPeriod,
+  // tokenName, tokenSymbol, usdcAmount, unitAmount, initialUps, tailUps, halvingPeriod,
   // rigEpochPeriod, rigPriceMultiplier, rigMinInitPrice, auctionInitPrice, auctionEpochPeriod,
   // auctionPriceMultiplier, auctionMinInitPrice
 

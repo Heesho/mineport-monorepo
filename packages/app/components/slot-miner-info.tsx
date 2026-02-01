@@ -15,7 +15,6 @@ type SlotMinerInfoProps = {
   tokenSymbol: string;
   tokenLogoUrl?: string;
   ethUsdPrice: number;
-  donutUsdPrice: number;
   rigAddress: string;
   onShare: () => void;
   minerProfile?: {
@@ -51,7 +50,6 @@ export function SlotMinerInfo({
   tokenSymbol,
   tokenLogoUrl,
   ethUsdPrice,
-  donutUsdPrice,
   rigAddress,
   onShare,
   minerProfile,
@@ -85,9 +83,9 @@ export function SlotMinerInfo({
 
   const glazedAmount = Number(formatUnits(interpolatedGlazed, TOKEN_DECIMALS));
   const unitPrice = slot.unitPrice > 0n ? Number(formatEther(slot.unitPrice)) : 0;
-  const glazedUsd = glazedAmount * unitPrice * donutUsdPrice;
+  const glazedUsd = glazedAmount * unitPrice; // USDC ~= $1
   const ratePerSec = Number(formatUnits(slot.nextUps, TOKEN_DECIMALS));
-  const rateUsd = ratePerSec * unitPrice * donutUsdPrice;
+  const rateUsd = ratePerSec * unitPrice; // USDC ~= $1
 
   const handleCopyLink = async () => {
     const rigUrl = `${window.location.origin}/rig/${rigAddress}`;

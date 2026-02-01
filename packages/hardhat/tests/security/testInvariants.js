@@ -40,7 +40,7 @@ const THIRTY_DAYS = 30 * ONE_DAY;
 
 describe("Unit Invariants", function () {
   let owner, protocol, team, user0, user1, user2, user3, attacker;
-  let weth, donut, registry, mineCore, entropy;
+  let weth, usdc, registry, mineCore, entropy;
   let rigAddress, rigContract, auctionAddress, unitAddress, unitContract;
 
   before("Deploy fresh contracts for Unit invariants", async function () {
@@ -51,7 +51,10 @@ describe("Unit Invariants", function () {
     // Deploy mock tokens
     const MockWETH = await ethers.getContractFactory("MockWETH");
     weth = await MockWETH.deploy();
-    donut = await MockWETH.deploy();
+
+    // Deploy MockUSDC (6 decimals)
+    const MockUSDC = await ethers.getContractFactory("MockUSDC");
+    usdc = await MockUSDC.deploy();
 
     // Deploy mock Entropy
     const MockEntropy = await ethers.getContractFactory("MockEntropy");
@@ -79,7 +82,7 @@ describe("Unit Invariants", function () {
     const MineCore = await ethers.getContractFactory("MineCore");
     mineCore = await MineCore.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
@@ -87,13 +90,13 @@ describe("Unit Invariants", function () {
       auctionFactory.address,
       entropy.address,
       protocol.address,
-      convert("100", 18)
+      convert("100", 6)
     );
 
     await registry.setFactoryApproval(mineCore.address, true);
 
     // Fund users
-    await donut.connect(user0).deposit({ value: convert("5000", 18) });
+    await usdc.mint(user0.address, convert("5000", 6));
     await weth.connect(user0).deposit({ value: convert("500", 18) });
     await weth.connect(user1).deposit({ value: convert("500", 18) });
     await weth.connect(user2).deposit({ value: convert("500", 18) });
@@ -106,7 +109,7 @@ describe("Unit Invariants", function () {
       tokenName: "Unit Invariant Test",
       tokenSymbol: "UINV",
       uri: "",
-      donutAmount: convert("1000", 18),
+      usdcAmount: convert("1000", 6),
       unitAmount: convert("1000000", 18),
       initialUps: convert("10", 18),
       tailUps: convert("0.1", 18),
@@ -122,7 +125,7 @@ describe("Unit Invariants", function () {
       auctionMinInitPrice: convert("0.01", 18),
     };
 
-    await donut.connect(user0).approve(mineCore.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(mineCore.address, launchParams.usdcAmount);
     const tx = await mineCore.connect(user0).launch(launchParams);
     const receipt = await tx.wait();
 
@@ -219,7 +222,7 @@ describe("Unit Invariants", function () {
 
 describe("MineRig Invariants", function () {
   let owner, protocol, team, user0, user1, user2, user3, attacker;
-  let weth, donut, registry, mineCore, entropy;
+  let weth, usdc, registry, mineCore, entropy;
   let rigAddress, rigContract, auctionAddress, unitAddress, unitContract;
 
   before("Deploy fresh contracts for MineRig invariants", async function () {
@@ -229,7 +232,10 @@ describe("MineRig Invariants", function () {
 
     const MockWETH = await ethers.getContractFactory("MockWETH");
     weth = await MockWETH.deploy();
-    donut = await MockWETH.deploy();
+
+    // Deploy MockUSDC (6 decimals)
+    const MockUSDC = await ethers.getContractFactory("MockUSDC");
+    usdc = await MockUSDC.deploy();
 
     const MockEntropy = await ethers.getContractFactory("MockEntropy");
     entropy = await MockEntropy.deploy();
@@ -252,7 +258,7 @@ describe("MineRig Invariants", function () {
     const MineCore = await ethers.getContractFactory("MineCore");
     mineCore = await MineCore.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
@@ -260,12 +266,12 @@ describe("MineRig Invariants", function () {
       auctionFactory.address,
       entropy.address,
       protocol.address,
-      convert("100", 18)
+      convert("100", 6)
     );
 
     await registry.setFactoryApproval(mineCore.address, true);
 
-    await donut.connect(user0).deposit({ value: convert("5000", 18) });
+    await usdc.mint(user0.address, convert("5000", 6));
     await weth.connect(user0).deposit({ value: convert("500", 18) });
     await weth.connect(user1).deposit({ value: convert("500", 18) });
     await weth.connect(user2).deposit({ value: convert("500", 18) });
@@ -278,7 +284,7 @@ describe("MineRig Invariants", function () {
       tokenName: "Mine Invariant Test",
       tokenSymbol: "MINV",
       uri: "",
-      donutAmount: convert("1000", 18),
+      usdcAmount: convert("1000", 6),
       unitAmount: convert("1000000", 18),
       initialUps: convert("10", 18),
       tailUps: convert("0.1", 18),
@@ -294,7 +300,7 @@ describe("MineRig Invariants", function () {
       auctionMinInitPrice: convert("0.01", 18),
     };
 
-    await donut.connect(user0).approve(mineCore.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(mineCore.address, launchParams.usdcAmount);
     const tx = await mineCore.connect(user0).launch(launchParams);
     const receipt = await tx.wait();
 

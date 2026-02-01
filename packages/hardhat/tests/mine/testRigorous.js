@@ -7,7 +7,7 @@ const AddressZero = "0x0000000000000000000000000000000000000000";
 const AddressDead = "0x000000000000000000000000000000000000dEaD";
 
 let owner, protocol, team, user0, user1, user2, user3, user4;
-let weth, donut, registry, core, multicall;
+let weth, usdc, registry, core, multicall;
 let rigFactory, auctionFactory;
 let uniswapFactory, uniswapRouter;
 
@@ -17,24 +17,24 @@ async function getFutureDeadline() {
   return block.timestamp + 86400 * 365;
 }
 
-// Helper to ensure user has enough DONUT
-async function ensureDonut(user, amount = convert("50", 18)) {
-  const balance = await donut.balanceOf(user.address);
+// Helper to ensure user has enough USDC
+async function ensureUsdc(user, amount = convert("50", 6)) {
+  const balance = await usdc.balanceOf(user.address);
   if (balance.lt(amount)) {
-    await donut.connect(user).deposit({ value: amount.sub(balance).add(convert("10", 18)) });
+    await usdc.mint(user.address, amount.sub(balance).add(convert("10", 6)));
   }
 }
 
 // Helper to launch a fresh rig
 async function launchFreshRig(launcher, params = {}) {
-  await ensureDonut(launcher, convert("50", 18));
+  await ensureUsdc(launcher, convert("50", 6));
   const defaultParams = {
     launcher: launcher.address,
     quoteToken: weth.address,
     tokenName: "Test Unit",
     tokenSymbol: "TUNIT",
     uri: "",
-    donutAmount: convert("10", 18),
+    usdcAmount: convert("10", 6),
     unitAmount: convert("1000000", 18),
     initialUps: convert("4", 18),
     tailUps: convert("0.01", 18),
@@ -51,7 +51,7 @@ async function launchFreshRig(launcher, params = {}) {
   };
 
   const launchParams = { ...defaultParams, ...params };
-  await donut.connect(launcher).approve(core.address, launchParams.donutAmount);
+  await usdc.connect(launcher).approve(core.address, launchParams.usdcAmount);
   const tx = await core.connect(launcher).launch(launchParams);
   const receipt = await tx.wait();
   const launchEvent = receipt.events.find((e) => e.event === "MineCore__Launched");
@@ -97,8 +97,9 @@ describe("Rigorous Tests", function () {
     const wethArtifact = await ethers.getContractFactory("MockWETH");
     weth = await wethArtifact.deploy();
 
-    // Deploy mock DONUT token
-    donut = await wethArtifact.deploy();
+    // Deploy mock USDC token (6 decimals)
+    const usdcArtifact = await ethers.getContractFactory("MockUSDC");
+    usdc = await usdcArtifact.deploy();
 
     // Deploy mock Uniswap V2
     const mockUniswapFactoryArtifact = await ethers.getContractFactory("MockUniswapV2Factory");
@@ -130,7 +131,7 @@ describe("Rigorous Tests", function () {
     const coreArtifact = await ethers.getContractFactory("MineCore");
     core = await coreArtifact.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
@@ -138,7 +139,7 @@ describe("Rigorous Tests", function () {
       auctionFactory.address,
       entropy.address,
       protocol.address,
-      convert("5", 18)
+      convert("5", 6)
     );
 
     // Approve Core as factory in Registry
@@ -146,18 +147,18 @@ describe("Rigorous Tests", function () {
 
     // Deploy Multicall
     const multicallArtifact = await ethers.getContractFactory("MineMulticall");
-    multicall = await multicallArtifact.deploy(core.address, donut.address);
+    multicall = await multicallArtifact.deploy(core.address, usdc.address);
 
     // Mint tokens to users
     for (const user of [user0, user1, user2, user3, user4]) {
-      await donut.connect(user).deposit({ value: convert("100", 18) });
+      await usdc.mint(user.address, convert("100", 6));
     }
   });
 
   // ============================================
-  // MULTICALL DONUT PRICING TESTS
+  // MULTICALL USDC PRICING TESTS
   // ============================================
-  describe("Multicall DONUT Pricing", function () {
+  describe("Multicall USDC Pricing", function () {
     let testRig, testUnit, testAuction, testLpToken;
 
     before(async function () {
@@ -168,41 +169,41 @@ describe("Rigorous Tests", function () {
       testLpToken = result.lpToken;
     });
 
-    it("getRig returns unitPrice in DONUT terms", async function () {
+    it("getRig returns unitPrice in USDC terms", async function () {
       const state = await multicall.getRig(testRig, 0, user1.address);
 
-      // unitPrice should be DONUT/Unit ratio from LP
-      // Since LP was created with DONUT, unitPrice should be > 0
+      // unitPrice should be USDC/Unit ratio from LP
+      // Since LP was created with USDC, unitPrice should be > 0
       expect(state.unitPrice).to.be.gte(0);
 
       // Verify by checking LP reserves directly
       const lpContract = await ethers.getContractAt("IERC20", testLpToken);
-      const donutInLP = await donut.balanceOf(testLpToken);
+      const usdcInLP = await usdc.balanceOf(testLpToken);
       const unitInLP = await ethers.getContractAt("IERC20", testUnit).then(c => c.balanceOf(testLpToken));
 
       if (unitInLP.gt(0)) {
-        const expectedPrice = donutInLP.mul(convert("1", 18)).div(unitInLP);
+        const expectedPrice = usdcInLP.mul(convert("1", 30)).div(unitInLP);
         expect(state.unitPrice).to.be.closeTo(expectedPrice, expectedPrice.div(100));
       }
     });
 
-    it("getRig returns user donutBalance", async function () {
+    it("getRig returns user usdcBalance", async function () {
       const state = await multicall.getRig(testRig, 0, user1.address);
-      const actualDonutBalance = await donut.balanceOf(user1.address);
+      const actualUsdcBalance = await usdc.balanceOf(user1.address);
 
-      expect(state.accountDonutBalance).to.equal(actualDonutBalance);
+      expect(state.accountUsdcBalance).to.equal(actualUsdcBalance);
     });
 
-    it("getAuction returns paymentTokenPrice in DONUT terms", async function () {
+    it("getAuction returns paymentTokenPrice in USDC terms", async function () {
       const state = await multicall.getAuction(testRig, user1.address);
 
-      // paymentTokenPrice = (DONUT in LP * 2) / LP total supply
+      // paymentTokenPrice = (USDC in LP * 2) / LP total supply
       const lpContract = await ethers.getContractAt("IERC20", testLpToken);
-      const donutInLP = await donut.balanceOf(testLpToken);
+      const usdcInLP = await usdc.balanceOf(testLpToken);
       const lpTotalSupply = await lpContract.totalSupply();
 
       if (lpTotalSupply.gt(0)) {
-        const expectedPrice = donutInLP.mul(2).mul(convert("1", 18)).div(lpTotalSupply);
+        const expectedPrice = usdcInLP.mul(2).mul(convert("1", 30)).div(lpTotalSupply);
         expect(state.paymentTokenPrice).to.be.closeTo(expectedPrice, expectedPrice.div(100));
       }
     });
@@ -240,7 +241,7 @@ describe("Rigorous Tests", function () {
       const state = await multicall.getRig(testRig, 0, AddressZero);
 
       expect(state.accountQuoteBalance).to.equal(0);
-      expect(state.accountDonutBalance).to.equal(0);
+      expect(state.accountUsdcBalance).to.equal(0);
       expect(state.accountUnitBalance).to.equal(0);
       expect(state.accountClaimable).to.equal(0);
     });
@@ -719,8 +720,8 @@ describe("Rigorous Tests", function () {
     it("Multiple assets can be withdrawn in single buy", async function () {
       const auctionContract = await ethers.getContractAt("Auction", testAuction);
 
-      // Add donut to auction as well
-      await donut.connect(user1).transfer(testAuction, convert("1", 18));
+      // Add usdc to auction as well
+      await usdc.connect(user1).transfer(testAuction, convert("1", 6));
 
       // Fast forward to zero price
       await network.provider.send("evm_increaseTime", [3700]);
@@ -730,16 +731,16 @@ describe("Rigorous Tests", function () {
       const deadline = await getFutureDeadline();
 
       const user2WethBefore = await weth.balanceOf(user2.address);
-      const user2DonutBefore = await donut.balanceOf(user2.address);
+      const user2UsdcBefore = await usdc.balanceOf(user2.address);
 
       // Buy both assets
-      await auctionContract.connect(user2).buy([weth.address, donut.address], user2.address, epochId, deadline, 0);
+      await auctionContract.connect(user2).buy([weth.address, usdc.address], user2.address, epochId, deadline, 0);
 
       const user2WethAfter = await weth.balanceOf(user2.address);
-      const user2DonutAfter = await donut.balanceOf(user2.address);
+      const user2UsdcAfter = await usdc.balanceOf(user2.address);
 
       expect(user2WethAfter).to.be.gt(user2WethBefore);
-      expect(user2DonutAfter).to.be.gt(user2DonutBefore);
+      expect(user2UsdcAfter).to.be.gt(user2UsdcBefore);
     });
   });
 
@@ -871,7 +872,7 @@ describe("Rigorous Tests", function () {
       ).to.be.revertedWith("Ownable: caller is not the owner");
 
       await expect(
-        core.connect(user1).setMinDonutForLaunch(convert("1000", 18))
+        core.connect(user1).setMinUsdcForLaunch(convert("1000", 6))
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
@@ -880,8 +881,8 @@ describe("Rigorous Tests", function () {
       expect(await core.owner()).to.equal(user1.address);
 
       // New owner can make changes
-      await core.connect(user1).setMinDonutForLaunch(convert("200", 18));
-      expect(await core.minDonutForLaunch()).to.equal(convert("200", 18));
+      await core.connect(user1).setMinUsdcForLaunch(convert("200", 6));
+      expect(await core.minUsdcForLaunch()).to.equal(convert("200", 6));
 
       // Transfer back
       await core.connect(user1).transferOwnership(owner.address);

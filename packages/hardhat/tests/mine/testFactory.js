@@ -7,7 +7,7 @@ const AddressZero = "0x0000000000000000000000000000000000000000";
 const AddressDead = "0x000000000000000000000000000000000000dEaD";
 
 let owner, protocol, team, user0, user1, user2;
-let weth, donut, registry, core, multicall, entropy;
+let weth, usdc, registry, core, multicall, entropy;
 let rig, auction, unit, lpToken;
 let rigFactory, auctionFactory;
 
@@ -27,9 +27,10 @@ describe("Core Tests", function () {
     weth = await wethArtifact.deploy();
     console.log("- WETH Initialized");
 
-    // Deploy mock DONUT token (using MockWETH as a simple ERC20)
-    donut = await wethArtifact.deploy();
-    console.log("- DONUT Initialized");
+    // Deploy mock USDC token (6 decimals)
+    const usdcArtifact = await ethers.getContractFactory("MockUSDC");
+    usdc = await usdcArtifact.deploy();
+    console.log("- MockUSDC Initialized");
 
     // Deploy mock Entropy
     const entropyArtifact = await ethers.getContractFactory("MockEntropy");
@@ -69,7 +70,7 @@ describe("Core Tests", function () {
     const coreArtifact = await ethers.getContractFactory("MineCore");
     core = await coreArtifact.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
@@ -77,7 +78,7 @@ describe("Core Tests", function () {
       auctionFactory.address,
       entropy.address,
       protocol.address,
-      convert("100", 18) // minDonutForLaunch
+      convert("100", 6) // minUsdcForLaunch
     );
     console.log("- Core Initialized");
 
@@ -87,12 +88,12 @@ describe("Core Tests", function () {
 
     // Deploy Multicall
     const multicallArtifact = await ethers.getContractFactory("MineMulticall");
-    multicall = await multicallArtifact.deploy(core.address, donut.address);
+    multicall = await multicallArtifact.deploy(core.address, usdc.address);
     console.log("- Multicall Initialized");
 
-    // Mint DONUT to user0 for launching
-    await donut.connect(user0).deposit({ value: convert("1000", 18) });
-    console.log("- DONUT minted to user0");
+    // Mint USDC to user0 for launching
+    await usdc.mint(user0.address, convert("1000", 6));
+    console.log("- USDC minted to user0");
 
     console.log("Initialization Complete");
     console.log();
@@ -101,8 +102,8 @@ describe("Core Tests", function () {
   it("Core state", async function () {
     console.log("******************************************************");
     console.log("Protocol Fee Address:", await core.protocolFeeAddress());
-    console.log("DONUT Token:", await core.donutToken());
-    console.log("Min DONUT for Launch:", divDec(await core.minDonutForLaunch()));
+    console.log("USDC Token:", await core.usdcToken());
+    console.log("Min USDC for Launch:", divDec(await core.minUsdcForLaunch(), 6));
     console.log("Deployed Rigs Length:", (await core.deployedRigsLength()).toString());
   });
 
@@ -115,7 +116,7 @@ describe("Core Tests", function () {
       tokenName: "Test Unit",
       tokenSymbol: "TUNIT",
       uri: "",
-      donutAmount: convert("500", 18),
+      usdcAmount: convert("500", 6),
       unitAmount: convert("1000000", 18),
       initialUps: convert("4", 18),
       tailUps: convert("0.01", 18),
@@ -131,8 +132,8 @@ describe("Core Tests", function () {
       auctionMinInitPrice: convert("0.001", 18),
     };
 
-    // Approve DONUT
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    // Approve USDC
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
 
     // Launch
     const tx = await core.connect(user0).launch(launchParams);
@@ -310,13 +311,13 @@ describe("Core Tests", function () {
     await core.connect(owner).setProtocolFeeAddress(protocol.address);
   });
 
-  it("Protocol owner can change min DONUT for launch", async function () {
+  it("Protocol owner can change min USDC for launch", async function () {
     console.log("******************************************************");
-    await core.connect(owner).setMinDonutForLaunch(convert("200", 18));
-    console.log("Min DONUT for launch:", divDec(await core.minDonutForLaunch()));
+    await core.connect(owner).setMinUsdcForLaunch(convert("200", 6));
+    console.log("Min USDC for launch:", divDec(await core.minUsdcForLaunch(), 6));
   });
 
-  it("Cannot launch with insufficient DONUT", async function () {
+  it("Cannot launch with insufficient USDC", async function () {
     console.log("******************************************************");
 
     const launchParams = {
@@ -325,7 +326,7 @@ describe("Core Tests", function () {
       tokenName: "Test Unit 2",
       tokenSymbol: "TUNIT2",
       uri: "",
-      donutAmount: convert("100", 18), // Less than minDonutForLaunch (200)
+      usdcAmount: convert("100", 6), // Less than minUsdcForLaunch (200)
       unitAmount: convert("1000000", 18),
       initialUps: convert("4", 18),
       tailUps: convert("0.01", 18),
@@ -341,12 +342,12 @@ describe("Core Tests", function () {
       auctionMinInitPrice: convert("0.001", 18),
     };
 
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
 
     await expect(core.connect(user0).launch(launchParams)).to.be.revertedWith(
-      "Core__InsufficientDonut()"
+      "Core__InsufficientUsdc()"
     );
-    console.log("Launch correctly reverted with insufficient DONUT");
+    console.log("Launch correctly reverted with insufficient USDC");
   });
 
   it("Cannot launch with invalid parameters", async function () {
@@ -359,7 +360,7 @@ describe("Core Tests", function () {
       tokenName: "",
       tokenSymbol: "TUNIT2",
       uri: "",
-      donutAmount: convert("500", 18),
+      usdcAmount: convert("500", 6),
       unitAmount: convert("1000000", 18),
       initialUps: convert("4", 18),
       tailUps: convert("0.01", 18),
@@ -375,7 +376,7 @@ describe("Core Tests", function () {
       auctionMinInitPrice: convert("0.001", 18),
     };
 
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
 
     await expect(core.connect(user0).launch(launchParams)).to.be.revertedWith(
       "Core__EmptyTokenName()"

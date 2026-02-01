@@ -24,7 +24,7 @@ export type AuctionItem = {
   // Auction state
   lpPrice: bigint; // Current LP cost (18 dec)
   quoteAccumulated: bigint; // USDC in auction (6 dec)
-  paymentTokenPrice: bigint; // LP value in DONUT (18 dec)
+  paymentTokenPrice: bigint; // LP value in USDC (18 dec)
   epochId: bigint;
   // Derived display values
   lpCostUsd: number; // LP cost in USD-ish

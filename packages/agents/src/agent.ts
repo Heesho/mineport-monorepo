@@ -6,7 +6,7 @@ import { ADDRESSES, MOCK_TOKEN_ABI } from "./config";
 import { detectRigType, resolveRigInfo, readWorldState, type RigInfo } from "./state";
 import { pickAction, type ScoredAction } from "./scoring";
 import { executeRigAction } from "./actions/rig-action";
-import { executeBuy, executeSell, mintDonut, mintUsdc } from "./actions/swap";
+import { executeBuy, executeSell, mintUsdc } from "./actions/swap";
 import { executeAuctionBuy } from "./actions/auction";
 import { executeClaim } from "./actions/claim";
 
@@ -50,7 +50,7 @@ export class Agent {
     }
 
     // 2. Check balances, mint mock tokens if low
-    const [ethBalance, usdcBalance, donutBalance] = await Promise.all([
+    const [ethBalance, usdcBalance] = await Promise.all([
       this.publicClient.getBalance({ address: this.address }),
       this.publicClient.readContract({
         address: ADDRESSES.usdc as `0x${string}`,
@@ -58,15 +58,9 @@ export class Agent {
         functionName: "balanceOf",
         args: [this.address],
       }),
-      this.publicClient.readContract({
-        address: ADDRESSES.donut as `0x${string}`,
-        abi: [{inputs:[{name:"account",type:"address"}],name:"balanceOf",outputs:[{type:"uint256"}],stateMutability:"view",type:"function"}] as const,
-        functionName: "balanceOf",
-        args: [this.address],
-      }),
     ]);
 
-    this.log(`  balances: ${ethBalance} ETH, ${usdcBalance} USDC, ${donutBalance} DONUT`);
+    this.log(`  balances: ${ethBalance} ETH, ${usdcBalance} USDC`);
 
     // Mint USDC if < 1000 (6 decimals)
     if (usdcBalance < 1000n * 10n**6n) {
@@ -74,11 +68,6 @@ export class Agent {
       await mintUsdc(this.walletClient, this.publicClient, 10_000n * 10n**6n);
     }
 
-    // Mint DONUT if < 1000 (18 decimals)
-    if (donutBalance < 1000n * 10n**18n) {
-      this.log("  minting 10,000 DONUT...");
-      await mintDonut(this.walletClient, this.publicClient, 10_000n * 10n**18n);
-    }
 
     this.initialized = true;
   }

@@ -34,7 +34,7 @@ export function handleFundCoreLaunched(event: FundCoreLaunchedEvent): void {
 
   // Event params for FundCore:
   // launcher (indexed), rig (indexed), unit (indexed), recipient, auction, lpToken, quoteToken,
-  // tokenName, tokenSymbol, donutAmount, unitAmount, initialEmission, minEmission,
+  // tokenName, tokenSymbol, usdcAmount, unitAmount, initialEmission, minEmission,
   // minDonation, halvingPeriod, auctionInitPrice, auctionEpochPeriod, auctionPriceMultiplier, auctionMinInitPrice
 
   let unitAddress = event.params.unit

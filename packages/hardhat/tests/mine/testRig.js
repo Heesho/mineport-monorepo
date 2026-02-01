@@ -7,7 +7,7 @@ const AddressZero = "0x0000000000000000000000000000000000000000";
 const AddressDead = "0x000000000000000000000000000000000000dEaD";
 
 let owner, protocol, team, user0, user1, user2, user3;
-let weth, donut, registry, core, multicall, entropy;
+let weth, usdc, registry, core, multicall, entropy;
 let rig, rigContract, auction, unit, unitContract, lpToken;
 let rigFactory, auctionFactory;
 let uniswapFactory, uniswapRouter;
@@ -23,8 +23,9 @@ describe("Rig Comprehensive Tests", function () {
     const wethArtifact = await ethers.getContractFactory("MockWETH");
     weth = await wethArtifact.deploy();
 
-    // Deploy mock DONUT token
-    donut = await wethArtifact.deploy();
+    // Deploy mock USDC token (6 decimals)
+    const usdcArtifact = await ethers.getContractFactory("MockUSDC");
+    usdc = await usdcArtifact.deploy();
 
     // Deploy mock Entropy
     const entropyArtifact = await ethers.getContractFactory("MockEntropy");
@@ -55,7 +56,7 @@ describe("Rig Comprehensive Tests", function () {
     const coreArtifact = await ethers.getContractFactory("MineCore");
     core = await coreArtifact.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
@@ -63,7 +64,7 @@ describe("Rig Comprehensive Tests", function () {
       auctionFactory.address,
       entropy.address,
       protocol.address,
-      convert("100", 18)
+      convert("100", 6)
     );
 
     // Approve Core as factory in Registry
@@ -71,10 +72,10 @@ describe("Rig Comprehensive Tests", function () {
 
     // Deploy Multicall
     const multicallArtifact = await ethers.getContractFactory("MineMulticall");
-    multicall = await multicallArtifact.deploy(core.address, donut.address);
+    multicall = await multicallArtifact.deploy(core.address, usdc.address);
 
-    // Mint DONUT and WETH to users (reasonable amounts)
-    await donut.connect(user0).deposit({ value: convert("5000", 18) });
+    // Mint USDC and WETH to users (reasonable amounts)
+    await usdc.mint(user0.address, convert("5000", 6));
     await weth.connect(user1).deposit({ value: convert("100", 18) });
     await weth.connect(user2).deposit({ value: convert("100", 18) });
     await weth.connect(user3).deposit({ value: convert("100", 18) });
@@ -90,7 +91,7 @@ describe("Rig Comprehensive Tests", function () {
         tokenName: "Test Unit",
         tokenSymbol: "TUNIT",
         uri: "https://example.com/metadata",
-        donutAmount: convert("500", 18),
+        usdcAmount: convert("500", 6),
         unitAmount: convert("1000000", 18),
         initialUps: convert("4", 18),
         tailUps: convert("0.01", 18),
@@ -106,7 +107,7 @@ describe("Rig Comprehensive Tests", function () {
         auctionMinInitPrice: convert("0.001", 18),
       };
 
-      await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+      await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
       const tx = await core.connect(user0).launch(launchParams);
       const receipt = await tx.wait();
 
@@ -816,7 +817,7 @@ describe("Rig Comprehensive Tests", function () {
         tokenName: "Halving Test",
         tokenSymbol: "HALV",
         uri: "",
-        donutAmount: convert("500", 18),
+        usdcAmount: convert("500", 6),
         unitAmount: convert("1000000", 18),
         initialUps: convert("10000", 18), // Very high UPS for fast minting
         tailUps: convert("1", 18),
@@ -832,7 +833,7 @@ describe("Rig Comprehensive Tests", function () {
         auctionMinInitPrice: convert("0.001", 18),
       };
 
-      await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+      await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
       const tx = await core.connect(user0).launch(launchParams);
       const receipt = await tx.wait();
 
@@ -897,7 +898,7 @@ describe("Rig Comprehensive Tests", function () {
         tokenName: "Multi Slot",
         tokenSymbol: "MULTI",
         uri: "",
-        donutAmount: convert("500", 18),
+        usdcAmount: convert("500", 6),
         unitAmount: convert("1000000", 18),
         initialUps: convert("4", 18),
         tailUps: convert("0.01", 18),
@@ -913,7 +914,7 @@ describe("Rig Comprehensive Tests", function () {
         auctionMinInitPrice: convert("0.001", 18),
       };
 
-      await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+      await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
       const tx = await core.connect(user0).launch(launchParams);
       const receipt = await tx.wait();
 

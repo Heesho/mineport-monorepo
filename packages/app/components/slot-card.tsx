@@ -12,7 +12,6 @@ type SlotCardProps = {
   isCurrentUser: boolean;
   onClick: () => void;
   tokenSymbol: string;
-  donutUsdPrice: number;
   minerProfile?: {
     displayName: string;
     avatarUrl?: string;
@@ -31,7 +30,6 @@ export function SlotCard({
   isCurrentUser,
   onClick,
   tokenSymbol,
-  donutUsdPrice,
   minerProfile,
 }: SlotCardProps) {
   const glazedAmount = Number(formatUnits(slot.glazed, TOKEN_DECIMALS));
@@ -39,7 +37,7 @@ export function SlotCard({
 
   // Calculate USD value of glazed tokens
   const unitPrice = slot.unitPrice > 0n ? Number(formatEther(slot.unitPrice)) : 0;
-  const glazedUsd = glazedAmount * unitPrice * donutUsdPrice;
+  const glazedUsd = glazedAmount * unitPrice; // USDC ~= $1
 
   return (
     <button

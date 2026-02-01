@@ -14,7 +14,6 @@ type SlotSelectorProps = {
   selectedIndex: number;
   onSelectSlot: (index: number) => void;
   tokenSymbol: string;
-  donutUsdPrice: number;
   currentUserAddress?: `0x${string}`;
   minerProfiles?: Map<string, MinerProfile>; // keyed by lowercase address
 };
@@ -24,7 +23,6 @@ export function SlotSelector({
   selectedIndex,
   onSelectSlot,
   tokenSymbol,
-  donutUsdPrice,
   currentUserAddress,
   minerProfiles,
 }: SlotSelectorProps) {
@@ -88,7 +86,6 @@ export function SlotSelector({
               isCurrentUser={isCurrentUser}
               onClick={() => onSelectSlot(slot.index)}
               tokenSymbol={tokenSymbol}
-              donutUsdPrice={donutUsdPrice}
               minerProfile={profile}
             />
           );

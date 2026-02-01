@@ -39,9 +39,9 @@ export function getOrCreateProtocol(): Protocol {
     protocol = new Protocol(PROTOCOL_ID)
     protocol.totalUnits = ZERO_BI
     protocol.totalRigs = ZERO_BI
-    protocol.totalVolumeDonut = ZERO_BD
+    protocol.totalVolumeUsdc = ZERO_BD
     protocol.totalVolume24h = ZERO_BD
-    protocol.totalLiquidityDonut = ZERO_BD
+    protocol.totalLiquidityUsdc = ZERO_BD
     protocol.totalTreasuryRevenue = ZERO_BD
     protocol.totalProtocolRevenue = ZERO_BD
     protocol.totalMinted = ZERO_BD
@@ -69,7 +69,7 @@ export function getOrCreateAccount(address: Address): Account {
 export function createUnit(
   unitAddress: Address,
   lpPairAddress: Address,
-  donutAddress: Address,
+  usdcAddress: Address,
   launcher: Account,
   name: string,
   symbol: string,
@@ -88,7 +88,7 @@ export function createUnit(
 
   // Contracts
   unit.lpPair = lpPairAddress
-  unit.donutToken = donutAddress
+  unit.usdcToken = usdcAddress
   unit.launcher = launcher.id
 
   // Price data (will be updated on first Sync)
@@ -99,7 +99,7 @@ export function createUnit(
   unit.liquidity = ZERO_BD
   unit.liquidityUSD = ZERO_BD
   unit.reserveUnit = ZERO_BD
-  unit.reserveDonut = ZERO_BD
+  unit.reserveUsdc = ZERO_BD
 
   // Volume
   unit.volume24h = ZERO_BD
@@ -172,7 +172,7 @@ export function getOrCreateUnitHourData(unit: Unit, event: ethereum.Event): Unit
 
     // Volume
     hourData.volumeUnit = ZERO_BD
-    hourData.volumeDonut = ZERO_BD
+    hourData.volumeUsdc = ZERO_BD
     hourData.txCount = ZERO_BI
 
     // Liquidity
@@ -201,7 +201,7 @@ export function getOrCreateUnitDayData(unit: Unit, event: ethereum.Event): UnitD
 
     // Volume
     dayData.volumeUnit = ZERO_BD
-    dayData.volumeDonut = ZERO_BD
+    dayData.volumeUsdc = ZERO_BD
     dayData.txCount = ZERO_BI
 
     // Snapshots

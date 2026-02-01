@@ -13,7 +13,7 @@ interface IFundCore {
         address recipient;
         string tokenName;
         string tokenSymbol;
-        uint256 donutAmount;
+        uint256 usdcAmount;
         uint256 unitAmount;
         uint256 initialEmission;
         uint256 minEmission;
@@ -38,7 +38,7 @@ interface IFundCore {
 
     // Immutables
     function registry() external view returns (address);
-    function donutToken() external view returns (address);
+    function usdcToken() external view returns (address);
     function uniswapV2Factory() external view returns (address);
     function uniswapV2Router() external view returns (address);
     function unitFactory() external view returns (address);
@@ -47,7 +47,7 @@ interface IFundCore {
 
     // State
     function protocolFeeAddress() external view returns (address);
-    function minDonutForLaunch() external view returns (uint256);
+    function minUsdcForLaunch() external view returns (uint256);
     function deployedRigs(uint256 index) external view returns (address);
     function isDeployedRig(address rig) external view returns (bool);
     function rigToLauncher(address rig) external view returns (address);
@@ -63,7 +63,7 @@ interface IFundCore {
 
     // Restricted functions
     function setProtocolFeeAddress(address _protocolFeeAddress) external;
-    function setMinDonutForLaunch(uint256 _minDonutForLaunch) external;
+    function setMinUsdcForLaunch(uint256 _minUsdcForLaunch) external;
 
     // View functions
     function deployedRigsLength() external view returns (uint256);
@@ -79,7 +79,7 @@ interface IFundCore {
         address quoteToken,
         string tokenName,
         string tokenSymbol,
-        uint256 donutAmount,
+        uint256 usdcAmount,
         uint256 unitAmount,
         uint256 initialEmission,
         uint256 minEmission,
@@ -90,5 +90,5 @@ interface IFundCore {
         uint256 auctionMinInitPrice
     );
     event FundCore__ProtocolFeeAddressSet(address protocolFeeAddress);
-    event FundCore__MinDonutForLaunchSet(uint256 minDonutForLaunch);
+    event FundCore__MinUsdcForLaunchSet(uint256 minUsdcForLaunch);
 }

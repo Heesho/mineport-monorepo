@@ -2,7 +2,7 @@
 # FARPLACE UNIFIED SUBGRAPH SCHEMA
 # =============================================================================
 # Central concept: Unit token is the universal entity across all rig types
-# Each Unit has an LP pair (Unit/DONUT) for price tracking
+# Each Unit has an LP pair (Unit/USDC) for price tracking
 # Rigs are specialized by type but linked to their Unit
 # =============================================================================
 
@@ -17,12 +17,12 @@ type Protocol @entity(immutable: false) {
   totalUnits: BigInt!                  # Total Unit tokens launched
   totalRigs: BigInt!                   # Total rigs (same as units)
 
-  # Volume (in DONUT)
-  totalVolumeDonut: BigDecimal!        # All-time trading volume
+  # Volume (in USDC)
+  totalVolumeUsdc: BigDecimal!        # All-time trading volume
   totalVolume24h: BigDecimal!          # Rolling 24h volume (updated hourly)
 
   # Liquidity
-  totalLiquidityDonut: BigDecimal!     # Current total liquidity in DONUT
+  totalLiquidityUsdc: BigDecimal!     # Current total liquidity in USDC
 
   # Revenue
   totalTreasuryRevenue: BigDecimal!    # All treasury fees collected
@@ -52,8 +52,8 @@ type Unit @entity(immutable: false) {
   totalMinted: BigDecimal!             # Total ever minted by rig
 
   # Associated contracts
-  lpPair: Bytes!                       # LP pair address (Unit/DONUT)
-  donutToken: Bytes!                   # DONUT address (constant)
+  lpPair: Bytes!                       # LP pair address (Unit/USDC)
+  usdcToken: Bytes!                   # USDC address (constant)
   launcher: Account!
 
   # ==========================================================================
@@ -61,26 +61,26 @@ type Unit @entity(immutable: false) {
   # ==========================================================================
 
   # Current price
-  price: BigDecimal!                   # Current price in DONUT (reserve_donut / reserve_unit)
-  priceUSD: BigDecimal!                # Price in USD (if DONUT price available)
+  price: BigDecimal!                   # Current price in USDC (reserve_usdc / reserve_unit)
+  priceUSD: BigDecimal!                # Price in USD (if USDC price available)
 
   # Market metrics
-  marketCap: BigDecimal!               # price * totalSupply (in DONUT)
+  marketCap: BigDecimal!               # price * totalSupply (in USDC)
   marketCapUSD: BigDecimal!            # Market cap in USD
-  liquidity: BigDecimal!               # Total DONUT in LP
+  liquidity: BigDecimal!               # Total USDC in LP
   liquidityUSD: BigDecimal!            # Liquidity in USD
 
   # LP reserves (from Sync)
   reserveUnit: BigDecimal!             # Unit tokens in LP
-  reserveDonut: BigDecimal!            # DONUT in LP
+  reserveUsdc: BigDecimal!            # USDC in LP
 
   # ==========================================================================
   # VOLUME DATA (from LP Swap events)
   # ==========================================================================
 
-  volume24h: BigDecimal!               # 24h volume in DONUT
-  volume7d: BigDecimal!                # 7d volume in DONUT
-  volumeTotal: BigDecimal!             # All-time volume in DONUT
+  volume24h: BigDecimal!               # 24h volume in USDC
+  volume7d: BigDecimal!                # 7d volume in USDC
+  volumeTotal: BigDecimal!             # All-time volume in USDC
   txCount: BigInt!                     # Total swap transactions
   txCount24h: BigInt!                  # 24h transaction count
 
@@ -144,7 +144,7 @@ type UnitHourData @entity(immutable: false) {
   timestamp: BigInt!                   # Hour start (unix)
   hourIndex: Int!                      # Hours since epoch
 
-  # OHLC (in DONUT)
+  # OHLC (in USDC)
   open: BigDecimal!
   high: BigDecimal!
   low: BigDecimal!
@@ -152,11 +152,11 @@ type UnitHourData @entity(immutable: false) {
 
   # Volume
   volumeUnit: BigDecimal!              # Unit volume this hour
-  volumeDonut: BigDecimal!             # DONUT volume this hour
+  volumeUsdc: BigDecimal!             # USDC volume this hour
   txCount: BigInt!                     # Swaps this hour
 
   # Liquidity snapshot
-  liquidity: BigDecimal!               # DONUT in LP at hour end
+  liquidity: BigDecimal!               # USDC in LP at hour end
 }
 
 # Daily OHLCV candles
@@ -168,7 +168,7 @@ type UnitDayData @entity(immutable: false) {
   timestamp: BigInt!                   # Day start (unix)
   dayIndex: Int!                       # Days since epoch
 
-  # OHLC (in DONUT)
+  # OHLC (in USDC)
   open: BigDecimal!
   high: BigDecimal!
   low: BigDecimal!
@@ -176,7 +176,7 @@ type UnitDayData @entity(immutable: false) {
 
   # Volume
   volumeUnit: BigDecimal!
-  volumeDonut: BigDecimal!
+  volumeUsdc: BigDecimal!
   txCount: BigInt!
 
   # Liquidity snapshot
@@ -199,8 +199,8 @@ type Swap @entity(immutable: true) {
   # Swap details
   type: String!                        # "buy" or "sell"
   amountUnit: BigDecimal!              # Unit tokens swapped
-  amountDonut: BigDecimal!             # DONUT swapped
-  price: BigDecimal!                   # Execution price (donut/unit)
+  amountUsdc: BigDecimal!             # USDC swapped
+  price: BigDecimal!                   # Execution price (usdc/unit)
 
   # Transaction
   timestamp: BigInt!
@@ -470,7 +470,7 @@ type Account @entity(immutable: false) {
   id: ID!                              # Wallet address
 
   # Aggregate stats
-  totalSwapVolume: BigDecimal!         # Volume traded in DONUT
+  totalSwapVolume: BigDecimal!         # Volume traded in USDC
   totalRigSpend: BigDecimal!           # Spent on rig actions
   totalMined: BigDecimal!              # Unit tokens earned
   totalWon: BigDecimal!                # Unit tokens won (spin)
@@ -487,12 +487,3 @@ type Account @entity(immutable: false) {
   donations: [Donation!]! @derivedFrom(field: "donor")
 }
 
-# =============================================================================
-# DONUT TOKEN (for USD conversion - optional)
-# =============================================================================
-
-type DonutToken @entity(immutable: false) {
-  id: ID!                              # "donut" or donut address
-  priceUSD: BigDecimal!                # Current DONUT/USD price
-  lastUpdated: BigInt!
-}

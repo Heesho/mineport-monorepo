@@ -12,7 +12,6 @@ export const CONTRACT_ADDRESSES = {
   multicall: "0xE59CD876ae177Ff513C1efB6922f9902e984946C",
   // Token addresses (Mock tokens for staging)
   usdc: "0xe90495BE187d434e23A9B1FeC0B6Ce039700870e", // Mock USDC
-  donut: "0xD50B69581362C60Ce39596B237C71e07Fc4F6fdA", // Mock DONUT
   // Uniswap V2 on Base
   uniV2Router: "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24",
   uniV2Factory: "0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6",
@@ -81,14 +80,14 @@ export const CORE_ABI = [
   },
   {
     inputs: [],
-    name: "minDonutForLaunch",
+    name: "minUsdcForLaunch",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
   },
   {
     inputs: [],
-    name: "donutToken",
+    name: "usdcToken",
     outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "view",
     type: "function",
@@ -185,7 +184,7 @@ export const MULTICALL_ABI = [
           { internalType: "string", name: "tokenName", type: "string" },
           { internalType: "string", name: "tokenSymbol", type: "string" },
           { internalType: "string", name: "uri", type: "string" },
-          { internalType: "uint256", name: "donutAmount", type: "uint256" },
+          { internalType: "uint256", name: "usdcAmount", type: "uint256" },
           { internalType: "uint256", name: "unitAmount", type: "uint256" },
           { internalType: "uint256", name: "initialUps", type: "uint256" },
           { internalType: "uint256", name: "tailUps", type: "uint256" },
@@ -242,7 +241,7 @@ export const MULTICALL_ABI = [
           { internalType: "string", name: "rigUri", type: "string" },
           { internalType: "uint256", name: "capacity", type: "uint256" },
           { internalType: "uint256", name: "accountQuoteBalance", type: "uint256" },
-          { internalType: "uint256", name: "accountDonutBalance", type: "uint256" },
+          { internalType: "uint256", name: "accountUsdcBalance", type: "uint256" },
           { internalType: "uint256", name: "accountUnitBalance", type: "uint256" },
           { internalType: "uint256", name: "accountClaimable", type: "uint256" },
         ],
@@ -281,7 +280,7 @@ export const MULTICALL_ABI = [
           { internalType: "string", name: "rigUri", type: "string" },
           { internalType: "uint256", name: "capacity", type: "uint256" },
           { internalType: "uint256", name: "accountQuoteBalance", type: "uint256" },
-          { internalType: "uint256", name: "accountDonutBalance", type: "uint256" },
+          { internalType: "uint256", name: "accountUsdcBalance", type: "uint256" },
           { internalType: "uint256", name: "accountUnitBalance", type: "uint256" },
           { internalType: "uint256", name: "accountClaimable", type: "uint256" },
         ],
@@ -345,7 +344,7 @@ export const MULTICALL_ABI = [
   },
   {
     inputs: [],
-    name: "donut",
+    name: "usdc",
     outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "view",
     type: "function",
@@ -375,7 +374,7 @@ export const SPIN_MULTICALL_ABI = [
           { internalType: "uint256", name: "unitPrice", type: "uint256" },
           { internalType: "string", name: "rigUri", type: "string" },
           { internalType: "uint256", name: "accountQuoteBalance", type: "uint256" },
-          { internalType: "uint256", name: "accountDonutBalance", type: "uint256" },
+          { internalType: "uint256", name: "accountUsdcBalance", type: "uint256" },
           { internalType: "uint256", name: "accountUnitBalance", type: "uint256" },
         ],
         internalType: "struct SpinMulticall.SpinRigState",
@@ -487,7 +486,7 @@ export const FUND_MULTICALL_ABI = [
           { internalType: "uint256", name: "unitPrice", type: "uint256" },
           { internalType: "string", name: "rigUri", type: "string" },
           { internalType: "uint256", name: "accountPaymentTokenBalance", type: "uint256" },
-          { internalType: "uint256", name: "accountDonutBalance", type: "uint256" },
+          { internalType: "uint256", name: "accountUsdcBalance", type: "uint256" },
           { internalType: "uint256", name: "accountUnitBalance", type: "uint256" },
           { internalType: "uint256", name: "accountTodayDonation", type: "uint256" },
         ],
@@ -967,7 +966,7 @@ export type RigState = {
   rigUri: string;
   capacity: bigint;
   accountQuoteBalance: bigint;
-  accountDonutBalance: bigint;
+  accountUsdcBalance: bigint;
   accountUnitBalance: bigint;
   accountClaimable: bigint;
 };
@@ -998,7 +997,7 @@ export type SpinRigState = {
   unitPrice: bigint;
   rigUri: string;
   accountQuoteBalance: bigint;
-  accountDonutBalance: bigint;
+  accountUsdcBalance: bigint;
   accountUnitBalance: bigint;
 };
 
@@ -1012,7 +1011,7 @@ export type FundRigState = {
   unitPrice: bigint;
   rigUri: string;
   accountPaymentTokenBalance: bigint;
-  accountDonutBalance: bigint;
+  accountUsdcBalance: bigint;
   accountUnitBalance: bigint;
   accountTodayDonation: bigint;
 };
@@ -1030,7 +1029,7 @@ export type LaunchParams = {
   tokenName: string;
   tokenSymbol: string;
   uri: string;
-  donutAmount: bigint;
+  usdcAmount: bigint;
   unitAmount: bigint;
   initialUps: bigint;
   tailUps: bigint;
@@ -1065,7 +1064,7 @@ export const LAUNCH_DEFAULTS = {
   auctionMinInitPrice: BigInt("1000000000000000000000"), // 1000 LP
 } as const;
 
-// Mock token mint ABI - for test minting on MockDONUT/MockUSDC
+// Mock token mint ABI - for test minting on MockUSDC
 export const MOCK_MINT_ABI = [
   {
     inputs: [

@@ -15,8 +15,8 @@ export type SubgraphLaunchpad = {
   id: string;
   totalUnits: string;
   totalRigs: string;
-  totalVolumeDonut: string;
-  totalLiquidityDonut: string;
+  totalVolumeUsdc: string;
+  totalLiquidityUsdc: string;
   totalTreasuryRevenue: string;
   totalProtocolRevenue: string;
   totalMinted: string;
@@ -29,9 +29,9 @@ export type SubgraphRig = {
     name: string;
     symbol: string;
     lpPair: string; // LP pair address (Bytes)
-    price: string; // BigDecimal (in DONUT)
-    marketCap: string; // BigDecimal (in DONUT)
-    liquidity: string; // BigDecimal (DONUT in LP)
+    price: string; // BigDecimal (in USDC)
+    marketCap: string; // BigDecimal (in USDC)
+    liquidity: string; // BigDecimal (USDC in LP)
     totalSupply: string; // BigDecimal
     totalMinted: string; // BigDecimal
     lastActivityAt: string; // BigInt timestamp
@@ -130,12 +130,12 @@ export type SubgraphDonation = {
 export type SubgraphUnitCandle = {
   id: string;
   timestamp: string;
-  open: string; // BigDecimal price in DONUT
+  open: string; // BigDecimal price in USDC
   high: string;
   low: string;
   close: string;
   volumeUnit: string;
-  volumeDonut: string;
+  volumeUsdc: string;
   txCount: string;
 };
 
@@ -211,8 +211,8 @@ export const GET_LAUNCHPAD_STATS_QUERY = gql`
       id
       totalUnits
       totalRigs
-      totalVolumeDonut
-      totalLiquidityDonut
+      totalVolumeUsdc
+      totalLiquidityUsdc
       totalTreasuryRevenue
       totalProtocolRevenue
       totalMinted
@@ -435,7 +435,7 @@ export const GET_UNIT_HOUR_DATA_QUERY = gql`
       low
       close
       volumeUnit
-      volumeDonut
+      volumeUsdc
       txCount
     }
   }
@@ -457,7 +457,7 @@ export const GET_UNIT_DAY_DATA_QUERY = gql`
       low
       close
       volumeUnit
-      volumeDonut
+      volumeUsdc
       txCount
     }
   }

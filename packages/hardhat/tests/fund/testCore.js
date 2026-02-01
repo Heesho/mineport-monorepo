@@ -7,7 +7,7 @@ const AddressZero = "0x0000000000000000000000000000000000000000";
 const AddressDead = "0x000000000000000000000000000000000000dEaD";
 
 let owner, protocol, user0, user1, user2;
-let usdc, donut, registry, core;
+let usdc, registry, core;
 let fundRig, auction, unit, lpToken;
 let unitFactory, fundRigFactory, auctionFactory;
 let uniswapFactory, uniswapRouter;
@@ -23,11 +23,6 @@ describe("FundCore Launch Tests", function () {
     const usdcArtifact = await ethers.getContractFactory("MockUSDC");
     usdc = await usdcArtifact.deploy();
     console.log("- USDC Initialized");
-
-    // Deploy mock DONUT token
-    const donutArtifact = await ethers.getContractFactory("MockWETH");
-    donut = await donutArtifact.deploy();
-    console.log("- DONUT Initialized");
 
     // Deploy mock Uniswap V2 Factory and Router
     const mockUniswapFactoryArtifact = await ethers.getContractFactory("MockUniswapV2Factory");
@@ -60,14 +55,14 @@ describe("FundCore Launch Tests", function () {
     const coreArtifact = await ethers.getContractFactory("FundCore");
     core = await coreArtifact.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
       fundRigFactory.address,
       auctionFactory.address,
       protocol.address,
-      convert("100", 18) // minDonutForLaunch
+      convert("100", 6) // minUsdcForLaunch
     );
     console.log("- FundCore Initialized");
 
@@ -75,9 +70,9 @@ describe("FundCore Launch Tests", function () {
     await registry.setFactoryApproval(core.address, true);
     console.log("- FundCore approved in Registry");
 
-    // Mint DONUT to user0 for launching
-    await donut.connect(user0).deposit({ value: convert("1000", 18) });
-    console.log("- DONUT minted to user0");
+    // Mint USDC to user0 for launching
+    await usdc.mint(user0.address, convert("1000", 6));
+    console.log("- USDC minted to user0");
 
     console.log("Initialization Complete\n");
   });
@@ -85,8 +80,8 @@ describe("FundCore Launch Tests", function () {
   it("Core state is correct", async function () {
     console.log("******************************************************");
     expect(await core.protocolFeeAddress()).to.equal(protocol.address);
-    expect(await core.donutToken()).to.equal(donut.address);
-    expect(await core.minDonutForLaunch()).to.equal(convert("100", 18));
+    expect(await core.usdcToken()).to.equal(usdc.address);
+    expect(await core.minUsdcForLaunch()).to.equal(convert("100", 6));
     expect(await core.deployedRigsLength()).to.equal(0);
     expect(await core.RIG_TYPE()).to.equal("fund");
     console.log("Core state verified");
@@ -101,7 +96,7 @@ describe("FundCore Launch Tests", function () {
       recipient: user1.address, // recipient receives 50% of donations
       tokenName: "Test Unit",
       tokenSymbol: "TUNIT",
-      donutAmount: convert("500", 18),
+      usdcAmount: convert("500", 6),
       unitAmount: convert("1000000", 18),
       initialEmission: convert("345600", 18), // 345,600 per day
       minEmission: convert("864", 18), // 864 per day
@@ -112,8 +107,8 @@ describe("FundCore Launch Tests", function () {
       auctionMinInitPrice: convert("1", 6),
     };
 
-    // Approve DONUT
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    // Approve USDC
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
 
     // Launch
     const tx = await core.connect(user0).launch(launchParams);
@@ -178,7 +173,7 @@ describe("FundCore Launch Tests", function () {
     console.log("FundRig parameters verified");
   });
 
-  it("Cannot launch with insufficient DONUT", async function () {
+  it("Cannot launch with insufficient USDC", async function () {
     console.log("******************************************************");
 
     const launchParams = {
@@ -187,7 +182,7 @@ describe("FundCore Launch Tests", function () {
       recipient: user1.address,
       tokenName: "Test Unit 2",
       tokenSymbol: "TUNIT2",
-      donutAmount: convert("50", 18), // Less than minDonutForLaunch (100)
+      usdcAmount: convert("50", 6), // Less than minUsdcForLaunch (100)
       unitAmount: convert("1000000", 18),
       initialEmission: convert("345600", 18),
       minEmission: convert("864", 18),
@@ -198,12 +193,12 @@ describe("FundCore Launch Tests", function () {
       auctionMinInitPrice: convert("1", 6),
     };
 
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
 
     await expect(core.connect(user0).launch(launchParams)).to.be.revertedWith(
-      "FundCore__InsufficientDonut()"
+      "FundCore__InsufficientUsdc()"
     );
-    console.log("Launch correctly reverted with insufficient DONUT");
+    console.log("Launch correctly reverted with insufficient USDC");
   });
 
   it("Cannot launch with zero launcher address", async function () {
@@ -215,7 +210,7 @@ describe("FundCore Launch Tests", function () {
       recipient: user1.address,
       tokenName: "Test Unit 2",
       tokenSymbol: "TUNIT2",
-      donutAmount: convert("500", 18),
+      usdcAmount: convert("500", 6),
       unitAmount: convert("1000000", 18),
       initialEmission: convert("345600", 18),
       minEmission: convert("864", 18),
@@ -226,7 +221,7 @@ describe("FundCore Launch Tests", function () {
       auctionMinInitPrice: convert("1", 6),
     };
 
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
 
     await expect(core.connect(user0).launch(launchParams)).to.be.revertedWith(
       "FundCore__ZeroLauncher()"
@@ -243,7 +238,7 @@ describe("FundCore Launch Tests", function () {
       recipient: user1.address,
       tokenName: "Test Unit 2",
       tokenSymbol: "TUNIT2",
-      donutAmount: convert("500", 18),
+      usdcAmount: convert("500", 6),
       unitAmount: convert("1000000", 18),
       initialEmission: convert("345600", 18),
       minEmission: convert("864", 18),
@@ -254,7 +249,7 @@ describe("FundCore Launch Tests", function () {
       auctionMinInitPrice: convert("1", 6),
     };
 
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
 
     await expect(core.connect(user0).launch(launchParams)).to.be.revertedWith(
       "FundCore__ZeroQuoteToken()"
@@ -271,7 +266,7 @@ describe("FundCore Launch Tests", function () {
       recipient: user1.address,
       tokenName: "",
       tokenSymbol: "TUNIT2",
-      donutAmount: convert("500", 18),
+      usdcAmount: convert("500", 6),
       unitAmount: convert("1000000", 18),
       initialEmission: convert("345600", 18),
       minEmission: convert("864", 18),
@@ -282,7 +277,7 @@ describe("FundCore Launch Tests", function () {
       auctionMinInitPrice: convert("1", 6),
     };
 
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
 
     await expect(core.connect(user0).launch(launchParams)).to.be.revertedWith(
       "FundCore__EmptyTokenName()"
@@ -299,7 +294,7 @@ describe("FundCore Launch Tests", function () {
       recipient: user1.address,
       tokenName: "Test Unit 2",
       tokenSymbol: "",
-      donutAmount: convert("500", 18),
+      usdcAmount: convert("500", 6),
       unitAmount: convert("1000000", 18),
       initialEmission: convert("345600", 18),
       minEmission: convert("864", 18),
@@ -310,7 +305,7 @@ describe("FundCore Launch Tests", function () {
       auctionMinInitPrice: convert("1", 6),
     };
 
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
 
     await expect(core.connect(user0).launch(launchParams)).to.be.revertedWith(
       "FundCore__EmptyTokenSymbol()"
@@ -327,7 +322,7 @@ describe("FundCore Launch Tests", function () {
       recipient: user1.address,
       tokenName: "Test Unit 2",
       tokenSymbol: "TUNIT2",
-      donutAmount: convert("500", 18),
+      usdcAmount: convert("500", 6),
       unitAmount: 0,
       initialEmission: convert("345600", 18),
       minEmission: convert("864", 18),
@@ -338,7 +333,7 @@ describe("FundCore Launch Tests", function () {
       auctionMinInitPrice: convert("1", 6),
     };
 
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
 
     await expect(core.connect(user0).launch(launchParams)).to.be.revertedWith(
       "FundCore__ZeroUnitAmount()"
@@ -356,7 +351,7 @@ describe("FundCore Launch Tests", function () {
       recipient: user1.address,
       tokenName: "Test Unit 2",
       tokenSymbol: "TUNIT2",
-      donutAmount: convert("500", 18),
+      usdcAmount: convert("500", 6),
       unitAmount: convert("1000000", 18),
       initialEmission: convert("100", 18),
       minEmission: convert("200", 18), // greater than initial
@@ -367,7 +362,7 @@ describe("FundCore Launch Tests", function () {
       auctionMinInitPrice: convert("1", 6),
     };
 
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
 
     await expect(core.connect(user0).launch(launchParams)).to.be.revertedWith(
       "FundRig__InvalidEmission()"
@@ -392,19 +387,19 @@ describe("FundCore Launch Tests", function () {
     await core.connect(owner).setProtocolFeeAddress(protocol.address);
   });
 
-  it("Protocol owner can change min DONUT for launch", async function () {
+  it("Protocol owner can change min USDC for launch", async function () {
     console.log("******************************************************");
 
     await expect(
-      core.connect(user0).setMinDonutForLaunch(convert("200", 18))
+      core.connect(user0).setMinUsdcForLaunch(convert("200", 6))
     ).to.be.revertedWith("Ownable: caller is not the owner");
 
-    await core.connect(owner).setMinDonutForLaunch(convert("200", 18));
-    expect(await core.minDonutForLaunch()).to.equal(convert("200", 18));
-    console.log("Min DONUT for launch:", divDec(await core.minDonutForLaunch()));
+    await core.connect(owner).setMinUsdcForLaunch(convert("200", 6));
+    expect(await core.minUsdcForLaunch()).to.equal(convert("200", 6));
+    console.log("Min USDC for launch:", divDec(await core.minUsdcForLaunch()));
 
     // Change back
-    await core.connect(owner).setMinDonutForLaunch(convert("100", 18));
+    await core.connect(owner).setMinUsdcForLaunch(convert("100", 6));
   });
 
   it("Can launch multiple fund rigs", async function () {
@@ -416,7 +411,7 @@ describe("FundCore Launch Tests", function () {
       recipient: user2.address,
       tokenName: "Second Unit",
       tokenSymbol: "SUNIT",
-      donutAmount: convert("500", 18),
+      usdcAmount: convert("500", 6),
       unitAmount: convert("2000000", 18),
       initialEmission: convert("172800", 18), // different emission
       minEmission: convert("432", 18),
@@ -427,9 +422,9 @@ describe("FundCore Launch Tests", function () {
       auctionMinInitPrice: convert("10", 6),
     };
 
-    // Mint and approve DONUT for user1
-    await donut.connect(user1).deposit({ value: convert("1000", 18) });
-    await donut.connect(user1).approve(core.address, launchParams.donutAmount);
+    // Mint and approve USDC for user1
+    await usdc.mint(user1.address, convert("1000", 6));
+    await usdc.connect(user1).approve(core.address, launchParams.usdcAmount);
 
     const tx = await core.connect(user1).launch(launchParams);
     await tx.wait();

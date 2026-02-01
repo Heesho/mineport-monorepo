@@ -13,7 +13,7 @@ interface IMineCore {
         string tokenName;
         string tokenSymbol;
         string uri;
-        uint256 donutAmount;
+        uint256 usdcAmount;
         uint256 unitAmount;
         uint256 initialUps;
         uint256 tailUps;
@@ -33,11 +33,11 @@ interface IMineCore {
         external
         returns (address unit, address rig, address auction, address lpToken);
     function protocolFeeAddress() external view returns (address);
-    function donutToken() external view returns (address);
+    function usdcToken() external view returns (address);
     function uniswapV2Factory() external view returns (address);
     function uniswapV2Router() external view returns (address);
     function entropy() external view returns (address);
-    function minDonutForLaunch() external view returns (uint256);
+    function minUsdcForLaunch() external view returns (uint256);
     function isDeployedRig(address rig) external view returns (bool);
     function rigToLauncher(address rig) external view returns (address);
     function rigToUnit(address rig) external view returns (address);

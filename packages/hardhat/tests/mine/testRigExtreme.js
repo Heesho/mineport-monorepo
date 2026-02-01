@@ -13,15 +13,15 @@ function getFutureDeadline() {
 }
 
 let owner, protocol, team, user0, user1, user2, user3, attacker;
-let weth, donut, registry, core, entropy;
+let weth, usdc, registry, core, entropy;
 let rig, rigContract, auction, unit, unitContract, lpToken;
 
 // Helper to get fresh rig for isolated tests
 async function deployFreshRig(params = {}) {
-  // Mint more donut if needed
-  const donutBal = await donut.balanceOf(user0.address);
-  if (donutBal.lt(convert("600", 18))) {
-    await donut.connect(user0).deposit({ value: convert("1000", 18) });
+  // Mint more usdc if needed
+  const usdcBal = await usdc.balanceOf(user0.address);
+  if (usdcBal.lt(convert("600", 6))) {
+    await usdc.mint(user0.address, convert("1000", 6));
   }
 
   const launchParams = {
@@ -30,7 +30,7 @@ async function deployFreshRig(params = {}) {
     tokenName: params.tokenName || "Test Unit",
     tokenSymbol: params.tokenSymbol || "TUNIT",
     uri: params.uri || "",
-    donutAmount: params.donutAmount || convert("200", 18), // Reduced from 500
+    usdcAmount: params.usdcAmount || convert("200", 6), // Reduced from 500
     unitAmount: params.unitAmount || convert("1000000", 18),
     initialUps: params.initialUps || convert("4", 18),
     tailUps: params.tailUps || convert("0.01", 18),
@@ -46,7 +46,7 @@ async function deployFreshRig(params = {}) {
     auctionMinInitPrice: params.auctionMinInitPrice || convert("0.001", 18),
   };
 
-  await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+  await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
   const tx = await core.connect(user0).launch(launchParams);
   const receipt = await tx.wait();
   const launchEvent = receipt.events.find((e) => e.event === "MineCore__Launched");
@@ -68,12 +68,12 @@ async function ensureWeth(user, amount) {
   }
 }
 
-// Helper to ensure user has enough donut
-async function ensureDonut(user, amount) {
-  const bal = await donut.balanceOf(user.address);
+// Helper to ensure user has enough usdc
+async function ensureUsdc(user, amount) {
+  const bal = await usdc.balanceOf(user.address);
   if (bal.lt(amount)) {
-    const needed = amount.sub(bal).add(convert("500", 18));
-    await donut.connect(user).deposit({ value: needed });
+    const needed = amount.sub(bal).add(convert("500", 6));
+    await usdc.mint(user.address, needed);
   }
 }
 
@@ -87,7 +87,8 @@ describe("EXTREME RIG TESTING - TRY TO BREAK EVERYTHING", function () {
     // Deploy infrastructure
     const wethArtifact = await ethers.getContractFactory("MockWETH");
     weth = await wethArtifact.deploy();
-    donut = await wethArtifact.deploy();
+    const usdcArtifact = await ethers.getContractFactory("MockUSDC");
+    usdc = await usdcArtifact.deploy();
 
     const entropyArtifact = await ethers.getContractFactory("MockEntropy");
     entropy = await entropyArtifact.deploy();
@@ -114,7 +115,7 @@ describe("EXTREME RIG TESTING - TRY TO BREAK EVERYTHING", function () {
     const coreArtifact = await ethers.getContractFactory("MineCore");
     core = await coreArtifact.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
@@ -122,7 +123,7 @@ describe("EXTREME RIG TESTING - TRY TO BREAK EVERYTHING", function () {
       auctionFactory.address,
       entropy.address,
       protocol.address,
-      convert("100", 18)
+      convert("100", 6)
     );
 
     // Approve Core as factory in Registry
@@ -130,7 +131,7 @@ describe("EXTREME RIG TESTING - TRY TO BREAK EVERYTHING", function () {
 
     // Fund everyone generously (but within account balance)
     for (const user of [user0, user1, user2, user3, attacker]) {
-      await donut.connect(user).deposit({ value: convert("2000", 18) });
+      await usdc.mint(user.address, convert("2000", 6));
       await weth.connect(user).deposit({ value: convert("500", 18) });
     }
 

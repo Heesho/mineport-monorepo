@@ -34,7 +34,7 @@ export type MineRigState = {
   accountClaimable: bigint;
   accountUnitBalance: bigint;
   accountQuoteBalance: bigint;
-  accountDonutBalance: bigint;
+  accountUsdcBalance: bigint;
 };
 
 export type SpinRigState = {
@@ -48,7 +48,7 @@ export type SpinRigState = {
   unitPrice: bigint;
   accountUnitBalance: bigint;
   accountQuoteBalance: bigint;
-  accountDonutBalance: bigint;
+  accountUsdcBalance: bigint;
 };
 
 export type FundRigState = {
@@ -59,7 +59,7 @@ export type FundRigState = {
   unitPrice: bigint;
   accountUnitBalance: bigint;
   accountQuoteBalance: bigint;
-  accountDonutBalance: bigint;
+  accountUsdcBalance: bigint;
   accountTodayDonation: bigint;
   pendingRewards: bigint;
   unclaimedDays: bigint[];
@@ -76,7 +76,7 @@ export type AuctionState = {
 export type LPState = {
   lpAddress: Address;
   reserveUnit: bigint;
-  reserveDonut: bigint;
+  reserveUsdc: bigint;
   totalSupply: bigint;
   agentLPBalance: bigint;
 };
@@ -84,7 +84,6 @@ export type LPState = {
 export type WorldState = {
   ethBalance: bigint;
   usdcBalance: bigint;
-  donutBalance: bigint;
   rigs: Array<{
     state: MineRigState | SpinRigState | FundRigState;
     auction: AuctionState;
@@ -273,7 +272,7 @@ async function readMineRigState(
     accountClaimable: state.accountClaimable,
     accountUnitBalance: state.accountUnitBalance,
     accountQuoteBalance: state.accountQuoteBalance,
-    accountDonutBalance: state.accountDonutBalance,
+    accountUsdcBalance: state.accountUsdcBalance,
   };
 }
 
@@ -301,7 +300,7 @@ async function readSpinRigState(
     unitPrice: state.unitPrice,
     accountUnitBalance: state.accountUnitBalance,
     accountQuoteBalance: state.accountQuoteBalance,
-    accountDonutBalance: state.accountDonutBalance,
+    accountUsdcBalance: state.accountUsdcBalance,
   };
 }
 
@@ -345,7 +344,7 @@ async function readFundRigState(
     accountUnitBalance: rigState.accountUnitBalance,
     // FundRig returns accountPaymentTokenBalance instead of accountQuoteBalance
     accountQuoteBalance: rigState.accountPaymentTokenBalance,
-    accountDonutBalance: rigState.accountDonutBalance,
+    accountUsdcBalance: rigState.accountUsdcBalance,
     accountTodayDonation: rigState.accountTodayDonation,
     pendingRewards,
     unclaimedDays,
@@ -391,7 +390,7 @@ async function readLPState(
   rig: RigInfo,
 ): Promise<LPState> {
   const lpAddress = rig.lpAddress;
-  const donutAddress = ADDRESSES.donut as Address;
+  const usdcAddress = ADDRESSES.usdc as Address;
 
   // Batch: getReserves, token0, totalSupply, balanceOf(agent)
   const [reserves, token0, totalSupply, agentLPBalance] =
@@ -422,16 +421,16 @@ async function readLPState(
       allowFailure: false,
     });
 
-  // Determine which reserve is Unit vs DONUT based on token0
-  const token0IsDonut =
-    token0.toLowerCase() === donutAddress.toLowerCase();
-  const reserveUnit = token0IsDonut ? reserves[1] : reserves[0];
-  const reserveDonut = token0IsDonut ? reserves[0] : reserves[1];
+  // Determine which reserve is Unit vs USDC based on token0
+  const token0IsUsdc =
+    token0.toLowerCase() === usdcAddress.toLowerCase();
+  const reserveUnit = token0IsUsdc ? reserves[1] : reserves[0];
+  const reserveUsdc = token0IsUsdc ? reserves[0] : reserves[1];
 
   return {
     lpAddress,
     reserveUnit,
-    reserveDonut,
+    reserveUsdc,
     totalSupply,
     agentLPBalance,
   };
@@ -450,17 +449,11 @@ export async function readWorldState(
   agentAddress: Address,
   rigInfos: RigInfo[],
 ): Promise<WorldState> {
-  // 1. Read agent balances (ETH, USDC, DONUT) in parallel with rig reads
+  // 1. Read agent balances (ETH, USDC) in parallel with rig reads
   const balancePromise = publicClient.multicall({
     contracts: [
       {
         address: ADDRESSES.usdc as Address,
-        abi: ERC20_ABI,
-        functionName: "balanceOf",
-        args: [agentAddress],
-      },
-      {
-        address: ADDRESSES.donut as Address,
         abi: ERC20_ABI,
         functionName: "balanceOf",
         args: [agentAddress],
@@ -503,12 +496,11 @@ export async function readWorldState(
     ...rigPromises,
   ]);
 
-  const [usdcBalance, donutBalance] = tokenBalances;
+  const [usdcBalance] = tokenBalances;
 
   return {
     ethBalance,
     usdcBalance,
-    donutBalance,
     rigs: rigResults,
   };
 }

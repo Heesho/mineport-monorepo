@@ -8,7 +8,6 @@ import { ipfsToHttp } from "@/lib/constants";
 
 type RigCardProps = {
   rig: RigListItem;
-  donutUsdPrice?: number;
   isTopBump?: boolean;
   isNewBump?: boolean;
 };
@@ -20,7 +19,7 @@ const formatUsd = (value: number) => {
   return `$${value.toFixed(2)}`;
 };
 
-export function RigCard({ rig, donutUsdPrice = 0.01, isTopBump = false, isNewBump = false }: RigCardProps) {
+export function RigCard({ rig, isTopBump = false, isNewBump = false }: RigCardProps) {
   // Market cap comes directly from subgraph as USD
   const marketCapUsd = rig.marketCapUsd;
   const [logoUrl, setLogoUrl] = useState<string | null>(null);

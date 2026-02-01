@@ -21,7 +21,7 @@ export type RigListItem = {
   priceUsd: number;
   change24h: number;
   marketCapUsd: number;
-  volume24h: number;           // 24h volume in DONUT (not USD)
+  volume24h: number;           // 24h volume in USDC
   liquidityUsd: number;
   // Subgraph data
   totalMinted: bigint;

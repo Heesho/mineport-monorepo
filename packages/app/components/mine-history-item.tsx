@@ -35,7 +35,7 @@ function formatNumber(num: number): string {
 export const MineHistoryItem = memo(function MineHistoryItem({
   mine,
   timeAgo,
-  tokenSymbol = "DONUT",
+  tokenSymbol = "TOKEN",
 }: MineHistoryItemProps) {
   // Use cached profile lookup
   const { displayName, avatarUrl, fid } = useProfile(mine.miner);

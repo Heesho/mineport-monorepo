@@ -12,15 +12,12 @@ const divDec = (amount, decimals = 18) => amount / 10 ** decimals;
 
 // Base Mainnet addresses
 const USDC_MAINNET = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // Real USDC on Base
-const DONUT_MAINNET = "0xae4a37d554c6d6f3e398546d8566b25052e0169c"; // Real DONUT on Base
 
 // Mock Token addresses (for staging/testing on mainnet)
 const MOCK_USDC = "0xe90495BE187d434e23A9B1FeC0B6Ce039700870e"; // Mock USDC for testing
-const MOCK_DONUT = "0xD50B69581362C60Ce39596B237C71e07Fc4F6fdA"; // Mock DONUT for testing
 
 // Toggle between mock and mainnet tokens
 const USDC_ADDRESS = MOCK_USDC; // Switch to USDC_MAINNET for production
-const DONUT_ADDRESS = MOCK_DONUT; // Switch to DONUT_MAINNET for production
 
 const UNISWAP_V2_FACTORY = "0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6";
 const UNISWAP_V2_ROUTER = "0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24";
@@ -29,7 +26,7 @@ const ENTROPY_ADDRESS = "0x6e7d74fa7d5c90fef9f0512987605a6d546181bb"; // Pyth En
 // Protocol settings
 const PROTOCOL_FEE_ADDRESS = "0xbA366c82815983fF130C23CED78bD95E1F2c18EA"; // TODO: Set protocol fee recipient
 const MULTISIG_ADDRESS = "0xeE0CB49D2805DA6bC0A979ddAd87bb793fbB765E";
-const MIN_DONUT_FOR_LAUNCH = convert("1000", 18); // 1000 DONUT minimum
+const MIN_USDC_FOR_LAUNCH = convert("1", 6); // 1 USDC minimum
 
 // Deployed Contract Addresses (paste after deployment)
 const REGISTRY = "0x2Bdb8f8F4f0cF545D919fA5C041F84a039f2c4A3"; // Deploy first, then paste address here
@@ -47,7 +44,6 @@ const FUND_MULTICALL = "0xC39AF527b30509e28EC265F847c00432d54cd9E6";
 
 // Contract Variables
 let usdc,
-  donut,
   registry,
   unitFactory,
   mineRigFactory,
@@ -69,11 +65,6 @@ async function getContracts() {
   usdc = await ethers.getContractAt(
     "contracts/mocks/MockUSDC.sol:MockUSDC",
     USDC_ADDRESS,
-  );
-
-  donut = await ethers.getContractAt(
-    "contracts/mocks/MockDONUT.sol:MockDONUT",
-    DONUT_ADDRESS,
   );
 
   if (REGISTRY) {
@@ -227,8 +218,8 @@ async function deployMineCore() {
   if (!PROTOCOL_FEE_ADDRESS) {
     throw new Error("PROTOCOL_FEE_ADDRESS must be set before deployment");
   }
-  if (!DONUT_ADDRESS) {
-    throw new Error("DONUT_ADDRESS must be set before deployment");
+  if (!USDC_ADDRESS) {
+    throw new Error("USDC_ADDRESS must be set before deployment");
   }
   if (!registry?.address && !REGISTRY) {
     throw new Error("Registry must be deployed before MineCore");
@@ -239,7 +230,7 @@ async function deployMineCore() {
   const artifact = await ethers.getContractFactory("MineCore");
   const contract = await artifact.deploy(
     registryAddress,
-    DONUT_ADDRESS,
+    USDC_ADDRESS,
     UNISWAP_V2_FACTORY,
     UNISWAP_V2_ROUTER,
     unitFactory.address,
@@ -247,7 +238,7 @@ async function deployMineCore() {
     auctionFactory.address,
     ENTROPY_ADDRESS,
     PROTOCOL_FEE_ADDRESS,
-    MIN_DONUT_FOR_LAUNCH,
+    MIN_USDC_FOR_LAUNCH,
     { gasPrice: ethers.gasPrice },
   );
   mineCore = await contract.deployed();
@@ -261,8 +252,8 @@ async function deploySpinCore() {
   if (!PROTOCOL_FEE_ADDRESS) {
     throw new Error("PROTOCOL_FEE_ADDRESS must be set before deployment");
   }
-  if (!DONUT_ADDRESS) {
-    throw new Error("DONUT_ADDRESS must be set before deployment");
+  if (!USDC_ADDRESS) {
+    throw new Error("USDC_ADDRESS must be set before deployment");
   }
   if (!registry?.address && !REGISTRY) {
     throw new Error("Registry must be deployed before SpinCore");
@@ -273,7 +264,7 @@ async function deploySpinCore() {
   const artifact = await ethers.getContractFactory("SpinCore");
   const contract = await artifact.deploy(
     registryAddress,
-    DONUT_ADDRESS,
+    USDC_ADDRESS,
     UNISWAP_V2_FACTORY,
     UNISWAP_V2_ROUTER,
     unitFactory.address,
@@ -281,7 +272,7 @@ async function deploySpinCore() {
     auctionFactory.address,
     ENTROPY_ADDRESS,
     PROTOCOL_FEE_ADDRESS,
-    MIN_DONUT_FOR_LAUNCH,
+    MIN_USDC_FOR_LAUNCH,
     { gasPrice: ethers.gasPrice },
   );
   spinCore = await contract.deployed();
@@ -295,8 +286,8 @@ async function deployFundCore() {
   if (!PROTOCOL_FEE_ADDRESS) {
     throw new Error("PROTOCOL_FEE_ADDRESS must be set before deployment");
   }
-  if (!DONUT_ADDRESS) {
-    throw new Error("DONUT_ADDRESS must be set before deployment");
+  if (!USDC_ADDRESS) {
+    throw new Error("USDC_ADDRESS must be set before deployment");
   }
   if (!registry?.address && !REGISTRY) {
     throw new Error("Registry must be deployed before FundCore");
@@ -307,14 +298,14 @@ async function deployFundCore() {
   const artifact = await ethers.getContractFactory("FundCore");
   const contract = await artifact.deploy(
     registryAddress,
-    DONUT_ADDRESS,
+    USDC_ADDRESS,
     UNISWAP_V2_FACTORY,
     UNISWAP_V2_ROUTER,
     unitFactory.address,
     fundRigFactory.address,
     auctionFactory.address,
     PROTOCOL_FEE_ADDRESS,
-    MIN_DONUT_FOR_LAUNCH,
+    MIN_USDC_FOR_LAUNCH,
     { gasPrice: ethers.gasPrice },
   );
   fundCore = await contract.deployed();
@@ -349,7 +340,7 @@ async function approveFundCore() {
 async function deployMineMulticall() {
   console.log("Starting MineMulticall Deployment");
   const artifact = await ethers.getContractFactory("MineMulticall");
-  const contract = await artifact.deploy(mineCore.address, DONUT_ADDRESS, {
+  const contract = await artifact.deploy(mineCore.address, USDC_ADDRESS, {
     gasPrice: ethers.gasPrice,
   });
   mineMulticall = await contract.deployed();
@@ -360,7 +351,7 @@ async function deployMineMulticall() {
 async function deploySpinMulticall() {
   console.log("Starting SpinMulticall Deployment");
   const artifact = await ethers.getContractFactory("SpinMulticall");
-  const contract = await artifact.deploy(spinCore.address, DONUT_ADDRESS, {
+  const contract = await artifact.deploy(spinCore.address, USDC_ADDRESS, {
     gasPrice: ethers.gasPrice,
   });
   spinMulticall = await contract.deployed();
@@ -371,7 +362,7 @@ async function deploySpinMulticall() {
 async function deployFundMulticall() {
   console.log("Starting FundMulticall Deployment");
   const artifact = await ethers.getContractFactory("FundMulticall");
-  const contract = await artifact.deploy(fundCore.address, DONUT_ADDRESS, {
+  const contract = await artifact.deploy(fundCore.address, USDC_ADDRESS, {
     gasPrice: ethers.gasPrice,
   });
   fundMulticall = await contract.deployed();
@@ -450,7 +441,7 @@ async function verifyMineCore() {
     contract: "contracts/rigs/mine/MineCore.sol:MineCore",
     constructorArguments: [
       registry?.address || REGISTRY,
-      DONUT_ADDRESS,
+      USDC_ADDRESS,
       UNISWAP_V2_FACTORY,
       UNISWAP_V2_ROUTER,
       unitFactory?.address || UNIT_FACTORY,
@@ -458,7 +449,7 @@ async function verifyMineCore() {
       auctionFactory?.address || AUCTION_FACTORY,
       ENTROPY_ADDRESS,
       PROTOCOL_FEE_ADDRESS,
-      MIN_DONUT_FOR_LAUNCH,
+      MIN_USDC_FOR_LAUNCH,
     ],
   });
   console.log("MineCore Verified");
@@ -471,7 +462,7 @@ async function verifySpinCore() {
     contract: "contracts/rigs/spin/SpinCore.sol:SpinCore",
     constructorArguments: [
       registry?.address || REGISTRY,
-      DONUT_ADDRESS,
+      USDC_ADDRESS,
       UNISWAP_V2_FACTORY,
       UNISWAP_V2_ROUTER,
       unitFactory?.address || UNIT_FACTORY,
@@ -479,7 +470,7 @@ async function verifySpinCore() {
       auctionFactory?.address || AUCTION_FACTORY,
       ENTROPY_ADDRESS,
       PROTOCOL_FEE_ADDRESS,
-      MIN_DONUT_FOR_LAUNCH,
+      MIN_USDC_FOR_LAUNCH,
     ],
   });
   console.log("SpinCore Verified");
@@ -492,14 +483,14 @@ async function verifyFundCore() {
     contract: "contracts/rigs/fund/FundCore.sol:FundCore",
     constructorArguments: [
       registry?.address || REGISTRY,
-      DONUT_ADDRESS,
+      USDC_ADDRESS,
       UNISWAP_V2_FACTORY,
       UNISWAP_V2_ROUTER,
       unitFactory?.address || UNIT_FACTORY,
       fundRigFactory?.address || FUND_RIG_FACTORY,
       auctionFactory?.address || AUCTION_FACTORY,
       PROTOCOL_FEE_ADDRESS,
-      MIN_DONUT_FOR_LAUNCH,
+      MIN_USDC_FOR_LAUNCH,
     ],
   });
   console.log("FundCore Verified");
@@ -510,7 +501,7 @@ async function verifyMineMulticall() {
   await hre.run("verify:verify", {
     address: mineMulticall?.address || MINE_MULTICALL,
     contract: "contracts/rigs/mine/MineMulticall.sol:MineMulticall",
-    constructorArguments: [mineCore?.address || MINE_CORE, DONUT_ADDRESS],
+    constructorArguments: [mineCore?.address || MINE_CORE, USDC_ADDRESS],
   });
   console.log("MineMulticall Verified");
 }
@@ -520,7 +511,7 @@ async function verifySpinMulticall() {
   await hre.run("verify:verify", {
     address: spinMulticall?.address || SPIN_MULTICALL,
     contract: "contracts/rigs/spin/SpinMulticall.sol:SpinMulticall",
-    constructorArguments: [spinCore?.address || SPIN_CORE, DONUT_ADDRESS],
+    constructorArguments: [spinCore?.address || SPIN_CORE, USDC_ADDRESS],
   });
   console.log("SpinMulticall Verified");
 }
@@ -530,7 +521,7 @@ async function verifyFundMulticall() {
   await hre.run("verify:verify", {
     address: fundMulticall?.address || FUND_MULTICALL,
     contract: "contracts/rigs/fund/FundMulticall.sol:FundMulticall",
-    constructorArguments: [fundCore?.address || FUND_CORE, DONUT_ADDRESS],
+    constructorArguments: [fundCore?.address || FUND_CORE, USDC_ADDRESS],
   });
   console.log("FundMulticall Verified");
 }
@@ -1084,11 +1075,11 @@ async function setProtocolFeeAddress(coreContract, newAddress) {
   console.log("Protocol Fee Address updated");
 }
 
-async function setMinDonutForLaunch(coreContract, amount) {
-  console.log("Setting Min DONUT for Launch to:", divDec(amount));
-  const tx = await coreContract.setMinDonutForLaunch(amount);
+async function setMinUsdcForLaunch(coreContract, amount) {
+  console.log("Setting Min USDC for Launch to:", divDec(amount));
+  const tx = await coreContract.setMinUsdcForLaunch(amount);
   await tx.wait();
-  console.log("Min DONUT updated");
+  console.log("Min USDC updated");
 }
 
 async function transferMineCoreOwnership(newOwner) {
@@ -1120,13 +1111,12 @@ async function printDeployment() {
   console.log("\n==================== DEPLOYMENT ====================\n");
 
   console.log("--- Configuration ---");
-  console.log("USDC (Quote Token):  ", USDC_ADDRESS);
-  console.log("DONUT:               ", DONUT_ADDRESS || "NOT SET");
+  console.log("USDC:                ", USDC_ADDRESS);
   console.log("Uniswap V2 Factory:  ", UNISWAP_V2_FACTORY);
   console.log("Uniswap V2 Router:   ", UNISWAP_V2_ROUTER);
   console.log("Entropy:             ", ENTROPY_ADDRESS);
   console.log("Protocol Fee Address:", PROTOCOL_FEE_ADDRESS || "NOT SET");
-  console.log("Min DONUT for Launch:", divDec(MIN_DONUT_FOR_LAUNCH));
+  console.log("Min USDC for Launch:", divDec(MIN_USDC_FOR_LAUNCH));
 
   console.log("\n--- Deployed Contracts ---");
   console.log(
@@ -1183,8 +1173,8 @@ async function printDeployment() {
     console.log("Owner:               ", await mineCore.owner());
     console.log("Protocol Fee Address:", await mineCore.protocolFeeAddress());
     console.log(
-      "Min DONUT:           ",
-      divDec(await mineCore.minDonutForLaunch()),
+      "Min USDC:           ",
+      divDec(await mineCore.minUsdcForLaunch()),
     );
     console.log(
       "Deployed Rigs:       ",
@@ -1197,8 +1187,8 @@ async function printDeployment() {
     console.log("Owner:               ", await spinCore.owner());
     console.log("Protocol Fee Address:", await spinCore.protocolFeeAddress());
     console.log(
-      "Min DONUT:           ",
-      divDec(await spinCore.minDonutForLaunch()),
+      "Min USDC:           ",
+      divDec(await spinCore.minUsdcForLaunch()),
     );
     console.log(
       "Deployed Rigs:       ",
@@ -1211,8 +1201,8 @@ async function printDeployment() {
     console.log("Owner:               ", await fundCore.owner());
     console.log("Protocol Fee Address:", await fundCore.protocolFeeAddress());
     console.log(
-      "Min DONUT:           ",
-      divDec(await fundCore.minDonutForLaunch()),
+      "Min USDC:           ",
+      divDec(await fundCore.minUsdcForLaunch()),
     );
     console.log(
       "Deployed Rigs:       ",
@@ -1227,10 +1217,10 @@ async function printCoreState(coreContract, label) {
   console.log(`\n--- ${label} State ---`);
   console.log("Owner:               ", await coreContract.owner());
   console.log("Protocol Fee Address:", await coreContract.protocolFeeAddress());
-  console.log("DONUT:               ", await coreContract.donutToken());
+  console.log("USDC:               ", await coreContract.usdcToken());
   console.log(
-    "Min DONUT:           ",
-    divDec(await coreContract.minDonutForLaunch()),
+    "Min USDC:           ",
+    divDec(await coreContract.minUsdcForLaunch()),
   );
   console.log("Unit Factory:        ", await coreContract.unitFactory());
   console.log("Auction Factory:     ", await coreContract.auctionFactory());
@@ -1357,9 +1347,9 @@ async function main() {
   // await setProtocolFeeAddress(spinCore, PROTOCOL_FEE_ADDRESS);
   // await setProtocolFeeAddress(fundCore, PROTOCOL_FEE_ADDRESS);
 
-  // await setMinDonutForLaunch(mineCore, MIN_DONUT_FOR_LAUNCH);
-  // await setMinDonutForLaunch(spinCore, MIN_DONUT_FOR_LAUNCH);
-  // await setMinDonutForLaunch(fundCore, MIN_DONUT_FOR_LAUNCH);
+  // await setMinUsdcForLaunch(mineCore, MIN_USDC_FOR_LAUNCH);
+  // await setMinUsdcForLaunch(spinCore, MIN_USDC_FOR_LAUNCH);
+  // await setMinUsdcForLaunch(fundCore, MIN_USDC_FOR_LAUNCH);
 
   //===================================================================
   // 4. Transfer Ownership (optional)

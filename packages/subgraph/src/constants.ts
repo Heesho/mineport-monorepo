@@ -16,8 +16,8 @@ export const ONE_BD = BigDecimal.fromString('1')
 export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
 export const PROTOCOL_ID = 'farplace'
 
-// DONUT token address on Base (update after deployment)
-export const DONUT_ADDRESS = '0x0000000000000000000000000000000000000000' // TODO: Update
+// USDC token address on Base
+export const USDC_ADDRESS = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'
 
 // ============================================================================
 // DECIMALS

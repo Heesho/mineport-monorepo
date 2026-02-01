@@ -10,7 +10,7 @@ import {
 } from "../config";
 import type { RigInfo, AuctionState, LPState } from "../state";
 import { ensureApproval, deadline } from "./utils";
-import { mintDonut } from "./swap";
+import { mintUsdc } from "./swap";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -48,7 +48,7 @@ function multicallAbi(rigType: RigType) {
  * Buy the current auction lot with LP tokens.
  *
  * If the agent does not hold enough LP tokens, it will first add liquidity
- * (Unit + DONUT -> LP) to obtain them.  If the agent lacks DONUT it will
+ * (Unit + USDC -> LP) to obtain them.  If the agent lacks USDC it will
  * mint mock tokens.  If the agent lacks Unit it returns early because it
  * cannot produce LP tokens without Unit.
  */
@@ -61,7 +61,7 @@ export async function executeAuctionBuy(
 ): Promise<`0x${string}`> {
   const agentAddress = walletClient.account!.address;
   const unitAddress = rigInfo.unitAddress;
-  const donutAddress = ADDRESSES.donut as `0x${string}`;
+  const usdcAddress = ADDRESSES.usdc as `0x${string}`;
   const routerAddress = ADDRESSES.uniV2Router as `0x${string}`;
   const lpAddress = rigInfo.lpAddress;
   const mcAddress = multicallAddress(rigInfo.type);
@@ -82,16 +82,16 @@ export async function executeAuctionBuy(
     const lpShortfall = requiredLP - lpState.agentLPBalance;
     const targetLP = (lpShortfall * 130n) / 100n; // aim for 30% extra
 
-    // Calculate proportional amounts of Unit and DONUT needed to mint
+    // Calculate proportional amounts of Unit and USDC needed to mint
     // `targetLP` worth of LP tokens.
-    // LP minted ~ totalSupply * min(amountUnit/reserveUnit, amountDonut/reserveDonut)
+    // LP minted ~ totalSupply * min(amountUnit/reserveUnit, amountUsdc/reserveUsdc)
     // So for a given targetLP:
     //   amountUnit  = targetLP * reserveUnit  / totalSupply
-    //   amountDonut = targetLP * reserveDonut / totalSupply
+    //   amountUsdc = targetLP * reserveUsdc / totalSupply
     const amountUnit =
       (targetLP * lpState.reserveUnit) / lpState.totalSupply + 1n;
-    const amountDonut =
-      (targetLP * lpState.reserveDonut) / lpState.totalSupply + 1n;
+    const amountUsdc =
+      (targetLP * lpState.reserveUsdc) / lpState.totalSupply + 1n;
 
     // Check agent's Unit balance on chain
     const unitBalance = await publicClient.readContract({
@@ -110,23 +110,23 @@ export async function executeAuctionBuy(
       );
     }
 
-    // Check agent's DONUT balance — mint if insufficient
-    const donutBalance = await publicClient.readContract({
-      address: donutAddress,
+    // Check agent's USDC balance — mint if insufficient
+    const usdcBalance = await publicClient.readContract({
+      address: usdcAddress,
       abi: ERC20_ABI,
       functionName: "balanceOf",
       args: [agentAddress],
     });
 
-    if (donutBalance < amountDonut) {
-      const mintAmount = amountDonut - donutBalance;
+    if (usdcBalance < amountUsdc) {
+      const mintAmount = amountUsdc - usdcBalance;
       console.log(
-        `[auction] Minting ${mintAmount} DONUT for liquidity add`,
+        `[auction] Minting ${mintAmount} USDC for liquidity add`,
       );
-      await mintDonut(walletClient, publicClient, mintAmount);
+      await mintUsdc(walletClient, publicClient, mintAmount);
     }
 
-    // Approve Unit and DONUT to the UniV2 Router
+    // Approve Unit and USDC to the UniV2 Router
     await Promise.all([
       ensureApproval(
         walletClient,
@@ -138,9 +138,9 @@ export async function executeAuctionBuy(
       ensureApproval(
         walletClient,
         publicClient,
-        donutAddress,
+        usdcAddress,
         routerAddress,
-        amountDonut,
+        amountUsdc,
       ),
     ]);
 
@@ -154,9 +154,9 @@ export async function executeAuctionBuy(
       functionName: "addLiquidity",
       args: [
         unitAddress,
-        donutAddress,
+        usdcAddress,
         amountUnit,
-        amountDonut,
+        amountUsdc,
         0n, // amountAMin — accept any
         0n, // amountBMin — accept any
         agentAddress,

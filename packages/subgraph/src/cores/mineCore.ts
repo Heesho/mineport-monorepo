@@ -34,7 +34,7 @@ export function handleMineCoreLaunched(event: CoreLaunchedEvent): void {
 
   // Event params for MineCore:
   // launcher, quoteToken, unit, rig, auction, lpToken, tokenName, tokenSymbol, uri,
-  // donutAmount, unitAmount, initialUps, tailUps, halvingAmount, rigEpochPeriod,
+  // usdcAmount, unitAmount, initialUps, tailUps, halvingAmount, rigEpochPeriod,
   // rigPriceMultiplier, rigMinInitPrice, auctionInitPrice, auctionEpochPeriod, auctionPriceMultiplier, auctionMinInitPrice
 
   let unitAddress = event.params.unit

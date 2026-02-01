@@ -30,7 +30,7 @@ contract MineMulticall {
     /*----------  IMMUTABLES  -------------------------------------------*/
 
     address public immutable core;  // Core contract reference
-    address public immutable donut; // DONUT token address
+    address public immutable usdc; // USDC token address
 
     /*----------  STRUCTS  ----------------------------------------------*/
 
@@ -52,12 +52,12 @@ contract MineMulticall {
         uint256 entropyFee;        // current entropy fee if randomness enabled
         // Global rig state
         uint256 nextUps;           // calculated current ups (global)
-        uint256 unitPrice;         // Unit token price in DONUT
+        uint256 unitPrice;         // Unit token price in USDC
         string rigUri;             // metadata URI for the rig (global)
         uint256 capacity;          // total number of slots
         // User balances
         uint256 accountQuoteBalance;   // user's quote token balance
-        uint256 accountDonutBalance;   // user's DONUT balance
+        uint256 accountUsdcBalance;   // user's USDC balance
         uint256 accountUnitBalance;    // user's Unit balance
         uint256 accountClaimable;      // user's claimable miner fees
     }
@@ -70,9 +70,9 @@ contract MineMulticall {
         uint256 epochId;                    // current epoch
         uint256 initPrice;                  // epoch starting price
         uint256 startTime;                  // epoch start timestamp
-        address paymentToken;               // LP token used for payment (Unit-DONUT LP)
+        address paymentToken;               // LP token used for payment (Unit-USDC LP)
         uint256 price;                      // current Dutch auction price (in LP tokens)
-        uint256 paymentTokenPrice;          // LP token price in DONUT
+        uint256 paymentTokenPrice;          // LP token price in USDC
         uint256 quoteAccumulated;           // Quote token held by auction (from treasury fees)
         // User balances
         uint256 accountQuoteBalance;        // user's quote token balance
@@ -94,12 +94,12 @@ contract MineMulticall {
     /**
      * @notice Deploy the Multicall helper contract.
      * @param _core Core contract address
-     * @param _donut DONUT token address
+     * @param _usdc USDC token address
      */
-    constructor(address _core, address _donut) {
-        if (_core == address(0) || _donut == address(0)) revert MineMulticall__ZeroAddress();
+    constructor(address _core, address _usdc) {
+        if (_core == address(0) || _usdc == address(0)) revert MineMulticall__ZeroAddress();
         core = _core;
-        donut = _donut;
+        usdc = _usdc;
     }
 
     /*----------  EXTERNAL FUNCTIONS  -----------------------------------*/
@@ -253,21 +253,21 @@ contract MineMulticall {
 
     /**
      * @notice Launch a new rig via Core.
-     * @dev Transfers DONUT from caller, approves Core, and calls launch with caller as launcher.
+     * @dev Transfers USDC from caller, approves Core, and calls launch with caller as launcher.
      * @param params Launch parameters (launcher field is overwritten with msg.sender)
      * @return unit Address of deployed Unit token
      * @return rig Address of deployed Rig contract
      * @return auction Address of deployed Auction contract
-     * @return lpToken Address of Unit/DONUT LP token
+     * @return lpToken Address of Unit/USDC LP token
      */
     function launch(IMineCore.LaunchParams calldata params)
         external
         returns (address unit, address rig, address auction, address lpToken)
     {
-        // Transfer DONUT from user
-        IERC20(donut).safeTransferFrom(msg.sender, address(this), params.donutAmount);
-        IERC20(donut).safeApprove(core, 0);
-        IERC20(donut).safeApprove(core, params.donutAmount);
+        // Transfer USDC from user
+        IERC20(usdc).safeTransferFrom(msg.sender, address(this), params.usdcAmount);
+        IERC20(usdc).safeApprove(core, 0);
+        IERC20(usdc).safeApprove(core, params.usdcAmount);
 
         // Build params with msg.sender as launcher
         IMineCore.LaunchParams memory launchParams = IMineCore.LaunchParams({
@@ -276,7 +276,7 @@ contract MineMulticall {
             tokenName: params.tokenName,
             tokenSymbol: params.tokenSymbol,
             uri: params.uri,
-            donutAmount: params.donutAmount,
+            usdcAmount: params.usdcAmount,
             unitAmount: params.unitAmount,
             initialUps: params.initialUps,
             tailUps: params.tailUps,
@@ -354,18 +354,19 @@ contract MineMulticall {
         address unitToken = IMineRig(rig).unit();
         address auction = IMineCore(core).rigToAuction(rig);
 
-        // Calculate Unit price in DONUT from LP reserves
+        // Calculate Unit price in USDC from LP reserves
+        // USDC has 6 decimals, Unit has 18. Multiply by 1e30 (= 1e12 normalization * 1e18 precision)
         if (auction != address(0)) {
             address lpToken = IAuction(auction).paymentToken();
-            uint256 donutInLP = IERC20(donut).balanceOf(lpToken);
+            uint256 usdcInLP = IERC20(usdc).balanceOf(lpToken);
             uint256 unitInLP = IERC20(unitToken).balanceOf(lpToken);
-            state.unitPrice = unitInLP == 0 ? 0 : donutInLP * 1e18 / unitInLP;
+            state.unitPrice = unitInLP == 0 ? 0 : usdcInLP * 1e30 / unitInLP;
         }
 
         // User balances
         address quoteToken = IMineRig(rig).quote();
         state.accountQuoteBalance = account == address(0) ? 0 : IERC20(quoteToken).balanceOf(account);
-        state.accountDonutBalance = account == address(0) ? 0 : IERC20(donut).balanceOf(account);
+        state.accountUsdcBalance = account == address(0) ? 0 : IERC20(usdc).balanceOf(account);
         state.accountUnitBalance = account == address(0) ? 0 : IERC20(unitToken).balanceOf(account);
         state.accountClaimable = account == address(0) ? 0 : IMineRig(rig).accountToClaimable(account);
 
@@ -408,10 +409,11 @@ contract MineMulticall {
         state.paymentToken = IAuction(auction).paymentToken();
         state.price = IAuction(auction).getPrice();
 
-        // LP price in DONUT = (DONUT in LP * 2) / LP total supply
+        // LP price in USDC = (USDC in LP * 2) / LP total supply
+        // USDC has 6 decimals, LP has 18. Multiply by 2e30 (= 2 * 1e12 normalization * 1e18 precision)
         uint256 lpTotalSupply = IERC20(state.paymentToken).totalSupply();
         state.paymentTokenPrice =
-            lpTotalSupply == 0 ? 0 : IERC20(donut).balanceOf(state.paymentToken) * 2e18 / lpTotalSupply;
+            lpTotalSupply == 0 ? 0 : IERC20(usdc).balanceOf(state.paymentToken) * 2e30 / lpTotalSupply;
 
         address quoteToken = IMineRig(rig).quote();
         state.quoteAccumulated = IERC20(quoteToken).balanceOf(auction);

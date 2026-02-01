@@ -218,11 +218,11 @@ function scoreBuys(
     if (unitPrice === 0n) continue; // no LP activity
 
     const unitBalance = state.accountUnitBalance;
-    const donutBalance = state.accountDonutBalance;
+    const usdcBalance = state.accountUsdcBalance;
 
-    // unitValue in DONUT terms
+    // unitValue in USDC terms
     const unitValue = (unitBalance * unitPrice) / ONE;
-    const totalValue = donutBalance + unitValue;
+    const totalValue = usdcBalance + unitValue;
     if (totalValue === 0n) continue;
 
     const unitPercent = Number((unitValue * 100n) / totalValue);
@@ -231,9 +231,9 @@ function scoreBuys(
 
     const baseScore = 20 + (40 - unitPercent);
 
-    // Amount of DONUT to spend
+    // Amount of USDC to spend
     const amount =
-      world.donutBalance * BigInt(config.maxSpendPercent) / 100n;
+      world.usdcBalance * BigInt(config.maxSpendPercent) / 100n;
     if (amount === 0n) continue;
 
     candidates.push({
@@ -266,10 +266,10 @@ function scoreSells(
     if (unitPrice === 0n) continue;
 
     const unitBalance = state.accountUnitBalance;
-    const donutBalance = state.accountDonutBalance;
+    const usdcBalance = state.accountUsdcBalance;
 
     const unitValue = (unitBalance * unitPrice) / ONE;
-    const totalValue = donutBalance + unitValue;
+    const totalValue = usdcBalance + unitValue;
     if (totalValue === 0n) continue;
 
     const unitPercent = Number((unitValue * 100n) / totalValue);

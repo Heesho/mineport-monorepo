@@ -224,7 +224,7 @@ export default function AuctionsPage() {
                           ${selectedAuction.lpCostUsd.toFixed(2)}
                         </span>
                         <div className="text-[11px] text-muted-foreground">
-                          {selectedAuction.tokenSymbol}-DONUT LP
+                          {selectedAuction.tokenSymbol}-USDC LP
                         </div>
                       </div>
                     </div>

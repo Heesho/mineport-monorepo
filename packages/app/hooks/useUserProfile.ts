@@ -23,7 +23,7 @@ export type UserLaunchedRig = {
   tokenSymbol: string;
   rigUri: string;
   totalMinted: bigint;
-  unitPrice: bigint; // price in DONUT
+  unitPrice: bigint; // price in USDC
   revenue: bigint;
 };
 

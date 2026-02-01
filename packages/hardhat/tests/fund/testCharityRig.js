@@ -26,10 +26,10 @@ describe("FundRig Tests", function () {
 
     [owner, recipient, treasury, team, protocol, user0, user1, user2] = await ethers.getSigners();
 
-    // Deploy mock payment token (using MockWETH.sol)
-    const mockWethArtifact = await ethers.getContractFactory("MockWETH");
-    paymentToken = await mockWethArtifact.deploy();
-    console.log("- Payment Token (MockWETH) Initialized");
+    // Deploy mock payment token (using MockUSDC.sol - 6 decimals)
+    const mockUsdcArtifact = await ethers.getContractFactory("MockUSDC");
+    paymentToken = await mockUsdcArtifact.deploy();
+    console.log("- Payment Token (MockUSDC) Initialized");
 
     // Deploy mock Core (for protocolFeeAddress)
     const mockCoreArtifact = await ethers.getContractFactory("MockCore");
@@ -61,9 +61,9 @@ describe("FundRig Tests", function () {
     console.log("- Minting rights transferred to FundRig");
 
     // Mint payment tokens to users
-    await paymentToken.connect(user0).deposit({ value: convert("5000") });
-    await paymentToken.connect(user1).deposit({ value: convert("5000") });
-    await paymentToken.connect(user2).deposit({ value: convert("5000") });
+    await paymentToken.mint(user0.address, convert("5000", 6));
+    await paymentToken.mint(user1.address, convert("5000", 6));
+    await paymentToken.mint(user2.address, convert("5000", 6));
     console.log("- Payment tokens minted to users");
 
     console.log("Initialization Complete\n");
@@ -217,7 +217,7 @@ describe("FundRig Tests", function () {
     it("Should revert donation without approval", async function () {
       console.log("\n*** Allowance Check ***");
       await expect(
-        rig.connect(user0).fund(user0.address, convert("100"))
+        rig.connect(user0).fund(user0.address, convert("100", 6))
       ).to.be.reverted;
       console.log("- Donation without approval correctly reverted");
     });
@@ -284,7 +284,7 @@ describe("FundRig Tests", function () {
       const protocolBefore = await paymentToken.balanceOf(protocol.address);
 
       // Approve and donate 1000 tokens
-      const donationAmount = convert("1000");
+      const donationAmount = convert("1000", 6);
       await paymentToken.connect(user0).approve(rig.address, donationAmount);
       await rig.connect(user0).fund(user0.address, donationAmount);
 
@@ -299,23 +299,23 @@ describe("FundRig Tests", function () {
       const teamReceived = teamAfter.sub(teamBefore);
       const protocolReceived = protocolAfter.sub(protocolBefore);
 
-      console.log("Donation Amount:", divDec(donationAmount));
-      console.log("Recipient Received:", divDec(recipientReceived), "(expected: 500)");
-      console.log("Treasury Received:", divDec(treasuryReceived), "(expected: 450)");
-      console.log("Team Received:", divDec(teamReceived), "(expected: 40)");
-      console.log("Protocol Received:", divDec(protocolReceived), "(expected: 10)");
+      console.log("Donation Amount:", divDec(donationAmount, 6));
+      console.log("Recipient Received:", divDec(recipientReceived, 6), "(expected: 500)");
+      console.log("Treasury Received:", divDec(treasuryReceived, 6), "(expected: 450)");
+      console.log("Team Received:", divDec(teamReceived, 6), "(expected: 40)");
+      console.log("Protocol Received:", divDec(protocolReceived, 6), "(expected: 10)");
 
       // Verify splits: 50% recipient, 45% treasury (remainder), 4% team, 1% protocol
-      expect(recipientReceived).to.equal(convert("500")); // 50%
-      expect(treasuryReceived).to.equal(convert("450")); // 45%
-      expect(teamReceived).to.equal(convert("40")); // 4%
-      expect(protocolReceived).to.equal(convert("10")); // 1%
+      expect(recipientReceived).to.equal(convert("500", 6)); // 50%
+      expect(treasuryReceived).to.equal(convert("450", 6)); // 45%
+      expect(teamReceived).to.equal(convert("40", 6)); // 4%
+      expect(protocolReceived).to.equal(convert("10", 6)); // 1%
 
       console.log("- Split verification passed!");
     });
 
     it("Should emit FundRig__Funded event", async function () {
-      const donationAmount = convert("100");
+      const donationAmount = convert("100", 6);
       await paymentToken.connect(user1).approve(rig.address, donationAmount);
 
       const currentDay = await rig.currentDay();
@@ -330,7 +330,7 @@ describe("FundRig Tests", function () {
       const user0Donation = await rig.getUserDonation(day, user0.address);
       const dayTotal = await rig.getDayTotal(day);
 
-      expect(user0Donation).to.equal(convert("1000"));
+      expect(user0Donation).to.equal(convert("1000", 6));
       expect(dayTotal).to.be.gt(0);
     });
 
@@ -341,9 +341,9 @@ describe("FundRig Tests", function () {
     });
 
     it("Should prevent donation to zero address account", async function () {
-      await paymentToken.connect(user0).approve(rig.address, convert("100"));
+      await paymentToken.connect(user0).approve(rig.address, convert("100", 6));
       await expect(
-        rig.connect(user0).fund(AddressZero, convert("100"))
+        rig.connect(user0).fund(AddressZero, convert("100", 6))
       ).to.be.revertedWith("FundRig__InvalidAddress()");
     });
 
@@ -357,7 +357,7 @@ describe("FundRig Tests", function () {
       const protocolBefore = await paymentToken.balanceOf(protocol.address);
 
       // Donate 1000 tokens
-      const donationAmount = convert("1000");
+      const donationAmount = convert("1000", 6);
       await paymentToken.connect(user0).approve(rig.address, donationAmount);
       await rig.connect(user0).fund(user0.address, donationAmount);
 
@@ -372,9 +372,9 @@ describe("FundRig Tests", function () {
 
       // Recipient gets 50%, protocol gets 1%, treasury gets 44% + 4% (team fee) = 48%
       // Total: 1000 - 500 (recipient) - 10 (protocol) = 490 treasury
-      expect(recipientReceived).to.equal(convert("500")); // 50%
-      expect(protocolReceived).to.equal(convert("10")); // 1%
-      expect(treasuryReceived).to.equal(convert("490")); // 44% + 5% (remainder)
+      expect(recipientReceived).to.equal(convert("500", 6)); // 50%
+      expect(protocolReceived).to.equal(convert("10", 6)); // 1%
+      expect(treasuryReceived).to.equal(convert("490", 6)); // 44% + 5% (remainder)
 
       // Reset team address for other tests
       await rig.connect(owner).setTeam(team.address);
@@ -384,11 +384,11 @@ describe("FundRig Tests", function () {
       // user2 donates on behalf of user0
       const user0DonationBefore = await rig.getUserDonation(await rig.currentDay(), user0.address);
 
-      await paymentToken.connect(user2).approve(rig.address, convert("100"));
-      await rig.connect(user2).fund(user0.address, convert("100"));
+      await paymentToken.connect(user2).approve(rig.address, convert("100", 6));
+      await rig.connect(user2).fund(user0.address, convert("100", 6));
 
       const user0DonationAfter = await rig.getUserDonation(await rig.currentDay(), user0.address);
-      expect(user0DonationAfter.sub(user0DonationBefore)).to.equal(convert("100"));
+      expect(user0DonationAfter.sub(user0DonationBefore)).to.equal(convert("100", 6));
     });
   });
 
@@ -410,12 +410,12 @@ describe("FundRig Tests", function () {
       console.log("New day:", newDay.toString());
 
       // User A donates 100 tokens
-      await paymentToken.connect(user0).approve(rig.address, convert("100"));
-      await rig.connect(user0).fund(user0.address, convert("100"));
+      await paymentToken.connect(user0).approve(rig.address, convert("100", 6));
+      await rig.connect(user0).fund(user0.address, convert("100", 6));
 
       // User B donates 300 tokens
-      await paymentToken.connect(user1).approve(rig.address, convert("300"));
-      await rig.connect(user1).fund(user1.address, convert("300"));
+      await paymentToken.connect(user1).approve(rig.address, convert("300", 6));
+      await rig.connect(user1).fund(user1.address, convert("300", 6));
 
       // Advance to next day
       await increaseTime(ONE_DAY + 1);
@@ -483,8 +483,8 @@ describe("FundRig Tests", function () {
       await increaseTime(ONE_DAY + 1);
       const newDay = await rig.currentDay();
 
-      await paymentToken.connect(user2).approve(rig.address, convert("100"));
-      await rig.connect(user2).fund(user2.address, convert("100"));
+      await paymentToken.connect(user2).approve(rig.address, convert("100", 6));
+      await rig.connect(user2).fund(user2.address, convert("100", 6));
 
       // Advance to claim
       await increaseTime(ONE_DAY + 1);
@@ -514,8 +514,8 @@ describe("FundRig Tests", function () {
       await increaseTime(ONE_DAY + 1);
       const newDay = await rig.currentDay();
 
-      await paymentToken.connect(user0).approve(rig.address, convert("200"));
-      await rig.connect(user0).fund(user0.address, convert("200"));
+      await paymentToken.connect(user0).approve(rig.address, convert("200", 6));
+      await rig.connect(user0).fund(user0.address, convert("200", 6));
 
       // Advance to claim
       await increaseTime(ONE_DAY + 1);
@@ -584,8 +584,8 @@ describe("FundRig Tests", function () {
     it("getDayTotal should return total donations for a day", async function () {
       const day = await rig.currentDay();
 
-      await paymentToken.connect(user0).approve(rig.address, convert("100"));
-      await rig.connect(user0).fund(user0.address, convert("100"));
+      await paymentToken.connect(user0).approve(rig.address, convert("100", 6));
+      await rig.connect(user0).fund(user0.address, convert("100", 6));
 
       const total = await rig.getDayTotal(day);
       expect(total).to.be.gt(0);
@@ -594,7 +594,7 @@ describe("FundRig Tests", function () {
     it("getUserDonation should return user donation for a day", async function () {
       const day = await rig.currentDay();
       const donation = await rig.getUserDonation(day, user0.address);
-      expect(donation).to.equal(convert("100"));
+      expect(donation).to.equal(convert("100", 6));
     });
   });
 });

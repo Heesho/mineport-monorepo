@@ -31,7 +31,7 @@ const PRECISION = ethers.BigNumber.from("1000000000000000000"); // 1e18
 
 describe("MineRig Invariant Tests", function () {
   let owner, protocol, team, user0, user1, user2, user3;
-  let weth, donut, registry, core, entropy;
+  let weth, usdc, registry, core, entropy;
   let rig, rigContract, auction, unit, unitContract;
 
   before("Deploy fresh contracts", async function () {
@@ -42,7 +42,8 @@ describe("MineRig Invariant Tests", function () {
     // Deploy mock tokens
     const mockWethArtifact = await ethers.getContractFactory("MockWETH");
     weth = await mockWethArtifact.deploy();
-    donut = await mockWethArtifact.deploy();
+    const mockUsdcArtifact = await ethers.getContractFactory("MockUSDC");
+    usdc = await mockUsdcArtifact.deploy();
 
     // Deploy mock Entropy
     const entropyArtifact = await ethers.getContractFactory("MockEntropy");
@@ -70,7 +71,7 @@ describe("MineRig Invariant Tests", function () {
     const coreArtifact = await ethers.getContractFactory("MineCore");
     core = await coreArtifact.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
@@ -78,13 +79,13 @@ describe("MineRig Invariant Tests", function () {
       auctionFactory.address,
       entropy.address,
       protocol.address,
-      convert("100", 18)
+      convert("100", 6)
     );
 
     await registry.setFactoryApproval(core.address, true);
 
     // Fund users (keep amounts reasonable to leave room for gas)
-    await donut.connect(user0).deposit({ value: convert("5000", 18) });
+    await usdc.mint(user0.address, convert("5000", 6));
     await weth.connect(user0).deposit({ value: convert("500", 18) });
     await weth.connect(user1).deposit({ value: convert("500", 18) });
     await weth.connect(user2).deposit({ value: convert("500", 18) });
@@ -97,7 +98,7 @@ describe("MineRig Invariant Tests", function () {
       tokenName: "Invariant Test",
       tokenSymbol: "INVT",
       uri: "https://test.com",
-      donutAmount: convert("1000", 18),
+      usdcAmount: convert("1000", 6),
       unitAmount: convert("1000000", 18),
       initialUps: convert("10", 18), // 10 tokens per second per slot
       tailUps: convert("0.1", 18),
@@ -113,7 +114,7 @@ describe("MineRig Invariant Tests", function () {
       auctionMinInitPrice: convert("0.01", 18),
     };
 
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
     const tx = await core.connect(user0).launch(launchParams);
     const receipt = await tx.wait();
 
@@ -661,7 +662,7 @@ describe("MineRig Invariant Tests", function () {
 
 describe("MineRig Business Logic Tests", function () {
   let owner, protocol, team, user0, user1, user2, user3;
-  let weth, donut, registry, core, entropy;
+  let weth, usdc, registry, core, entropy;
   let rig, rigContract, auction, unit, unitContract;
 
   before("Deploy contracts", async function () {
@@ -672,7 +673,8 @@ describe("MineRig Business Logic Tests", function () {
     // Deploy infrastructure (same as above)
     const mockWethArtifact = await ethers.getContractFactory("MockWETH");
     weth = await mockWethArtifact.deploy();
-    donut = await mockWethArtifact.deploy();
+    const mockUsdcArtifact = await ethers.getContractFactory("MockUSDC");
+    usdc = await mockUsdcArtifact.deploy();
 
     const entropyArtifact = await ethers.getContractFactory("MockEntropy");
     entropy = await entropyArtifact.deploy();
@@ -695,7 +697,7 @@ describe("MineRig Business Logic Tests", function () {
     const coreArtifact = await ethers.getContractFactory("MineCore");
     core = await coreArtifact.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
@@ -703,13 +705,13 @@ describe("MineRig Business Logic Tests", function () {
       auctionFactory.address,
       entropy.address,
       protocol.address,
-      convert("100", 18)
+      convert("100", 6)
     );
 
     await registry.setFactoryApproval(core.address, true);
 
     // Fund users (keep amounts reasonable to leave room for gas)
-    await donut.connect(user0).deposit({ value: convert("5000", 18) });
+    await usdc.mint(user0.address, convert("5000", 6));
     await weth.connect(user0).deposit({ value: convert("500", 18) });
     await weth.connect(user1).deposit({ value: convert("500", 18) });
     await weth.connect(user2).deposit({ value: convert("500", 18) });
@@ -721,7 +723,7 @@ describe("MineRig Business Logic Tests", function () {
       tokenName: "Business Logic Test",
       tokenSymbol: "BLT",
       uri: "https://test.com",
-      donutAmount: convert("1000", 18),
+      usdcAmount: convert("1000", 6),
       unitAmount: convert("1000000", 18),
       initialUps: convert("10", 18),
       tailUps: convert("0.1", 18),
@@ -737,7 +739,7 @@ describe("MineRig Business Logic Tests", function () {
       auctionMinInitPrice: convert("0.01", 18),
     };
 
-    await donut.connect(user0).approve(core.address, launchParams.donutAmount);
+    await usdc.connect(user0).approve(core.address, launchParams.usdcAmount);
     const tx = await core.connect(user0).launch(launchParams);
     const receipt = await tx.wait();
 

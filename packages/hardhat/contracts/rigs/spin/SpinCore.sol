@@ -17,10 +17,10 @@ import {IRegistry} from "../../interfaces/IRegistry.sol";
  * @title SpinCore
  * @author heesho
  * @notice The launchpad contract for deploying new SpinRig instances.
- *         Users provide DONUT tokens to launch a new spin-to-earn slot machine. The SpinCore contract:
+ *         Users provide USDC tokens to launch a new spin-to-earn slot machine. The SpinCore contract:
  *         1. Deploys a new Unit token via UnitFactory
  *         2. Mints initial Unit tokens for liquidity
- *         3. Creates a Unit/DONUT liquidity pool on Uniswap V2
+ *         3. Creates a Unit/USDC liquidity pool on Uniswap V2
  *         4. Burns the initial LP tokens
  *         5. Deploys an Auction contract to collect and auction treasury fees
  *         6. Deploys a new SpinRig contract via SpinRigFactory
@@ -39,7 +39,7 @@ contract SpinCore is Ownable, ReentrancyGuard {
     /*----------  IMMUTABLES  -------------------------------------------*/
 
     address public immutable registry; // central registry for all rig types
-    address public immutable donutToken; // token required to launch
+    address public immutable usdcToken; // token required to launch
     address public immutable uniswapV2Factory; // Uniswap V2 factory
     address public immutable uniswapV2Router; // Uniswap V2 router
     address public immutable unitFactory; // factory for deploying Unit tokens
@@ -50,7 +50,7 @@ contract SpinCore is Ownable, ReentrancyGuard {
     /*----------  STATE  ------------------------------------------------*/
 
     address public protocolFeeAddress; // receives protocol fees from rigs
-    uint256 public minDonutForLaunch; // minimum DONUT required to launch
+    uint256 public minUsdcForLaunch; // minimum USDC required to launch
 
     address[] public deployedRigs; // array of all deployed rigs
     mapping(address => bool) public isDeployedRig; // rig => is valid
@@ -71,7 +71,7 @@ contract SpinCore is Ownable, ReentrancyGuard {
         address quoteToken; // ERC20 payment token for spinning (e.g., USDC, WETH)
         string tokenName; // Unit token name
         string tokenSymbol; // Unit token symbol
-        uint256 donutAmount; // DONUT to provide for LP
+        uint256 usdcAmount; // USDC to provide for LP
         uint256 unitAmount; // Unit tokens minted for initial LP
         uint256 initialUps; // starting units per second
         uint256 tailUps; // minimum units per second
@@ -88,7 +88,7 @@ contract SpinCore is Ownable, ReentrancyGuard {
 
     /*----------  ERRORS  -----------------------------------------------*/
 
-    error SpinCore__InsufficientDonut();
+    error SpinCore__InsufficientUsdc();
     error SpinCore__ZeroLauncher();
     error SpinCore__ZeroQuoteToken();
     error SpinCore__EmptyTokenName();
@@ -107,7 +107,7 @@ contract SpinCore is Ownable, ReentrancyGuard {
         address quoteToken,
         string tokenName,
         string tokenSymbol,
-        uint256 donutAmount,
+        uint256 usdcAmount,
         uint256 unitAmount,
         uint256 initialUps,
         uint256 tailUps,
@@ -121,14 +121,14 @@ contract SpinCore is Ownable, ReentrancyGuard {
         uint256 auctionMinInitPrice
     );
     event SpinCore__ProtocolFeeAddressSet(address protocolFeeAddress);
-    event SpinCore__MinDonutForLaunchSet(uint256 minDonutForLaunch);
+    event SpinCore__MinUsdcForLaunchSet(uint256 minUsdcForLaunch);
 
     /*----------  CONSTRUCTOR  ------------------------------------------*/
 
     /**
      * @notice Deploy the SpinCore launchpad contract.
      * @param _registry Central registry for all rig types
-     * @param _donutToken DONUT token address
+     * @param _usdcToken USDC token address
      * @param _uniswapV2Factory Uniswap V2 factory address
      * @param _uniswapV2Router Uniswap V2 router address
      * @param _unitFactory UnitFactory contract address
@@ -136,11 +136,11 @@ contract SpinCore is Ownable, ReentrancyGuard {
      * @param _auctionFactory AuctionFactory contract address
      * @param _entropy Pyth Entropy contract address
      * @param _protocolFeeAddress Address to receive protocol fees
-     * @param _minDonutForLaunch Minimum DONUT required to launch
+     * @param _minUsdcForLaunch Minimum USDC required to launch
      */
     constructor(
         address _registry,
-        address _donutToken,
+        address _usdcToken,
         address _uniswapV2Factory,
         address _uniswapV2Router,
         address _unitFactory,
@@ -148,10 +148,10 @@ contract SpinCore is Ownable, ReentrancyGuard {
         address _auctionFactory,
         address _entropy,
         address _protocolFeeAddress,
-        uint256 _minDonutForLaunch
+        uint256 _minUsdcForLaunch
     ) {
         if (
-            _registry == address(0) || _donutToken == address(0) || _uniswapV2Factory == address(0)
+            _registry == address(0) || _usdcToken == address(0) || _uniswapV2Factory == address(0)
                 || _uniswapV2Router == address(0) || _unitFactory == address(0) || _spinRigFactory == address(0)
                 || _auctionFactory == address(0) || _entropy == address(0)
         ) {
@@ -159,7 +159,7 @@ contract SpinCore is Ownable, ReentrancyGuard {
         }
 
         registry = _registry;
-        donutToken = _donutToken;
+        usdcToken = _usdcToken;
         uniswapV2Factory = _uniswapV2Factory;
         uniswapV2Router = _uniswapV2Router;
         unitFactory = _unitFactory;
@@ -167,19 +167,19 @@ contract SpinCore is Ownable, ReentrancyGuard {
         auctionFactory = _auctionFactory;
         entropy = _entropy;
         protocolFeeAddress = _protocolFeeAddress;
-        minDonutForLaunch = _minDonutForLaunch;
+        minUsdcForLaunch = _minUsdcForLaunch;
     }
 
     /*----------  EXTERNAL FUNCTIONS  -----------------------------------*/
 
     /**
      * @notice Launch a new SpinRig with associated Unit token, LP, and Auction.
-     * @dev Caller must approve DONUT tokens before calling.
+     * @dev Caller must approve USDC tokens before calling.
      * @param params Launch parameters struct
      * @return unit Address of deployed Unit token
      * @return rig Address of deployed SpinRig contract
      * @return auction Address of deployed Auction contract
-     * @return lpToken Address of Unit/DONUT LP token
+     * @return lpToken Address of Unit/USDC LP token
      */
     function launch(LaunchParams calldata params)
         external
@@ -189,8 +189,8 @@ contract SpinCore is Ownable, ReentrancyGuard {
         // Validate ALL inputs upfront (fail fast before any state changes)
         _validateLaunchParams(params);
 
-        // Transfer DONUT from launcher
-        IERC20(donutToken).safeTransferFrom(msg.sender, address(this), params.donutAmount);
+        // Transfer USDC from launcher
+        IERC20(usdcToken).safeTransferFrom(msg.sender, address(this), params.usdcAmount);
 
         // Deploy Unit token via factory (SpinCore becomes initial rig/minter)
         unit = IUnitFactory(unitFactory).deploy(params.tokenName, params.tokenSymbol);
@@ -198,25 +198,25 @@ contract SpinCore is Ownable, ReentrancyGuard {
         // Mint initial Unit tokens for LP seeding
         IUnit(unit).mint(address(this), params.unitAmount);
 
-        // Create Unit/DONUT LP via Uniswap V2
+        // Create Unit/USDC LP via Uniswap V2
         IERC20(unit).safeApprove(uniswapV2Router, 0);
         IERC20(unit).safeApprove(uniswapV2Router, params.unitAmount);
-        IERC20(donutToken).safeApprove(uniswapV2Router, 0);
-        IERC20(donutToken).safeApprove(uniswapV2Router, params.donutAmount);
+        IERC20(usdcToken).safeApprove(uniswapV2Router, 0);
+        IERC20(usdcToken).safeApprove(uniswapV2Router, params.usdcAmount);
 
         (,, uint256 liquidity) = IUniswapV2Router(uniswapV2Router).addLiquidity(
             unit,
-            donutToken,
+            usdcToken,
             params.unitAmount,
-            params.donutAmount,
+            params.usdcAmount,
             params.unitAmount,
-            params.donutAmount,
+            params.usdcAmount,
             address(this),
             block.timestamp + 20 minutes
         );
 
         // Get LP token address and burn initial liquidity
-        lpToken = IUniswapV2Factory(uniswapV2Factory).getPair(unit, donutToken);
+        lpToken = IUniswapV2Factory(uniswapV2Factory).getPair(unit, usdcToken);
         IERC20(lpToken).safeTransfer(DEAD_ADDRESS, liquidity);
 
         // Deploy Auction with LP as payment token
@@ -272,7 +272,7 @@ contract SpinCore is Ownable, ReentrancyGuard {
             params.quoteToken,
             params.tokenName,
             params.tokenSymbol,
-            params.donutAmount,
+            params.usdcAmount,
             params.unitAmount,
             params.initialUps,
             params.tailUps,
@@ -302,12 +302,12 @@ contract SpinCore is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Update the minimum DONUT required to launch.
-     * @param _minDonutForLaunch New minimum amount
+     * @notice Update the minimum USDC required to launch.
+     * @param _minUsdcForLaunch New minimum amount
      */
-    function setMinDonutForLaunch(uint256 _minDonutForLaunch) external onlyOwner {
-        minDonutForLaunch = _minDonutForLaunch;
-        emit SpinCore__MinDonutForLaunchSet(_minDonutForLaunch);
+    function setMinUsdcForLaunch(uint256 _minUsdcForLaunch) external onlyOwner {
+        minUsdcForLaunch = _minUsdcForLaunch;
+        emit SpinCore__MinUsdcForLaunchSet(_minUsdcForLaunch);
     }
 
     /*----------  INTERNAL FUNCTIONS  -----------------------------------*/
@@ -320,7 +320,7 @@ contract SpinCore is Ownable, ReentrancyGuard {
     function _validateLaunchParams(LaunchParams calldata params) internal view {
         if (params.launcher == address(0)) revert SpinCore__ZeroLauncher();
         if (params.quoteToken == address(0)) revert SpinCore__ZeroQuoteToken();
-        if (params.donutAmount < minDonutForLaunch) revert SpinCore__InsufficientDonut();
+        if (params.usdcAmount < minUsdcForLaunch) revert SpinCore__InsufficientUsdc();
         if (bytes(params.tokenName).length == 0) revert SpinCore__EmptyTokenName();
         if (bytes(params.tokenSymbol).length == 0) revert SpinCore__EmptyTokenSymbol();
         if (params.unitAmount == 0) revert SpinCore__ZeroUnitAmount();

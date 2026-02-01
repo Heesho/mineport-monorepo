@@ -38,7 +38,7 @@ const ONE_YEAR = 365 * ONE_DAY;
 
 describe("Edge Case Security Audit Tests", function () {
   let owner, protocol, team, user0, user1, user2, user3, user4, user5, user6, user7;
-  let weth, donut, usdc, entropy, registry;
+  let weth, usdc, entropy, registry;
   let mineCore, spinCore, fundCore;
   let uniswapFactory, uniswapRouter;
   let unitFactory, mineRigFactory, spinRigFactory, fundRigFactory, auctionFactory;
@@ -56,7 +56,6 @@ describe("Edge Case Security Audit Tests", function () {
     // Deploy mock tokens
     const MockWETH = await ethers.getContractFactory("MockWETH");
     weth = await MockWETH.deploy();
-    donut = await MockWETH.deploy();
 
     const MockUSDC = await ethers.getContractFactory("MockUSDC");
     usdc = await MockUSDC.deploy();
@@ -96,7 +95,7 @@ describe("Edge Case Security Audit Tests", function () {
     const MineCore = await ethers.getContractFactory("MineCore");
     mineCore = await MineCore.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
@@ -104,14 +103,14 @@ describe("Edge Case Security Audit Tests", function () {
       auctionFactory.address,
       entropy.address,
       protocol.address,
-      convert("100", 18)
+      convert("100", 6)
     );
 
     // Deploy SpinCore
     const SpinCore = await ethers.getContractFactory("SpinCore");
     spinCore = await SpinCore.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
@@ -119,21 +118,21 @@ describe("Edge Case Security Audit Tests", function () {
       auctionFactory.address,
       entropy.address,
       protocol.address,
-      convert("100", 18)
+      convert("100", 6)
     );
 
     // Deploy FundCore
     const FundCore = await ethers.getContractFactory("FundCore");
     fundCore = await FundCore.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
       fundRigFactory.address,
       auctionFactory.address,
       protocol.address,
-      convert("100", 18)
+      convert("100", 6)
     );
 
     // Approve all Cores in Registry
@@ -148,11 +147,11 @@ describe("Edge Case Security Audit Tests", function () {
       await usdc.mint(signer.address, convert("10000000", 6));
     }
 
-    // Fund user0 with lots of DONUT (it will be the primary launcher)
-    await donut.connect(user0).deposit({ value: convert("5000", 18) });
-    // Also fund other users with some DONUT in case they launch
-    await donut.connect(user1).deposit({ value: convert("1000", 18) });
-    await donut.connect(user2).deposit({ value: convert("1000", 18) });
+    // Fund users with USDC for launches
+    await usdc.mint(user0.address, convert("5000", 6));
+    // Also fund other users with USDC in case they launch
+    await usdc.mint(user1.address, convert("1000", 6));
+    await usdc.mint(user2.address, convert("1000", 6));
   });
 
   // ---------------------------------------------------------------------------
@@ -167,7 +166,7 @@ describe("Edge Case Security Audit Tests", function () {
       tokenName: overrides.tokenName || `MineEdge${launchCounter}`,
       tokenSymbol: overrides.tokenSymbol || `ME${launchCounter}`,
       uri: overrides.uri !== undefined ? overrides.uri : "",
-      donutAmount: overrides.donutAmount || convert("100", 18),
+      usdcAmount: overrides.usdcAmount || convert("100", 6),
       unitAmount: overrides.unitAmount || convert("1000000", 18),
       initialUps: overrides.initialUps || convert("4", 18),
       tailUps: overrides.tailUps || convert("0.01", 18),
@@ -183,7 +182,7 @@ describe("Edge Case Security Audit Tests", function () {
       auctionMinInitPrice: overrides.auctionMinInitPrice || convert("0.1", 18),
     };
 
-    await donut.connect(launcher).approve(mineCore.address, params.donutAmount);
+    await usdc.connect(launcher).approve(mineCore.address, params.usdcAmount);
     const tx = await mineCore.connect(launcher).launch(params);
     const receipt = await tx.wait();
     const ev = receipt.events.find((e) => e.event === "MineCore__Launched");
@@ -210,7 +209,7 @@ describe("Edge Case Security Audit Tests", function () {
       quoteToken: overrides.quoteToken || weth.address,
       tokenName: overrides.tokenName || `SpinEdge${launchCounter}`,
       tokenSymbol: overrides.tokenSymbol || `SE${launchCounter}`,
-      donutAmount: overrides.donutAmount || convert("100", 18),
+      usdcAmount: overrides.usdcAmount || convert("100", 6),
       unitAmount: overrides.unitAmount || convert("1000000", 18),
       initialUps: overrides.initialUps || convert("4", 18),
       tailUps: overrides.tailUps || convert("0.01", 18),
@@ -225,7 +224,7 @@ describe("Edge Case Security Audit Tests", function () {
       auctionMinInitPrice: overrides.auctionMinInitPrice || convert("0.1", 18),
     };
 
-    await donut.connect(launcher).approve(spinCore.address, params.donutAmount);
+    await usdc.connect(launcher).approve(spinCore.address, params.usdcAmount);
     const tx = await spinCore.connect(launcher).launch(params);
     const receipt = await tx.wait();
     const ev = receipt.events.find((e) => e.event === "SpinCore__Launched");
@@ -253,7 +252,7 @@ describe("Edge Case Security Audit Tests", function () {
       recipient: overrides.recipient || user1.address,
       tokenName: overrides.tokenName || `FundEdge${launchCounter}`,
       tokenSymbol: overrides.tokenSymbol || `FE${launchCounter}`,
-      donutAmount: overrides.donutAmount || convert("100", 18),
+      usdcAmount: overrides.usdcAmount || convert("100", 6),
       unitAmount: overrides.unitAmount || convert("1000000", 18),
       initialEmission: overrides.initialEmission || convert("1000", 18),
       minEmission: overrides.minEmission || convert("1", 18),
@@ -264,7 +263,7 @@ describe("Edge Case Security Audit Tests", function () {
       auctionMinInitPrice: overrides.auctionMinInitPrice || convert("0.1", 18),
     };
 
-    await donut.connect(launcher).approve(fundCore.address, params.donutAmount);
+    await usdc.connect(launcher).approve(fundCore.address, params.usdcAmount);
     const tx = await fundCore.connect(launcher).launch(params);
     const receipt = await tx.wait();
     const ev = receipt.events.find((e) => e.event === "FundCore__Launched");
@@ -850,7 +849,7 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD", uri: "",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingAmount: convert("10000000", 18),
           rigEpochPeriod: 599,
@@ -859,7 +858,7 @@ describe("Edge Case Security Audit Tests", function () {
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(mineCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(mineCore.address, params.usdcAmount);
         await expect(mineCore.connect(user0).launch(params)).to.be.revertedWith("Rig__EpochPeriodOutOfRange()");
       });
 
@@ -867,7 +866,7 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD", uri: "",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingAmount: convert("10000000", 18), rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("1", 18),
@@ -875,7 +874,7 @@ describe("Edge Case Security Audit Tests", function () {
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(mineCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(mineCore.address, params.usdcAmount);
         await expect(mineCore.connect(user0).launch(params)).to.be.revertedWith("Rig__PriceMultiplierOutOfRange()");
       });
 
@@ -883,7 +882,7 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD", uri: "",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: 0, tailUps: convert("0.01", 18),
           halvingAmount: convert("10000000", 18), rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -891,7 +890,7 @@ describe("Edge Case Security Audit Tests", function () {
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(mineCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(mineCore.address, params.usdcAmount);
         await expect(mineCore.connect(user0).launch(params)).to.be.revertedWith("Rig__ZeroInitialUps()");
       });
 
@@ -899,7 +898,7 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD", uri: "",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: ethers.BigNumber.from("1000000000000000000000001"),
           tailUps: convert("0.01", 18), halvingAmount: convert("10000000", 18),
           rigEpochPeriod: ONE_HOUR, rigPriceMultiplier: convert("2", 18),
@@ -907,7 +906,7 @@ describe("Edge Case Security Audit Tests", function () {
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(mineCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(mineCore.address, params.usdcAmount);
         await expect(mineCore.connect(user0).launch(params)).to.be.revertedWith("Rig__InitialUpsExceedsMax()");
       });
 
@@ -915,7 +914,7 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD", uri: "",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("1", 18), tailUps: convert("2", 18),
           halvingAmount: convert("10000000", 18), rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -923,7 +922,7 @@ describe("Edge Case Security Audit Tests", function () {
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(mineCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(mineCore.address, params.usdcAmount);
         await expect(mineCore.connect(user0).launch(params)).to.be.revertedWith("Rig__TailUpsOutOfRange()");
       });
 
@@ -931,7 +930,7 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD", uri: "",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingAmount: convert("999", 18), rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -939,7 +938,7 @@ describe("Edge Case Security Audit Tests", function () {
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(mineCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(mineCore.address, params.usdcAmount);
         await expect(mineCore.connect(user0).launch(params)).to.be.revertedWith("Rig__HalvingAmountBelowMin()");
       });
 
@@ -947,7 +946,7 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD", uri: "",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingAmount: convert("10000000", 18), rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: 999999,
@@ -955,7 +954,7 @@ describe("Edge Case Security Audit Tests", function () {
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(mineCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(mineCore.address, params.usdcAmount);
         await expect(mineCore.connect(user0).launch(params)).to.be.revertedWith("Rig__MinInitPriceOutOfRange()");
       });
     });
@@ -1002,7 +1001,7 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingPeriod: SEVEN_DAYS - 1,
           rigEpochPeriod: ONE_HOUR, rigPriceMultiplier: convert("2", 18),
@@ -1010,7 +1009,7 @@ describe("Edge Case Security Audit Tests", function () {
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(spinCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(spinCore.address, params.usdcAmount);
         await expect(spinCore.connect(user0).launch(params)).to.be.revertedWith("SpinRig__HalvingPeriodOutOfRange()");
       });
 
@@ -1018,7 +1017,7 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingPeriod: SEVEN_DAYS, rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -1026,7 +1025,7 @@ describe("Edge Case Security Audit Tests", function () {
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(spinCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(spinCore.address, params.usdcAmount);
         await expect(spinCore.connect(user0).launch(params)).to.be.revertedWith("SpinRig__InvalidOdds()");
       });
 
@@ -1034,7 +1033,7 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingPeriod: SEVEN_DAYS, rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -1042,7 +1041,7 @@ describe("Edge Case Security Audit Tests", function () {
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(spinCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(spinCore.address, params.usdcAmount);
         await expect(spinCore.connect(user0).launch(params)).to.be.revertedWith("SpinRig__OddsTooLow()");
       });
 
@@ -1050,7 +1049,7 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingPeriod: SEVEN_DAYS, rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -1058,7 +1057,7 @@ describe("Edge Case Security Audit Tests", function () {
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(spinCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(spinCore.address, params.usdcAmount);
         await expect(spinCore.connect(user0).launch(params)).to.be.revertedWith("SpinRig__InvalidOdds()");
       });
     });
@@ -1099,13 +1098,13 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: usdc.address, recipient: user1.address,
           tokenName: "Bad", tokenSymbol: "BAD",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialEmission: convert("1000", 18), minEmission: convert("1", 18),
           halvingPeriod: 6,
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(fundCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(fundCore.address, params.usdcAmount);
         await expect(fundCore.connect(user0).launch(params)).to.be.revertedWith("FundRig__InvalidHalvingPeriod()");
       });
 
@@ -1113,13 +1112,13 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: usdc.address, recipient: user1.address,
           tokenName: "Bad", tokenSymbol: "BAD",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialEmission: convert("1000", 18), minEmission: convert("1", 18),
           halvingPeriod: 366,
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(fundCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(fundCore.address, params.usdcAmount);
         await expect(fundCore.connect(user0).launch(params)).to.be.revertedWith("FundRig__InvalidHalvingPeriod()");
       });
 
@@ -1127,14 +1126,14 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: usdc.address, recipient: user1.address,
           tokenName: "Bad", tokenSymbol: "BAD",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialEmission: ethers.BigNumber.from("999999999999999999"),
           minEmission: ethers.BigNumber.from("999999999999999999"),
           halvingPeriod: 30,
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(fundCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(fundCore.address, params.usdcAmount);
         await expect(fundCore.connect(user0).launch(params)).to.be.revertedWith("FundRig__InvalidEmission()");
       });
 
@@ -1142,13 +1141,13 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: usdc.address, recipient: user1.address,
           tokenName: "Bad", tokenSymbol: "BAD",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialEmission: convert("100", 18), minEmission: convert("200", 18),
           halvingPeriod: 30,
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(fundCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(fundCore.address, params.usdcAmount);
         await expect(fundCore.connect(user0).launch(params)).to.be.revertedWith("FundRig__InvalidEmission()");
       });
 
@@ -1156,13 +1155,13 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: usdc.address, recipient: AddressZero,
           tokenName: "Bad", tokenSymbol: "BAD",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialEmission: convert("1000", 18), minEmission: convert("1", 18),
           halvingPeriod: 30,
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(fundCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(fundCore.address, params.usdcAmount);
         await expect(fundCore.connect(user0).launch(params)).to.be.revertedWith("FundCore__ZeroRecipient()");
       });
     });
@@ -1172,7 +1171,7 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD", uri: "",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingAmount: convert("10000000", 18), rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -1181,7 +1180,7 @@ describe("Edge Case Security Audit Tests", function () {
           auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(mineCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(mineCore.address, params.usdcAmount);
         await expect(mineCore.connect(user0).launch(params)).to.be.revertedWith("Auction__InitPriceOutOfRange()");
       });
 
@@ -1189,7 +1188,7 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD", uri: "",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingAmount: convert("10000000", 18), rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -1198,7 +1197,7 @@ describe("Edge Case Security Audit Tests", function () {
           auctionEpochPeriod: ONE_HOUR - 1,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(mineCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(mineCore.address, params.usdcAmount);
         await expect(mineCore.connect(user0).launch(params)).to.be.revertedWith("Auction__EpochPeriodOutOfRange()");
       });
 
@@ -1206,7 +1205,7 @@ describe("Edge Case Security Audit Tests", function () {
         const params = {
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD", uri: "",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingAmount: convert("10000000", 18), rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -1215,7 +1214,7 @@ describe("Edge Case Security Audit Tests", function () {
           auctionPriceMultiplier: ethers.BigNumber.from("3000000000000000001"),
           auctionMinInitPrice: convert("0.1", 18),
         };
-        await donut.connect(user0).approve(mineCore.address, params.donutAmount);
+        await usdc.connect(user0).approve(mineCore.address, params.usdcAmount);
         await expect(mineCore.connect(user0).launch(params)).to.be.revertedWith("Auction__PriceMultiplierOutOfRange()");
       });
     });
@@ -1223,11 +1222,11 @@ describe("Edge Case Security Audit Tests", function () {
     describe("Cross-rig parameter validation", function () {
       it("Should revert with zero launcher for all core types", async function () {
         // MineCore
-        await donut.connect(user0).approve(mineCore.address, convert("100", 18));
+        await usdc.connect(user0).approve(mineCore.address, convert("100", 6));
         await expect(mineCore.connect(user0).launch({
           launcher: AddressZero, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD", uri: "",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingAmount: convert("10000000", 18), rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -1237,11 +1236,11 @@ describe("Edge Case Security Audit Tests", function () {
         })).to.be.revertedWith("Core__ZeroLauncher()");
 
         // SpinCore
-        await donut.connect(user0).approve(spinCore.address, convert("100", 18));
+        await usdc.connect(user0).approve(spinCore.address, convert("100", 6));
         await expect(spinCore.connect(user0).launch({
           launcher: AddressZero, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingPeriod: SEVEN_DAYS, rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -1251,11 +1250,11 @@ describe("Edge Case Security Audit Tests", function () {
         })).to.be.revertedWith("SpinCore__ZeroLauncher()");
 
         // FundCore
-        await donut.connect(user0).approve(fundCore.address, convert("100", 18));
+        await usdc.connect(user0).approve(fundCore.address, convert("100", 6));
         await expect(fundCore.connect(user0).launch({
           launcher: AddressZero, quoteToken: usdc.address, recipient: user1.address,
           tokenName: "Bad", tokenSymbol: "BAD",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialEmission: convert("1000", 18), minEmission: convert("1", 18),
           halvingPeriod: 30,
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
@@ -1264,11 +1263,11 @@ describe("Edge Case Security Audit Tests", function () {
       });
 
       it("Should revert with zero quote token for all core types", async function () {
-        await donut.connect(user0).approve(mineCore.address, convert("100", 18));
+        await usdc.connect(user0).approve(mineCore.address, convert("100", 6));
         await expect(mineCore.connect(user0).launch({
           launcher: user0.address, quoteToken: AddressZero,
           tokenName: "Bad", tokenSymbol: "BAD", uri: "",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingAmount: convert("10000000", 18), rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -1277,11 +1276,11 @@ describe("Edge Case Security Audit Tests", function () {
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         })).to.be.revertedWith("Core__ZeroQuoteToken()");
 
-        await donut.connect(user0).approve(spinCore.address, convert("100", 18));
+        await usdc.connect(user0).approve(spinCore.address, convert("100", 6));
         await expect(spinCore.connect(user0).launch({
           launcher: user0.address, quoteToken: AddressZero,
           tokenName: "Bad", tokenSymbol: "BAD",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingPeriod: SEVEN_DAYS, rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -1290,11 +1289,11 @@ describe("Edge Case Security Audit Tests", function () {
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         })).to.be.revertedWith("SpinCore__ZeroQuoteToken()");
 
-        await donut.connect(user0).approve(fundCore.address, convert("100", 18));
+        await usdc.connect(user0).approve(fundCore.address, convert("100", 6));
         await expect(fundCore.connect(user0).launch({
           launcher: user0.address, quoteToken: AddressZero, recipient: user1.address,
           tokenName: "Bad", tokenSymbol: "BAD",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialEmission: convert("1000", 18), minEmission: convert("1", 18),
           halvingPeriod: 30,
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
@@ -1303,11 +1302,11 @@ describe("Edge Case Security Audit Tests", function () {
       });
 
       it("Should revert with empty token name and symbol", async function () {
-        await donut.connect(user0).approve(mineCore.address, convert("100", 18));
+        await usdc.connect(user0).approve(mineCore.address, convert("100", 6));
         await expect(mineCore.connect(user0).launch({
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "", tokenSymbol: "X", uri: "",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingAmount: convert("10000000", 18), rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -1316,11 +1315,11 @@ describe("Edge Case Security Audit Tests", function () {
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
         })).to.be.revertedWith("Core__EmptyTokenName()");
 
-        await donut.connect(user0).approve(mineCore.address, convert("100", 18));
+        await usdc.connect(user0).approve(mineCore.address, convert("100", 6));
         await expect(mineCore.connect(user0).launch({
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "X", tokenSymbol: "", uri: "",
-          donutAmount: convert("100", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("100", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingAmount: convert("10000000", 18), rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -1331,11 +1330,11 @@ describe("Edge Case Security Audit Tests", function () {
       });
 
       it("Should revert with zero unitAmount", async function () {
-        await donut.connect(user0).approve(mineCore.address, convert("100", 18));
+        await usdc.connect(user0).approve(mineCore.address, convert("100", 6));
         await expect(mineCore.connect(user0).launch({
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD", uri: "",
-          donutAmount: convert("100", 18), unitAmount: 0,
+          usdcAmount: convert("100", 6), unitAmount: 0,
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingAmount: convert("10000000", 18), rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
@@ -1345,19 +1344,19 @@ describe("Edge Case Security Audit Tests", function () {
         })).to.be.revertedWith("Core__ZeroUnitAmount()");
       });
 
-      it("Should revert with insufficient donut", async function () {
-        await donut.connect(user0).approve(mineCore.address, convert("50", 18));
+      it("Should revert with insufficient usdc", async function () {
+        await usdc.connect(user0).approve(mineCore.address, convert("50", 6));
         await expect(mineCore.connect(user0).launch({
           launcher: user0.address, quoteToken: weth.address,
           tokenName: "Bad", tokenSymbol: "BAD", uri: "",
-          donutAmount: convert("50", 18), unitAmount: convert("1000000", 18),
+          usdcAmount: convert("50", 6), unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18), tailUps: convert("0.01", 18),
           halvingAmount: convert("10000000", 18), rigEpochPeriod: ONE_HOUR,
           rigPriceMultiplier: convert("2", 18), rigMinInitPrice: convert("0.0001", 18),
           upsMultipliers: [], upsMultiplierDuration: ONE_DAY,
           auctionInitPrice: convert("1", 18), auctionEpochPeriod: ONE_HOUR,
           auctionPriceMultiplier: convert("2", 18), auctionMinInitPrice: convert("0.1", 18),
-        })).to.be.revertedWith("Core__InsufficientDonut()");
+        })).to.be.revertedWith("Core__InsufficientUsdc()");
       });
     });
   });

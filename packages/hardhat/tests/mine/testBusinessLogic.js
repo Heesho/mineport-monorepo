@@ -7,29 +7,29 @@ const AddressZero = "0x0000000000000000000000000000000000000000";
 const AddressDead = "0x000000000000000000000000000000000000dEaD";
 
 let owner, protocol, team, user0, user1, user2, user3, user4;
-let weth, donut, registry, core, multicall;
+let weth, usdc, registry, core, multicall;
 let rig, auction, unit, lpToken;
 let rigFactory, auctionFactory;
 let uniswapFactory, uniswapRouter;
 
-// Helper to ensure user has enough DONUT
-async function ensureDonut(user, amount = convert("20", 18)) {
-  const balance = await donut.balanceOf(user.address);
+// Helper to ensure user has enough USDC
+async function ensureUsdc(user, amount = convert("20", 6)) {
+  const balance = await usdc.balanceOf(user.address);
   if (balance.lt(amount)) {
-    await donut.connect(user).deposit({ value: amount.sub(balance).add(convert("10", 18)) });
+    await usdc.mint(user.address, amount.sub(balance).add(convert("10", 6)));
   }
 }
 
 // Helper to get a fresh rig for isolated tests
 async function launchFreshRig(launcher, params = {}) {
-  await ensureDonut(launcher, convert("20", 18));
+  await ensureUsdc(launcher, convert("20", 6));
   const defaultParams = {
     launcher: launcher.address,
     quoteToken: weth.address,
     tokenName: "Test Unit",
     tokenSymbol: "TUNIT",
     uri: "",
-    donutAmount: convert("10", 18), // Reduced for testing
+    usdcAmount: convert("10", 6), // Reduced for testing
     unitAmount: convert("1000000", 18),
     initialUps: convert("4", 18),
     tailUps: convert("0.01", 18),
@@ -46,7 +46,7 @@ async function launchFreshRig(launcher, params = {}) {
   };
 
   const launchParams = { ...defaultParams, ...params };
-  await donut.connect(launcher).approve(core.address, launchParams.donutAmount);
+  await usdc.connect(launcher).approve(core.address, launchParams.usdcAmount);
   const tx = await core.connect(launcher).launch(launchParams);
   const receipt = await tx.wait();
   const launchEvent = receipt.events.find((e) => e.event === "MineCore__Launched");
@@ -98,8 +98,9 @@ describe("Business Logic Tests", function () {
     const wethArtifact = await ethers.getContractFactory("MockWETH");
     weth = await wethArtifact.deploy();
 
-    // Deploy mock DONUT token
-    donut = await wethArtifact.deploy();
+    // Deploy mock USDC token (6 decimals)
+    const usdcArtifact = await ethers.getContractFactory("MockUSDC");
+    usdc = await usdcArtifact.deploy();
 
     // Deploy mock Uniswap V2
     const mockUniswapFactoryArtifact = await ethers.getContractFactory("MockUniswapV2Factory");
@@ -131,7 +132,7 @@ describe("Business Logic Tests", function () {
     const coreArtifact = await ethers.getContractFactory("MineCore");
     core = await coreArtifact.deploy(
       registry.address,
-      donut.address,
+      usdc.address,
       uniswapFactory.address,
       uniswapRouter.address,
       unitFactory.address,
@@ -139,7 +140,7 @@ describe("Business Logic Tests", function () {
       auctionFactory.address,
       entropy.address,
       protocol.address,
-      convert("5", 18) // minDonutForLaunch (reduced for testing)
+      convert("5", 6) // minUsdcForLaunch (reduced for testing)
     );
 
     // Approve Core as factory in Registry
@@ -147,12 +148,12 @@ describe("Business Logic Tests", function () {
 
     // Deploy Multicall
     const multicallArtifact = await ethers.getContractFactory("MineMulticall");
-    multicall = await multicallArtifact.deploy(core.address, donut.address);
+    multicall = await multicallArtifact.deploy(core.address, usdc.address);
 
-    // Mint DONUT to users for launching (need enough for many rigs at 500 each)
-    // Each user gets 100 ETH worth of DONUT for extensive testing
+    // Mint USDC to users for launching (need enough for many rigs at 500 each)
+    // Each user gets 100 USDC for extensive testing
     for (const user of [user0, user1, user2, user3, user4]) {
-      await donut.connect(user).deposit({ value: convert("100", 18) });
+      await usdc.mint(user.address, convert("100", 6));
     }
 
     // Launch initial rig for tests
@@ -938,7 +939,7 @@ describe("Business Logic Tests", function () {
   // ============================================
   describe("Core Launch Validation", function () {
     it("Reverts with zero initialUps", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       await expect(
         core.connect(user1).launch({
@@ -947,7 +948,7 @@ describe("Business Logic Tests", function () {
           tokenName: "Test",
           tokenSymbol: "TST",
           uri: "",
-          donutAmount: convert("10", 18),
+          usdcAmount: convert("10", 6),
           unitAmount: convert("1000000", 18),
           initialUps: 0, // Invalid
           tailUps: convert("0.01", 18),
@@ -966,7 +967,7 @@ describe("Business Logic Tests", function () {
     });
 
     it("Reverts with zero tailUps", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       await expect(
         core.connect(user1).launch({
@@ -975,7 +976,7 @@ describe("Business Logic Tests", function () {
           tokenName: "Test",
           tokenSymbol: "TST",
           uri: "",
-          donutAmount: convert("10", 18),
+          usdcAmount: convert("10", 6),
           unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18),
           tailUps: 0, // Invalid
@@ -994,7 +995,7 @@ describe("Business Logic Tests", function () {
     });
 
     it("Reverts when tailUps > initialUps", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       await expect(
         core.connect(user1).launch({
@@ -1003,7 +1004,7 @@ describe("Business Logic Tests", function () {
           tokenName: "Test",
           tokenSymbol: "TST",
           uri: "",
-          donutAmount: convert("10", 18),
+          usdcAmount: convert("10", 6),
           unitAmount: convert("1000000", 18),
           initialUps: convert("1", 18),
           tailUps: convert("2", 18), // tailUps > initialUps
@@ -1022,7 +1023,7 @@ describe("Business Logic Tests", function () {
     });
 
     it("Reverts with zero halvingAmount", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       await expect(
         core.connect(user1).launch({
@@ -1031,7 +1032,7 @@ describe("Business Logic Tests", function () {
           tokenName: "Test",
           tokenSymbol: "TST",
           uri: "",
-          donutAmount: convert("10", 18),
+          usdcAmount: convert("10", 6),
           unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18),
           tailUps: convert("0.01", 18),
@@ -1050,7 +1051,7 @@ describe("Business Logic Tests", function () {
     });
 
     it("Reverts with empty token symbol", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       await expect(
         core.connect(user1).launch({
@@ -1059,7 +1060,7 @@ describe("Business Logic Tests", function () {
           tokenName: "Test",
           tokenSymbol: "", // Invalid
           uri: "",
-          donutAmount: convert("10", 18),
+          usdcAmount: convert("10", 6),
           unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18),
           tailUps: convert("0.01", 18),
@@ -1169,7 +1170,7 @@ describe("Business Logic Tests", function () {
       const state = await multicall.getRig(testRig, 0, AddressZero);
 
       expect(state.accountQuoteBalance).to.equal(0);
-      expect(state.accountDonutBalance).to.equal(0);
+      expect(state.accountUsdcBalance).to.equal(0);
       expect(state.accountUnitBalance).to.equal(0);
       expect(state.accountClaimable).to.equal(0);
     });
@@ -1235,7 +1236,7 @@ describe("Business Logic Tests", function () {
   // ============================================
   describe("Auction Parameter Validation", function () {
     it("Reverts if epoch period below minimum", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       await expect(
         core.connect(user1).launch({
@@ -1244,7 +1245,7 @@ describe("Business Logic Tests", function () {
           tokenName: "Test",
           tokenSymbol: "TST",
           uri: "",
-          donutAmount: convert("10", 18),
+          usdcAmount: convert("10", 6),
           unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18),
           tailUps: convert("0.01", 18),
@@ -1263,7 +1264,7 @@ describe("Business Logic Tests", function () {
     });
 
     it("Reverts if price multiplier below minimum", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       await expect(
         core.connect(user1).launch({
@@ -1272,7 +1273,7 @@ describe("Business Logic Tests", function () {
           tokenName: "Test",
           tokenSymbol: "TST",
           uri: "",
-          donutAmount: convert("10", 18),
+          usdcAmount: convert("10", 6),
           unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18),
           tailUps: convert("0.01", 18),
@@ -1291,7 +1292,7 @@ describe("Business Logic Tests", function () {
     });
 
     it("Reverts if price multiplier above maximum", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       await expect(
         core.connect(user1).launch({
@@ -1300,7 +1301,7 @@ describe("Business Logic Tests", function () {
           tokenName: "Test",
           tokenSymbol: "TST",
           uri: "",
-          donutAmount: convert("10", 18),
+          usdcAmount: convert("10", 6),
           unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18),
           tailUps: convert("0.01", 18),
@@ -1319,7 +1320,7 @@ describe("Business Logic Tests", function () {
     });
 
     it("Reverts if minInitPrice below absolute minimum", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       await expect(
         core.connect(user1).launch({
@@ -1328,7 +1329,7 @@ describe("Business Logic Tests", function () {
           tokenName: "Test",
           tokenSymbol: "TST",
           uri: "",
-          donutAmount: convert("10", 18),
+          usdcAmount: convert("10", 6),
           unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18),
           tailUps: convert("0.01", 18),
@@ -1352,7 +1353,7 @@ describe("Business Logic Tests", function () {
   // ============================================
   describe("Rig Parameter Validation", function () {
     it("Reverts if rig epoch period below minimum (10 minutes)", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       await expect(
         core.connect(user1).launch({
@@ -1361,7 +1362,7 @@ describe("Business Logic Tests", function () {
           tokenName: "Test",
           tokenSymbol: "TST",
           uri: "",
-          donutAmount: convert("10", 18),
+          usdcAmount: convert("10", 6),
           unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18),
           tailUps: convert("0.01", 18),
@@ -1380,7 +1381,7 @@ describe("Business Logic Tests", function () {
     });
 
     it("Reverts if rig epoch period above maximum (365 days)", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       await expect(
         core.connect(user1).launch({
@@ -1389,7 +1390,7 @@ describe("Business Logic Tests", function () {
           tokenName: "Test",
           tokenSymbol: "TST",
           uri: "",
-          donutAmount: convert("10", 18),
+          usdcAmount: convert("10", 6),
           unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18),
           tailUps: convert("0.01", 18),
@@ -1408,7 +1409,7 @@ describe("Business Logic Tests", function () {
     });
 
     it("Reverts if rig price multiplier below minimum (110%)", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       await expect(
         core.connect(user1).launch({
@@ -1417,7 +1418,7 @@ describe("Business Logic Tests", function () {
           tokenName: "Test",
           tokenSymbol: "TST",
           uri: "",
-          donutAmount: convert("10", 18),
+          usdcAmount: convert("10", 6),
           unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18),
           tailUps: convert("0.01", 18),
@@ -1436,7 +1437,7 @@ describe("Business Logic Tests", function () {
     });
 
     it("Reverts if rig price multiplier above maximum (300%)", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       await expect(
         core.connect(user1).launch({
@@ -1445,7 +1446,7 @@ describe("Business Logic Tests", function () {
           tokenName: "Test",
           tokenSymbol: "TST",
           uri: "",
-          donutAmount: convert("10", 18),
+          usdcAmount: convert("10", 6),
           unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18),
           tailUps: convert("0.01", 18),
@@ -1464,7 +1465,7 @@ describe("Business Logic Tests", function () {
     });
 
     it("Reverts if rig minInitPrice below absolute minimum", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       await expect(
         core.connect(user1).launch({
@@ -1473,7 +1474,7 @@ describe("Business Logic Tests", function () {
           tokenName: "Test",
           tokenSymbol: "TST",
           uri: "",
-          donutAmount: convert("10", 18),
+          usdcAmount: convert("10", 6),
           unitAmount: convert("1000000", 18),
           initialUps: convert("4", 18),
           tailUps: convert("0.01", 18),
@@ -1492,7 +1493,7 @@ describe("Business Logic Tests", function () {
     });
 
     it("Accepts valid rig parameters at boundary values", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       // Should not revert with exact minimum values
       const tx = await core.connect(user1).launch({
@@ -1501,7 +1502,7 @@ describe("Business Logic Tests", function () {
         tokenName: "Boundary Test",
         tokenSymbol: "BNDRY",
         uri: "",
-        donutAmount: convert("10", 18),
+        usdcAmount: convert("10", 6),
         unitAmount: convert("1000000", 18),
         initialUps: convert("4", 18),
         tailUps: convert("0.01", 18),
@@ -1522,7 +1523,7 @@ describe("Business Logic Tests", function () {
     });
 
     it("Accepts valid rig parameters at maximum boundary values", async function () {
-      await donut.connect(user1).approve(core.address, convert("10", 18));
+      await usdc.connect(user1).approve(core.address, convert("10", 6));
 
       // Should not revert with exact maximum values
       const tx = await core.connect(user1).launch({
@@ -1531,7 +1532,7 @@ describe("Business Logic Tests", function () {
         tokenName: "Max Boundary Test",
         tokenSymbol: "MAXB",
         uri: "",
-        donutAmount: convert("10", 18),
+        usdcAmount: convert("10", 6),
         unitAmount: convert("1000000", 18),
         initialUps: convert("4", 18),
         tailUps: convert("0.01", 18),

@@ -34,9 +34,9 @@ describe("FundRig Invariant Tests", function () {
 
     [owner, treasury, team, protocol, recipient, user0, user1, user2] = await ethers.getSigners();
 
-    // Deploy mock WETH as payment token
-    const mockWethArtifact = await ethers.getContractFactory("MockWETH");
-    paymentToken = await mockWethArtifact.deploy();
+    // Deploy mock USDC as payment token (6 decimals)
+    const mockUsdcArtifact = await ethers.getContractFactory("MockUSDC");
+    paymentToken = await mockUsdcArtifact.deploy();
 
     // Deploy mock Core (for protocolFeeAddress)
     const mockCoreArtifact = await ethers.getContractFactory("MockCore");
@@ -65,9 +65,9 @@ describe("FundRig Invariant Tests", function () {
     await unitToken.setRig(rig.address);
 
     // Fund users
-    await paymentToken.connect(user0).deposit({ value: convert("5000", 18) });
-    await paymentToken.connect(user1).deposit({ value: convert("5000", 18) });
-    await paymentToken.connect(user2).deposit({ value: convert("5000", 18) });
+    await paymentToken.mint(user0.address, convert("5000", 6));
+    await paymentToken.mint(user1.address, convert("5000", 6));
+    await paymentToken.mint(user2.address, convert("5000", 6));
   });
 
   /**
@@ -77,7 +77,7 @@ describe("FundRig Invariant Tests", function () {
   describe("INVARIANT: Donation Sums", function () {
     it("Day total should equal sum of individual donations", async function () {
       const currentDay = await rig.currentDay();
-      const donationAmount = convert("100", 18);
+      const donationAmount = convert("100", 6);
 
       // Multiple users donate
       await paymentToken.connect(user0).approve(rig.address, donationAmount);
@@ -101,7 +101,7 @@ describe("FundRig Invariant Tests", function () {
       const currentDay = await rig.currentDay();
       const donationBefore = await rig.dayAccountToDonation(currentDay, user0.address);
 
-      const additionalDonation = convert("50", 18);
+      const additionalDonation = convert("50", 6);
       await paymentToken.connect(user0).approve(rig.address, additionalDonation);
       await rig.connect(user0).fund(user0.address, additionalDonation);
 
@@ -115,7 +115,7 @@ describe("FundRig Invariant Tests", function () {
    */
   describe("INVARIANT: Fee Distribution", function () {
     it("Fees should sum to donation amount", async function () {
-      const donationAmount = convert("1000", 18);
+      const donationAmount = convert("1000", 6);
 
       const recipientBefore = await paymentToken.balanceOf(recipient.address);
       const treasuryBefore = await paymentToken.balanceOf(treasury.address);
@@ -140,7 +140,7 @@ describe("FundRig Invariant Tests", function () {
     });
 
     it("Fee percentages should match 50/45/4/1 split", async function () {
-      const donationAmount = convert("1000", 18);
+      const donationAmount = convert("1000", 6);
 
       const recipientBefore = await paymentToken.balanceOf(recipient.address);
       const treasuryBefore = await paymentToken.balanceOf(treasury.address);
@@ -181,12 +181,12 @@ describe("FundRig Invariant Tests", function () {
       claimDay = await rig.currentDay();
 
       // User0 donates 75%
-      await paymentToken.connect(user0).approve(rig.address, convert("750", 18));
-      await rig.connect(user0).fund(user0.address, convert("750", 18));
+      await paymentToken.connect(user0).approve(rig.address, convert("750", 6));
+      await rig.connect(user0).fund(user0.address, convert("750", 6));
 
       // User1 donates 25%
-      await paymentToken.connect(user1).approve(rig.address, convert("250", 18));
-      await rig.connect(user1).fund(user1.address, convert("250", 18));
+      await paymentToken.connect(user1).approve(rig.address, convert("250", 6));
+      await rig.connect(user1).fund(user1.address, convert("250", 6));
 
       // Move to next day so we can claim
       await increaseTime(ONE_DAY);
@@ -230,8 +230,8 @@ describe("FundRig Invariant Tests", function () {
       await increaseTime(ONE_DAY);
       testDay = await rig.currentDay();
 
-      await paymentToken.connect(user2).approve(rig.address, convert("100", 18));
-      await rig.connect(user2).fund(user2.address, convert("100", 18));
+      await paymentToken.connect(user2).approve(rig.address, convert("100", 6));
+      await rig.connect(user2).fund(user2.address, convert("100", 6));
 
       await increaseTime(ONE_DAY);
     });
@@ -326,8 +326,8 @@ describe("FundRig Business Logic Tests", function () {
 
     [owner, treasury, team, protocol, recipient, user0, user1, user2] = await ethers.getSigners();
 
-    const mockWethArtifact = await ethers.getContractFactory("MockWETH");
-    paymentToken = await mockWethArtifact.deploy();
+    const mockUsdcArtifact = await ethers.getContractFactory("MockUSDC");
+    paymentToken = await mockUsdcArtifact.deploy();
 
     // Deploy mock Core (for protocolFeeAddress)
     const mockCoreArtifact = await ethers.getContractFactory("MockCore");
@@ -351,9 +351,9 @@ describe("FundRig Business Logic Tests", function () {
 
     await unitToken.setRig(rig.address);
 
-    await paymentToken.connect(user0).deposit({ value: convert("5000", 18) });
-    await paymentToken.connect(user1).deposit({ value: convert("5000", 18) });
-    await paymentToken.connect(user2).deposit({ value: convert("5000", 18) });
+    await paymentToken.mint(user0.address, convert("5000", 6));
+    await paymentToken.mint(user1.address, convert("5000", 6));
+    await paymentToken.mint(user2.address, convert("5000", 6));
   });
 
   describe("Recipient Management", function () {
@@ -406,15 +406,15 @@ describe("FundRig Business Logic Tests", function () {
     });
 
     it("Should revert on zero account address", async function () {
-      await paymentToken.connect(user0).approve(rig.address, convert("100", 18));
+      await paymentToken.connect(user0).approve(rig.address, convert("100", 6));
 
       await expect(
-        rig.connect(user0).fund(AddressZero, convert("100", 18))
+        rig.connect(user0).fund(AddressZero, convert("100", 6))
       ).to.be.revertedWith("FundRig__InvalidAddress()");
     });
 
     it("Should allow donating on behalf of another account", async function () {
-      const donationAmount = convert("100", 18);
+      const donationAmount = convert("100", 6);
 
       await paymentToken.connect(user0).approve(rig.address, donationAmount);
 
@@ -436,8 +436,8 @@ describe("FundRig Business Logic Tests", function () {
       await increaseTime(ONE_DAY);
       donationDay = await rig.currentDay();
 
-      await paymentToken.connect(user0).approve(rig.address, convert("100", 18));
-      await rig.connect(user0).fund(user0.address, convert("100", 18));
+      await paymentToken.connect(user0).approve(rig.address, convert("100", 6));
+      await rig.connect(user0).fund(user0.address, convert("100", 6));
 
       await increaseTime(ONE_DAY);
     });
@@ -470,14 +470,14 @@ describe("FundRig Business Logic Tests", function () {
     it("Donations on different days should be isolated", async function () {
       const day1 = await rig.currentDay();
 
-      await paymentToken.connect(user1).approve(rig.address, convert("300", 18));
-      await rig.connect(user1).fund(user1.address, convert("100", 18));
+      await paymentToken.connect(user1).approve(rig.address, convert("300", 6));
+      await rig.connect(user1).fund(user1.address, convert("100", 6));
 
       await increaseTime(ONE_DAY);
       const day2 = await rig.currentDay();
 
       // Different amount to show isolation
-      await rig.connect(user1).fund(user1.address, convert("200", 18));
+      await rig.connect(user1).fund(user1.address, convert("200", 6));
 
       const day1Donation = await rig.dayAccountToDonation(day1, user1.address);
       const day2Donation = await rig.dayAccountToDonation(day2, user1.address);
@@ -485,11 +485,11 @@ describe("FundRig Business Logic Tests", function () {
       const day2Total = await rig.dayToTotalDonated(day2);
 
       // Verify donations are tracked per day
-      expect(day1Donation).to.equal(convert("100", 18));
-      expect(day2Donation).to.equal(convert("200", 18));
+      expect(day1Donation).to.equal(convert("100", 6));
+      expect(day2Donation).to.equal(convert("200", 6));
       // Day totals should reflect actual donations on each day
-      expect(day1Total).to.equal(convert("100", 18));
-      expect(day2Total).to.equal(convert("200", 18));
+      expect(day1Total).to.equal(convert("100", 6));
+      expect(day2Total).to.equal(convert("200", 6));
     });
 
     it("Claims for different days should be independent", async function () {
@@ -515,8 +515,8 @@ describe("FundRig Business Logic Tests", function () {
       const soloDay = await rig.currentDay();
 
       // Only user0 donates
-      await paymentToken.connect(user0).approve(rig.address, convert("50", 18));
-      await rig.connect(user0).fund(user0.address, convert("50", 18));
+      await paymentToken.connect(user0).approve(rig.address, convert("50", 6));
+      await rig.connect(user0).fund(user0.address, convert("50", 6));
 
       await increaseTime(ONE_DAY);
 
@@ -537,20 +537,20 @@ describe("FundRig Business Logic Tests", function () {
       const manyDonationsDay = await rig.currentDay();
 
       // Make 10 small donations
-      await paymentToken.connect(user0).approve(rig.address, convert("100", 18));
+      await paymentToken.connect(user0).approve(rig.address, convert("100", 6));
 
       for (let i = 0; i < 10; i++) {
-        await rig.connect(user0).fund(user0.address, convert("10", 18));
+        await rig.connect(user0).fund(user0.address, convert("10", 6));
       }
 
       const totalDonation = await rig.dayAccountToDonation(manyDonationsDay, user0.address);
-      expect(totalDonation).to.equal(convert("100", 18));
+      expect(totalDonation).to.equal(convert("100", 6));
     });
   });
 
   describe("Events", function () {
     it("Should emit Funded event on donation", async function () {
-      const donationAmount = convert("100", 18);
+      const donationAmount = convert("100", 6);
       await paymentToken.connect(user0).approve(rig.address, donationAmount);
 
       await expect(
@@ -562,8 +562,8 @@ describe("FundRig Business Logic Tests", function () {
       await increaseTime(ONE_DAY);
       const claimableDay = await rig.currentDay();
 
-      await paymentToken.connect(user2).approve(rig.address, convert("100", 18));
-      await rig.connect(user2).fund(user2.address, convert("100", 18));
+      await paymentToken.connect(user2).approve(rig.address, convert("100", 6));
+      await rig.connect(user2).fund(user2.address, convert("100", 6));
 
       await increaseTime(ONE_DAY);
 

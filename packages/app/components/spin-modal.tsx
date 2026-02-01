@@ -117,7 +117,7 @@ export function SpinModal({
     ? Number(formatUnits(spinState.accountQuoteBalance, QUOTE_TOKEN_DECIMALS))
     : 0;
 
-  // Token price from spinState (unitPrice is 18 decimals representing DONUT/unit ratio)
+  // Token price from spinState (unitPrice is 18 decimals representing USDC/unit ratio)
   const tokenPrice = spinState?.unitPrice
     ? Number(formatEther(spinState.unitPrice))
     : 0;
