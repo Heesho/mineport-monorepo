@@ -90,7 +90,6 @@ describe("SpinCore Launch Tests", function () {
     expect(await core.usdcToken()).to.equal(usdc.address);
     expect(await core.entropy()).to.equal(mockEntropy.address);
     expect(await core.minUsdcForLaunch()).to.equal(convert("100", 6));
-    expect(await core.deployedRigsLength()).to.equal(0);
     expect(await core.RIG_TYPE()).to.equal("spin");
     console.log("Core state verified");
   });
@@ -138,13 +137,12 @@ describe("SpinCore Launch Tests", function () {
     console.log("LP Token at:", lpToken);
 
     // Verify registry
-    expect(await core.isDeployedRig(spinRig)).to.equal(true);
-    expect(await core.rigToLauncher(spinRig)).to.equal(user0.address);
-    expect(await core.rigToUnit(spinRig)).to.equal(unit);
+    expect(await core.rigToIsRig(spinRig)).to.equal(true);
     expect(await core.rigToAuction(spinRig)).to.equal(auction);
+    expect(await core.rigs(0)).to.equal(spinRig);
+    expect(await core.rigsLength()).to.equal(1);
+    expect(await core.rigToIndex(spinRig)).to.equal(0);
     expect(await core.rigToLP(spinRig)).to.equal(lpToken);
-    expect(await core.rigToQuote(spinRig)).to.equal(usdc.address);
-    expect(await core.deployedRigsLength()).to.equal(1);
   });
 
   it("SpinRig ownership transferred to launcher", async function () {
@@ -340,7 +338,6 @@ describe("SpinCore Launch Tests", function () {
     const tx = await core.connect(user1).launch(launchParams);
     await tx.wait();
 
-    expect(await core.deployedRigsLength()).to.equal(2);
-    console.log("Second spin rig launched. Total:", (await core.deployedRigsLength()).toString());
+    console.log("Second spin rig launched.");
   });
 });

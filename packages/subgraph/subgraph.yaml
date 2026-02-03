@@ -11,9 +11,9 @@ dataSources:
     name: MineCore
     network: base
     source:
-      address: "0xee347D06436D0995abe28d5CE8ab402e79958D1e"
+      address: "0xF719bfBB8CdBb7bcC22Df99554d4ef6c0965e362"
       abi: MineCore
-      startBlock: 41576103
+      startBlock: 41643772
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -41,9 +41,9 @@ dataSources:
     name: SpinCore
     network: base
     source:
-      address: "0xF6515c81C8e9Fa40f56cf6882f096825730cabD0"
+      address: "0x2444eaA70e3669Fc5a01bD05DBA716f94305466c"
       abi: SpinCore
-      startBlock: 41576103
+      startBlock: 41643772
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -71,9 +71,9 @@ dataSources:
     name: FundCore
     network: base
     source:
-      address: "0x5536baD2ec14EbeD83038AF448620634B452185b"
+      address: "0xbc40b29417f823b2Ae8cBE393c309F2d8A3BA6BE"
       abi: FundCore
-      startBlock: 41576103
+      startBlock: 41643772
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9

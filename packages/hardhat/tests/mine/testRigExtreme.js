@@ -251,7 +251,7 @@ describe("EXTREME RIG TESTING - TRY TO BREAK EVERYTHING", function () {
 
     it("ATTACK: Excess ETH stays in contract (no reentrancy via refund)", async function () {
       // Enable multipliers to trigger ETH handling
-      await rigContract.connect(user0).setMultipliersEnabled(true);
+      await rigContract.connect(user0).setEntropyEnabled(true);
 
       // Wait for multiplier duration
       const duration = await rigContract.upsMultiplierDuration();
@@ -274,7 +274,7 @@ describe("EXTREME RIG TESTING - TRY TO BREAK EVERYTHING", function () {
       // Should succeed (not revert)
       await expect(tx).to.not.be.reverted;
 
-      await rigContract.connect(user0).setMultipliersEnabled(false);
+      await rigContract.connect(user0).setEntropyEnabled(false);
     });
   });
 
@@ -559,7 +559,7 @@ describe("EXTREME RIG TESTING - TRY TO BREAK EVERYTHING", function () {
           convert("10", 18)
         ],
       });
-      await result.rig.connect(user0).setMultipliersEnabled(true);
+      await result.rig.connect(user0).setEntropyEnabled(true);
 
       // Mine to trigger entropy request
       const duration = await result.rig.upsMultiplierDuration();

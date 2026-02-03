@@ -19,7 +19,7 @@ type AdminModalProps = {
     uri: string;
     // Mine specific
     capacity?: number;
-    multipliersEnabled?: boolean;
+    entropyEnabled?: boolean;
     // Fund specific
     recipient?: string | null;
   };
@@ -47,7 +47,7 @@ export function AdminModal({
 
   // Mine specific state
   const [capacity, setCapacity] = useState(currentConfig.capacity || 1);
-  const [multipliersEnabled, setMultipliersEnabled] = useState(currentConfig.multipliersEnabled ?? false);
+  const [entropyEnabled, setEntropyEnabled] = useState(currentConfig.entropyEnabled ?? false);
 
   // Fund specific state
   const [recipient, setRecipient] = useState(currentConfig.recipient || "");
@@ -63,7 +63,7 @@ export function AdminModal({
       setTeam(currentConfig.team || "");
       setUri(currentConfig.uri || "");
       setCapacity(currentConfig.capacity || 1);
-      setMultipliersEnabled(currentConfig.multipliersEnabled ?? false);
+      setEntropyEnabled(currentConfig.entropyEnabled ?? false);
       setRecipient(currentConfig.recipient || "");
     }
   }, [isOpen, currentConfig]);
@@ -74,7 +74,7 @@ export function AdminModal({
   const isRecipientValid = rigType !== "fund" || isValidAddress(recipient);
 
   // Check if multipliers toggle changed
-  const multipliersChanged = multipliersEnabled !== (currentConfig.multipliersEnabled ?? false);
+  const multipliersChanged = entropyEnabled !== (currentConfig.entropyEnabled ?? false);
 
   // Handle individual field save (mock)
   const handleSave = async (field: string) => {
@@ -346,15 +346,15 @@ export function AdminModal({
                     <div className="text-muted-foreground text-[12px]">Use VRF for random UPS multipliers</div>
                   </div>
                   <button
-                    onClick={() => setMultipliersEnabled(!multipliersEnabled)}
+                    onClick={() => setEntropyEnabled(!entropyEnabled)}
                     disabled={isSaving}
                     className={`w-12 h-7 rounded-full transition-all relative ${
-                      multipliersEnabled ? "bg-white" : "bg-zinc-700"
+                      entropyEnabled ? "bg-white" : "bg-zinc-700"
                     }`}
                   >
                     <div
                       className={`absolute w-5 h-5 rounded-full top-1 transition-all ${
-                        multipliersEnabled ? "right-1 bg-black" : "left-1 bg-zinc-500"
+                        entropyEnabled ? "right-1 bg-black" : "left-1 bg-zinc-500"
                       }`}
                     />
                   </button>
@@ -373,7 +373,7 @@ export function AdminModal({
                   >
                     {isSaving && pendingField === "multipliers"
                       ? "Saving..."
-                      : multipliersEnabled
+                      : entropyEnabled
                       ? "Enable Multipliers"
                       : "Disable Multipliers"}
                   </button>

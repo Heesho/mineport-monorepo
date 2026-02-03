@@ -48,13 +48,12 @@ interface IFundCore {
     // State
     function protocolFeeAddress() external view returns (address);
     function minUsdcForLaunch() external view returns (uint256);
-    function deployedRigs(uint256 index) external view returns (address);
-    function isDeployedRig(address rig) external view returns (bool);
-    function rigToLauncher(address rig) external view returns (address);
-    function rigToUnit(address rig) external view returns (address);
+    function rigToIsRig(address rig) external view returns (bool);
     function rigToAuction(address rig) external view returns (address);
+    function rigs(uint256 index) external view returns (address);
+    function rigsLength() external view returns (uint256);
+    function rigToIndex(address rig) external view returns (uint256);
     function rigToLP(address rig) external view returns (address);
-    function rigToQuote(address rig) external view returns (address);
 
     // Functions
     function launch(LaunchParams calldata params)
@@ -64,9 +63,6 @@ interface IFundCore {
     // Restricted functions
     function setProtocolFeeAddress(address _protocolFeeAddress) external;
     function setMinUsdcForLaunch(uint256 _minUsdcForLaunch) external;
-
-    // View functions
-    function deployedRigsLength() external view returns (uint256);
 
     // Events
     event FundCore__Launched(

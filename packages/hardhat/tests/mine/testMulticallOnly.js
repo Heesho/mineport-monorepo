@@ -154,8 +154,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
             expect(await rig.owner()).to.equal(user0.address);
 
             // Verify registry
-            expect(await core.rigToLauncher(rigAddr)).to.equal(user0.address);
-            expect(await core.isDeployedRig(rigAddr)).to.be.true;
+            expect(await core.rigToIsRig(rigAddr)).to.be.true;
         });
 
         it("Launcher param is overwritten with msg.sender", async function () {
@@ -190,7 +189,6 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
 
             // Owner should be user1 (caller), not user3 (param)
             expect(await rig.owner()).to.equal(user1.address);
-            expect(await core.rigToLauncher(launchEvent.args.rig)).to.equal(user1.address);
         });
 
         it("Reverts if USDC not approved", async function () {
@@ -1224,6 +1222,39 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
     // GAS ESTIMATION VIA MULTICALL
     // ============================================================
     describe("Gas Usage", function () {
+        let gasRigAddr;
+
+        before(async function () {
+            // Launch a rig to use in gas tests
+            const launchParams = {
+                launcher: AddressZero,
+                quoteToken: weth.address,
+                tokenName: "Gas Rig",
+                tokenSymbol: "GRIG",
+                uri: "",
+                usdcAmount: convert("200", 6),
+                unitAmount: convert("1000000", 18),
+                initialUps: convert("1", 18),
+                tailUps: convert("0.01", 18),
+                halvingAmount: convert("10000000", 18),
+                rigEpochPeriod: 3600,
+                rigPriceMultiplier: convert("1.5", 18),
+                rigMinInitPrice: convert("0.0001", 18),
+                upsMultipliers: [],
+                upsMultiplierDuration: 86400,
+                auctionInitPrice: convert("1", 18),
+                auctionEpochPeriod: 86400,
+                auctionPriceMultiplier: convert("1.1", 18),
+                auctionMinInitPrice: convert("0.001", 18),
+            };
+
+            await usdc.connect(user0).approve(multicall.address, launchParams.usdcAmount);
+            const tx = await multicall.connect(user0).launch(launchParams);
+            const receipt = await tx.wait();
+            const launchEvent = await parseLaunchEvent(receipt);
+            gasRigAddr = launchEvent.args.rig;
+        });
+
         it("Launch gas cost", async function () {
             const launchParams = {
                 launcher: AddressZero,
@@ -1256,9 +1287,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
         });
 
         it("Mine gas cost", async function () {
-            // Get a rig address
-            const rigAddr = await core.deployedRigs(0);
-            const rig = await ethers.getContractAt("MineRig", rigAddr);
+            const rig = await ethers.getContractAt("MineRig", gasRigAddr);
 
             const slot = await rig.getSlot(0);
             const epochId = slot.epochId;
@@ -1268,7 +1297,7 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
             await weth.connect(user1).approve(multicall.address, price.add(convert("1", 6)));
 
             const tx = await multicall.connect(user1).mine(
-                rigAddr,
+                gasRigAddr,
                 0, // index
                 epochId,
                 deadline,
@@ -1283,17 +1312,13 @@ describe("Multicall-Only Tests (Frontend Simulation)", function () {
         });
 
         it("getRig view call gas estimation", async function () {
-            const rigAddr = await core.deployedRigs(0);
-
             // For view calls, we can estimate gas
-            const gasEstimate = await multicall.estimateGas.getRig(rigAddr, 0, user1.address);
+            const gasEstimate = await multicall.estimateGas.getRig(gasRigAddr, 0, user1.address);
             console.log(`    getRig estimated gas: ${gasEstimate.toString()}`);
         });
 
         it("getAuction view call gas estimation", async function () {
-            const rigAddr = await core.deployedRigs(0);
-
-            const gasEstimate = await multicall.estimateGas.getAuction(rigAddr, user1.address);
+            const gasEstimate = await multicall.estimateGas.getAuction(gasRigAddr, user1.address);
             console.log(`    getAuction estimated gas: ${gasEstimate.toString()}`);
         });
     });

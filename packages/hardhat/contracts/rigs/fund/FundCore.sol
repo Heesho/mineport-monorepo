@@ -52,14 +52,11 @@ contract FundCore is Ownable, ReentrancyGuard {
     address public protocolFeeAddress; // receives protocol fees
     uint256 public minUsdcForLaunch; // minimum USDC required to launch
 
-    address[] public deployedRigs; // array of all deployed fund rigs
-    mapping(address => bool) public isDeployedRig; // rig => is valid
-    mapping(address => address) public rigToLauncher; // rig => launcher address
-    mapping(address => address) public rigToUnit; // rig => Unit token
+    address[] public rigs; // enumerable list of deployed rigs
+    mapping(address => bool) public rigToIsRig; // rig => is valid
+    mapping(address => uint256) public rigToIndex; // rig => index in rigs[]
     mapping(address => address) public rigToAuction; // rig => Auction contract
-    mapping(address => address) public rigToLP; // rig => LP token
-    mapping(address => address) public rigToQuote; // rig => quote token (payment token)
-    mapping(address => address) public rigToRecipient; // rig => recipient address
+    mapping(address => address) public rigToLP; // rig => LP token address
 
     /*----------  STRUCTS  ----------------------------------------------*/
 
@@ -245,14 +242,11 @@ contract FundCore is Ownable, ReentrancyGuard {
         IFundRig(rig).transferOwnership(params.launcher);
 
         // Update local registry
-        deployedRigs.push(rig);
-        isDeployedRig[rig] = true;
-        rigToLauncher[rig] = params.launcher;
-        rigToUnit[rig] = unit;
-        rigToAuction[rig] = auction;
+        rigToIsRig[rig] = true;
+        rigToIndex[rig] = rigs.length;
+        rigs.push(rig);
         rigToLP[rig] = lpToken;
-        rigToQuote[rig] = params.quoteToken;
-        rigToRecipient[rig] = params.recipient;
+        rigToAuction[rig] = auction;
 
         // Register with central registry
         IRegistry(registry).register(rig, RIG_TYPE, unit, params.launcher);
@@ -302,6 +296,16 @@ contract FundCore is Ownable, ReentrancyGuard {
         emit FundCore__MinUsdcForLaunchSet(_minUsdcForLaunch);
     }
 
+    /*----------  VIEW FUNCTIONS  ---------------------------------------*/
+
+    /**
+     * @notice Returns the number of deployed rigs.
+     * @return The length of the rigs array
+     */
+    function rigsLength() external view returns (uint256) {
+        return rigs.length;
+    }
+
     /*----------  INTERNAL FUNCTIONS  -----------------------------------*/
 
     /**
@@ -319,13 +323,4 @@ contract FundCore is Ownable, ReentrancyGuard {
         if (params.unitAmount == 0) revert FundCore__ZeroUnitAmount();
     }
 
-    /*----------  VIEW FUNCTIONS  ---------------------------------------*/
-
-    /**
-     * @notice Get the total number of deployed fund rigs.
-     * @return Number of fund rigs launched
-     */
-    function deployedRigsLength() external view returns (uint256) {
-        return deployedRigs.length;
-    }
 }

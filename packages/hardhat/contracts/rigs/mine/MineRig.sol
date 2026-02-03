@@ -80,7 +80,7 @@ contract MineRig is IEntropyConsumer, ReentrancyGuard, Ownable {
     address public team;
     uint256 public capacity = 1;
     uint256 public totalMinted;
-    bool public multipliersEnabled;
+    bool public entropyEnabled;
     uint256[] public upsMultipliers;
     string public uri;  // Global rig metadata URI
 
@@ -158,7 +158,7 @@ contract MineRig is IEntropyConsumer, ReentrancyGuard, Ownable {
     event Rig__TreasurySet(address indexed treasury);
     event Rig__TeamSet(address indexed team);
     event Rig__CapacitySet(uint256 capacity);
-    event Rig__MultipliersEnabledSet(bool enabled);
+    event Rig__EntropyEnabledSet(bool enabled);
     event Rig__UriSet(string uri);
     event Rig__Claimed(address indexed account, uint256 amount);
 
@@ -334,7 +334,7 @@ contract MineRig is IEntropyConsumer, ReentrancyGuard, Ownable {
         emit Rig__Mine(msg.sender, miner, index, epochId, price, _uri);
 
         // Only request entropy if randomness is enabled and upsMultiplier needs updating
-        if (multipliersEnabled && shouldUpdateUpsMultiplier) {
+        if (entropyEnabled && shouldUpdateUpsMultiplier) {
             uint128 fee = IEntropyV2(entropy).getFeeV2();
             if (msg.value < fee) revert Rig__InsufficientFee();
             uint64 seq = IEntropyV2(entropy).requestV2{value: fee}();
@@ -491,12 +491,12 @@ contract MineRig is IEntropyConsumer, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Enable or disable multipliers for UPS.
+     * @notice Enable or disable entropy for UPS multipliers.
      * @param _enabled True to enable entropy-based random multipliers
      */
-    function setMultipliersEnabled(bool _enabled) external onlyOwner {
-        multipliersEnabled = _enabled;
-        emit Rig__MultipliersEnabledSet(_enabled);
+    function setEntropyEnabled(bool _enabled) external onlyOwner {
+        entropyEnabled = _enabled;
+        emit Rig__EntropyEnabledSet(_enabled);
     }
 
     /**
@@ -538,7 +538,7 @@ contract MineRig is IEntropyConsumer, ReentrancyGuard, Ownable {
         return upsMultipliers.length;
     }
 
-    function isMultipliersEnabled() external view returns (bool) {
-        return multipliersEnabled;
+    function isEntropyEnabled() external view returns (bool) {
+        return entropyEnabled;
     }
 }

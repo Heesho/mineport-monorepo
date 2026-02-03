@@ -1,15 +1,15 @@
 export const CONTRACT_ADDRESSES = {
   // Per-rig-type Core contracts
-  mineCore: "0xee347D06436D0995abe28d5CE8ab402e79958D1e",
-  spinCore: "0xF6515c81C8e9Fa40f56cf6882f096825730cabD0",
-  fundCore: "0x5536baD2ec14EbeD83038AF448620634B452185b",
+  mineCore: "0xF719bfBB8CdBb7bcC22Df99554d4ef6c0965e362",
+  spinCore: "0x2444eaA70e3669Fc5a01bD05DBA716f94305466c",
+  fundCore: "0xbc40b29417f823b2Ae8cBE393c309F2d8A3BA6BE",
   // Per-rig-type Multicall contracts
-  mineMulticall: "0x1fE3B4f47D5B4824620676Aa2B8bd48007D36207",
-  spinMulticall: "0x76eE857c437b9cb7EA12a4fBb0BfCD5098a387A2",
-  fundMulticall: "0x103161203A302E6e79f516d04848b376dE0A2C03",
+  mineMulticall: "0x6504E919c26E94f3f60e76B39C7921a66D2Fb39b",
+  spinMulticall: "0xa33F8b4E42e967A99B352eE4F4D8FAD89Ef3a2C8",
+  fundMulticall: "0x9d6dCbbc614425EC524fA754f8212901a980F49c",
   // Legacy aliases (point to mine variants for backwards compat)
-  core: "0xee347D06436D0995abe28d5CE8ab402e79958D1e",
-  multicall: "0x1fE3B4f47D5B4824620676Aa2B8bd48007D36207",
+  core: "0xF719bfBB8CdBb7bcC22Df99554d4ef6c0965e362",
+  multicall: "0x6504E919c26E94f3f60e76B39C7921a66D2Fb39b",
   // Token addresses (Mock tokens for staging)
   usdc: "0xe90495BE187d434e23A9B1FeC0B6Ce039700870e", // Mock USDC
   // Uniswap V2 on Base
@@ -20,40 +20,12 @@ export const CONTRACT_ADDRESSES = {
 // Native ETH placeholder address used by 0x API
 export const NATIVE_ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 
-// Core contract ABI - for reading deployed rigs and their mappings
+// Core contract ABI - for reading deployed rig state
 export const CORE_ABI = [
   {
-    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    name: "deployedRigs",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "deployedRigsLength",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
     inputs: [{ internalType: "address", name: "", type: "address" }],
-    name: "isDeployedRig",
+    name: "rigToIsRig",
     outputs: [{ internalType: "bool", name: "", type: "bool" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "address", name: "", type: "address" }],
-    name: "rigToLauncher",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "address", name: "", type: "address" }],
-    name: "rigToUnit",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "view",
     type: "function",
   },
@@ -65,15 +37,29 @@ export const CORE_ABI = [
     type: "function",
   },
   {
-    inputs: [{ internalType: "address", name: "", type: "address" }],
-    name: "rigToLP",
+    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    name: "rigs",
     outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "view",
     type: "function",
   },
   {
+    inputs: [],
+    name: "rigsLength",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [{ internalType: "address", name: "", type: "address" }],
-    name: "rigToQuote",
+    name: "rigToIndex",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "address", name: "", type: "address" }],
+    name: "rigToLP",
     outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "view",
     type: "function",
@@ -832,7 +818,7 @@ export const RIG_ABI = [
   },
   {
     inputs: [],
-    name: "isMultipliersEnabled",
+    name: "isEntropyEnabled",
     outputs: [{ internalType: "bool", name: "", type: "bool" }],
     stateMutability: "view",
     type: "function",

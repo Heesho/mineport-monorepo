@@ -29,18 +29,18 @@ const MULTISIG_ADDRESS = "0xeE0CB49D2805DA6bC0A979ddAd87bb793fbB765E";
 const MIN_USDC_FOR_LAUNCH = convert("1", 6); // 1 USDC minimum
 
 // Deployed Contract Addresses
-const REGISTRY = "0xDe73808FdA366bbc029F3F050AF95003982c333C";
-const UNIT_FACTORY = "0xD5c5e463d1BBC5D139c59ce920A35A0AB03E8882";
-const MINE_RIG_FACTORY = "0x9DFd79bc5758A8438cE0ad0BF15BD7B4593D3121";
-const SPIN_RIG_FACTORY = "0x54f11F79f22847d7F72C9fDAa7C5388854899376";
-const FUND_RIG_FACTORY = "0xD30Ab91762bB468fDDa22FEAa8Ab222CD20aF2Df";
-const AUCTION_FACTORY = "0x1bede89EdFbE32D611AE0bCEB4C4F4d5Fa4e1Be9";
-const MINE_CORE = "0xee347D06436D0995abe28d5CE8ab402e79958D1e";
-const SPIN_CORE = "0xF6515c81C8e9Fa40f56cf6882f096825730cabD0";
-const FUND_CORE = "0x5536baD2ec14EbeD83038AF448620634B452185b";
-const MINE_MULTICALL = "0x1fE3B4f47D5B4824620676Aa2B8bd48007D36207";
-const SPIN_MULTICALL = "0x76eE857c437b9cb7EA12a4fBb0BfCD5098a387A2";
-const FUND_MULTICALL = "0x103161203A302E6e79f516d04848b376dE0A2C03";
+const REGISTRY = "";
+const UNIT_FACTORY = "";
+const MINE_RIG_FACTORY = "";
+const SPIN_RIG_FACTORY = "";
+const FUND_RIG_FACTORY = "";
+const AUCTION_FACTORY = "";
+const MINE_CORE = "";
+const SPIN_CORE = "";
+const FUND_CORE = "";
+const MINE_MULTICALL = "";
+const SPIN_MULTICALL = "";
+const FUND_MULTICALL = "";
 
 // Contract Variables
 let usdc,
@@ -526,9 +526,12 @@ async function verifyFundMulticall() {
   console.log("FundMulticall Verified");
 }
 
-async function verifyUnitByRigIndex(rigIndex) {
-  const rigAddress = await mineCore.deployedRigs(rigIndex);
-  const unitAddress = await mineCore.rigToUnit(rigAddress);
+async function verifyUnitByRigAddress(rigAddress) {
+  const rig = await ethers.getContractAt(
+    "contracts/rigs/mine/MineRig.sol:MineRig",
+    rigAddress
+  );
+  const unitAddress = await rig.unit();
   const unit = await ethers.getContractAt(
     "contracts/Unit.sol:Unit",
     unitAddress
@@ -552,9 +555,12 @@ async function verifyUnitByRigIndex(rigIndex) {
   console.log("Unit Verified:", unitAddress);
 }
 
-async function getUnitVerificationInfo(rigIndex) {
-  const rigAddress = await mineCore.deployedRigs(rigIndex);
-  const unitAddress = await mineCore.rigToUnit(rigAddress);
+async function getUnitVerificationInfo(rigAddress) {
+  const rig = await ethers.getContractAt(
+    "contracts/rigs/mine/MineRig.sol:MineRig",
+    rigAddress
+  );
+  const unitAddress = await rig.unit();
   const unit = await ethers.getContractAt(
     "contracts/Unit.sol:Unit",
     unitAddress
@@ -592,8 +598,7 @@ async function getUnitVerificationInfo(rigIndex) {
   };
 }
 
-async function verifyRigByIndex(rigIndex) {
-  const rigAddress = await mineCore.deployedRigs(rigIndex);
+async function verifyRigByAddress(rigAddress) {
   const rig = await ethers.getContractAt(
     "contracts/rigs/mine/MineRig.sol:MineRig",
     rigAddress
@@ -669,8 +674,7 @@ async function verifyRigByIndex(rigIndex) {
   console.log("Rig Verified:", rigAddress);
 }
 
-async function verifyAuctionByRigIndex(rigIndex) {
-  const rigAddress = await mineCore.deployedRigs(rigIndex);
+async function verifyAuctionByRigAddress(rigAddress) {
   const auctionAddress = await mineCore.rigToAuction(rigAddress);
   const auction = await ethers.getContractAt(
     "contracts/Auction.sol:Auction",
@@ -724,9 +728,12 @@ async function verifyAuctionByRigIndex(rigIndex) {
 
 // --- SpinRig-specific verification ---
 
-async function verifySpinUnitByRigIndex(rigIndex) {
-  const rigAddress = await spinCore.deployedRigs(rigIndex);
-  const unitAddress = await spinCore.rigToUnit(rigAddress);
+async function verifySpinUnitByRigAddress(rigAddress) {
+  const rig = await ethers.getContractAt(
+    "contracts/rigs/spin/SpinRig.sol:SpinRig",
+    rigAddress
+  );
+  const unitAddress = await rig.unit();
   const unit = await ethers.getContractAt(
     "contracts/Unit.sol:Unit",
     unitAddress
@@ -749,9 +756,12 @@ async function verifySpinUnitByRigIndex(rigIndex) {
   console.log("Unit Verified:", unitAddress);
 }
 
-async function getSpinUnitVerificationInfo(rigIndex) {
-  const rigAddress = await spinCore.deployedRigs(rigIndex);
-  const unitAddress = await spinCore.rigToUnit(rigAddress);
+async function getSpinUnitVerificationInfo(rigAddress) {
+  const rig = await ethers.getContractAt(
+    "contracts/rigs/spin/SpinRig.sol:SpinRig",
+    rigAddress
+  );
+  const unitAddress = await rig.unit();
   const unit = await ethers.getContractAt(
     "contracts/Unit.sol:Unit",
     unitAddress
@@ -786,8 +796,7 @@ async function getSpinUnitVerificationInfo(rigIndex) {
   };
 }
 
-async function verifySpinRigByIndex(rigIndex) {
-  const rigAddress = await spinCore.deployedRigs(rigIndex);
+async function verifySpinRigByAddress(rigAddress) {
   const rig = await ethers.getContractAt(
     "contracts/rigs/spin/SpinRig.sol:SpinRig",
     rigAddress
@@ -857,8 +866,7 @@ async function verifySpinRigByIndex(rigIndex) {
   console.log("SpinRig Verified:", rigAddress);
 }
 
-async function verifySpinAuctionByRigIndex(rigIndex) {
-  const rigAddress = await spinCore.deployedRigs(rigIndex);
+async function verifySpinAuctionByRigAddress(rigAddress) {
   const auctionAddress = await spinCore.rigToAuction(rigAddress);
   const auction = await ethers.getContractAt(
     "contracts/Auction.sol:Auction",
@@ -909,9 +917,12 @@ async function verifySpinAuctionByRigIndex(rigIndex) {
 
 // --- FundRig-specific verification ---
 
-async function verifyFundUnitByRigIndex(rigIndex) {
-  const rigAddress = await fundCore.deployedRigs(rigIndex);
-  const unitAddress = await fundCore.rigToUnit(rigAddress);
+async function verifyFundUnitByRigAddress(rigAddress) {
+  const rig = await ethers.getContractAt(
+    "contracts/rigs/fund/FundRig.sol:FundRig",
+    rigAddress
+  );
+  const unitAddress = await rig.unit();
   const unit = await ethers.getContractAt(
     "contracts/Unit.sol:Unit",
     unitAddress
@@ -934,9 +945,12 @@ async function verifyFundUnitByRigIndex(rigIndex) {
   console.log("Unit Verified:", unitAddress);
 }
 
-async function getFundUnitVerificationInfo(rigIndex) {
-  const rigAddress = await fundCore.deployedRigs(rigIndex);
-  const unitAddress = await fundCore.rigToUnit(rigAddress);
+async function getFundUnitVerificationInfo(rigAddress) {
+  const rig = await ethers.getContractAt(
+    "contracts/rigs/fund/FundRig.sol:FundRig",
+    rigAddress
+  );
+  const unitAddress = await rig.unit();
   const unit = await ethers.getContractAt(
     "contracts/Unit.sol:Unit",
     unitAddress
@@ -971,8 +985,7 @@ async function getFundUnitVerificationInfo(rigIndex) {
   };
 }
 
-async function verifyFundRigByIndex(rigIndex) {
-  const rigAddress = await fundCore.deployedRigs(rigIndex);
+async function verifyFundRigByAddress(rigAddress) {
   const rig = await ethers.getContractAt(
     "contracts/rigs/fund/FundRig.sol:FundRig",
     rigAddress
@@ -1017,8 +1030,7 @@ async function verifyFundRigByIndex(rigIndex) {
   console.log("FundRig Verified:", rigAddress);
 }
 
-async function verifyFundAuctionByRigIndex(rigIndex) {
-  const rigAddress = await fundCore.deployedRigs(rigIndex);
+async function verifyFundAuctionByRigAddress(rigAddress) {
   const auctionAddress = await fundCore.rigToAuction(rigAddress);
   const auction = await ethers.getContractAt(
     "contracts/Auction.sol:Auction",
@@ -1179,10 +1191,6 @@ async function printDeployment() {
       "Min USDC:           ",
       divDec(await mineCore.minUsdcForLaunch())
     );
-    console.log(
-      "Deployed Rigs:       ",
-      (await mineCore.deployedRigsLength()).toString()
-    );
   }
 
   if (spinCore) {
@@ -1193,10 +1201,6 @@ async function printDeployment() {
       "Min USDC:           ",
       divDec(await spinCore.minUsdcForLaunch())
     );
-    console.log(
-      "Deployed Rigs:       ",
-      (await spinCore.deployedRigsLength()).toString()
-    );
   }
 
   if (fundCore) {
@@ -1206,10 +1210,6 @@ async function printDeployment() {
     console.log(
       "Min USDC:           ",
       divDec(await fundCore.minUsdcForLaunch())
-    );
-    console.log(
-      "Deployed Rigs:       ",
-      (await fundCore.deployedRigsLength()).toString()
     );
   }
 
@@ -1227,10 +1227,6 @@ async function printCoreState(coreContract, label) {
   );
   console.log("Unit Factory:        ", await coreContract.unitFactory());
   console.log("Auction Factory:     ", await coreContract.auctionFactory());
-  console.log(
-    "Deployed Rigs:       ",
-    (await coreContract.deployedRigsLength()).toString()
-  );
   console.log("");
 }
 
@@ -1255,28 +1251,28 @@ async function main() {
   //===================================================================
 
   // // --- Shared infrastructure ---
-  // console.log("Starting Deployment...");
-  // await deployRegistry();
-  // await deployUnitFactory();
-  // await deployAuctionFactory();
+  console.log("Starting Deployment...");
+  await deployRegistry();
+  await deployUnitFactory();
+  await deployAuctionFactory();
 
   // // --- MineCore ---
-  // await deployMineRigFactory();
-  // await deployMineCore();
-  // await approveMineCore();
-  // await deployMineMulticall();
+  await deployMineRigFactory();
+  await deployMineCore();
+  await approveMineCore();
+  await deployMineMulticall();
 
   // // --- SpinCore ---
-  // await deploySpinRigFactory();
-  // await deploySpinCore();
-  // await approveSpinCore();
-  // await deploySpinMulticall();
+  await deploySpinRigFactory();
+  await deploySpinCore();
+  await approveSpinCore();
+  await deploySpinMulticall();
 
   // // --- FundCore ---
-  // await deployFundRigFactory();
-  // await deployFundCore();
-  // await approveFundCore();
-  // await deployFundMulticall();
+  await deployFundRigFactory();
+  await deployFundCore();
+  await approveFundCore();
+  await deployFundMulticall();
 
   //===================================================================
   // 2. Verify Contracts
@@ -1315,31 +1311,31 @@ async function main() {
   // await verifyFundMulticall();
   // await sleep(5000);
 
-  // --- MineRig-specific verification ---
-  // await getUnitVerificationInfo(0);
-  // await verifyUnitByRigIndex(0);
+  // --- MineRig-specific verification (pass rig address) ---
+  // await getUnitVerificationInfo("0xRIG_ADDRESS");
+  // await verifyUnitByRigAddress("0xRIG_ADDRESS");
   // await sleep(5000);
-  // await verifyRigByIndex(0);
+  // await verifyRigByAddress("0xRIG_ADDRESS");
   // await sleep(5000);
-  // await verifyAuctionByRigIndex(0);
-  // await sleep(5000);
-
-  // --- SpinRig-specific verification ---
-  // await getSpinUnitVerificationInfo(0);
-  // await verifySpinUnitByRigIndex(0);
-  // await sleep(5000);
-  // await verifySpinRigByIndex(0);
-  // await sleep(5000);
-  // await verifySpinAuctionByRigIndex(0);
+  // await verifyAuctionByRigAddress("0xRIG_ADDRESS");
   // await sleep(5000);
 
-  // --- FundRig-specific verification ---
-  // await getFundUnitVerificationInfo(0);
-  // await verifyFundUnitByRigIndex(0);
+  // --- SpinRig-specific verification (pass rig address) ---
+  // await getSpinUnitVerificationInfo("0xRIG_ADDRESS");
+  // await verifySpinUnitByRigAddress("0xRIG_ADDRESS");
   // await sleep(5000);
-  // await verifyFundRigByIndex(0);
+  // await verifySpinRigByAddress("0xRIG_ADDRESS");
   // await sleep(5000);
-  // await verifyFundAuctionByRigIndex(0);
+  // await verifySpinAuctionByRigAddress("0xRIG_ADDRESS");
+  // await sleep(5000);
+
+  // --- FundRig-specific verification (pass rig address) ---
+  // await getFundUnitVerificationInfo("0xRIG_ADDRESS");
+  // await verifyFundUnitByRigAddress("0xRIG_ADDRESS");
+  // await sleep(5000);
+  // await verifyFundRigByAddress("0xRIG_ADDRESS");
+  // await sleep(5000);
+  // await verifyFundAuctionByRigAddress("0xRIG_ADDRESS");
   // await sleep(5000);
 
   //===================================================================

@@ -1079,14 +1079,13 @@ describe("Business Logic Tests", function () {
     });
 
     it("Multiple rigs can be launched", async function () {
-      const countBefore = await core.deployedRigsLength();
+      const resultA = await launchFreshRig(user1, { tokenName: "Rig A", tokenSymbol: "RIGA" });
+      const resultB = await launchFreshRig(user2, { tokenName: "Rig B", tokenSymbol: "RIGB" });
+      const resultC = await launchFreshRig(user3, { tokenName: "Rig C", tokenSymbol: "RIGC" });
 
-      await launchFreshRig(user1, { tokenName: "Rig A", tokenSymbol: "RIGA" });
-      await launchFreshRig(user2, { tokenName: "Rig B", tokenSymbol: "RIGB" });
-      await launchFreshRig(user3, { tokenName: "Rig C", tokenSymbol: "RIGC" });
-
-      const countAfter = await core.deployedRigsLength();
-      expect(countAfter.sub(countBefore)).to.equal(3);
+      expect(await core.rigToIsRig(resultA.rig)).to.be.true;
+      expect(await core.rigToIsRig(resultB.rig)).to.be.true;
+      expect(await core.rigToIsRig(resultC.rig)).to.be.true;
     });
 
     it("Each rig has unique Unit token", async function () {

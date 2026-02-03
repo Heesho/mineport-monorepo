@@ -103,7 +103,7 @@ contract FundMulticall {
         address account,
         uint256 amount
     ) external {
-        if (!IFundCore(core).isDeployedRig(rig)) revert FundMulticall__InvalidRig();
+        if (!IFundCore(core).rigToIsRig(rig)) revert FundMulticall__InvalidRig();
 
         address paymentToken = IFundRig(rig).paymentToken();
         IERC20(paymentToken).safeTransferFrom(msg.sender, address(this), amount);
@@ -119,7 +119,7 @@ contract FundMulticall {
      * @param day The day to claim
      */
     function claim(address rig, address account, uint256 day) external {
-        if (!IFundCore(core).isDeployedRig(rig)) revert FundMulticall__InvalidRig();
+        if (!IFundCore(core).rigToIsRig(rig)) revert FundMulticall__InvalidRig();
         IFundRig(rig).claim(account, day);
     }
 
@@ -131,7 +131,7 @@ contract FundMulticall {
      * @param dayIds Array of days to claim
      */
     function claimMultiple(address rig, address account, uint256[] calldata dayIds) external {
-        if (!IFundCore(core).isDeployedRig(rig)) revert FundMulticall__InvalidRig();
+        if (!IFundCore(core).rigToIsRig(rig)) revert FundMulticall__InvalidRig();
         uint256 length = dayIds.length;
         if (length == 0) revert FundMulticall__ArrayLengthMismatch();
 
@@ -158,7 +158,7 @@ contract FundMulticall {
      * @param maxPaymentTokenAmount Maximum LP tokens willing to pay
      */
     function buy(address rig, uint256 epochId, uint256 deadline, uint256 maxPaymentTokenAmount) external {
-        if (!IFundCore(core).isDeployedRig(rig)) revert FundMulticall__InvalidRig();
+        if (!IFundCore(core).rigToIsRig(rig)) revert FundMulticall__InvalidRig();
         address auction = IFundCore(core).rigToAuction(rig);
         address lpToken = IAuction(auction).paymentToken();
         uint256 price = IAuction(auction).getPrice();
@@ -229,12 +229,11 @@ contract FundMulticall {
         state.team = IFundRig(rig).team();
 
         address unitToken = IFundRig(rig).unit();
-        address auction = IFundCore(core).rigToAuction(rig);
 
         // Calculate Unit price in USDC from LP reserves
         // USDC has 6 decimals, Unit has 18. Multiply by 1e30 (= 1e12 normalization * 1e18 precision)
-        if (auction != address(0)) {
-            address lpToken = IAuction(auction).paymentToken();
+        address lpToken = IFundCore(core).rigToLP(rig);
+        if (lpToken != address(0)) {
             uint256 usdcInLP = IERC20(usdc).balanceOf(lpToken);
             uint256 unitInLP = IERC20(unitToken).balanceOf(lpToken);
             state.unitPrice = unitInLP == 0 ? 0 : usdcInLP * 1e30 / unitInLP;

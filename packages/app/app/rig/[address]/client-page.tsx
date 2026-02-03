@@ -947,7 +947,7 @@ export default function RigDetailPage() {
           uri: rigUri ?? "",
           ...(rigType === "mine" && {
             capacity,
-            multipliersEnabled: false,
+            entropyEnabled: false,
           }),
           ...(rigType === "fund" && {
             recipient: null,

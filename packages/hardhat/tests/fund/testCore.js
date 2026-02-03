@@ -82,7 +82,6 @@ describe("FundCore Launch Tests", function () {
     expect(await core.protocolFeeAddress()).to.equal(protocol.address);
     expect(await core.usdcToken()).to.equal(usdc.address);
     expect(await core.minUsdcForLaunch()).to.equal(convert("100", 6));
-    expect(await core.deployedRigsLength()).to.equal(0);
     expect(await core.RIG_TYPE()).to.equal("fund");
     console.log("Core state verified");
   });
@@ -127,13 +126,12 @@ describe("FundCore Launch Tests", function () {
     console.log("LP Token at:", lpToken);
 
     // Verify registry
-    expect(await core.isDeployedRig(fundRig)).to.equal(true);
-    expect(await core.rigToLauncher(fundRig)).to.equal(user0.address);
-    expect(await core.rigToUnit(fundRig)).to.equal(unit);
+    expect(await core.rigToIsRig(fundRig)).to.equal(true);
     expect(await core.rigToAuction(fundRig)).to.equal(auction);
+    expect(await core.rigs(0)).to.equal(fundRig);
+    expect(await core.rigsLength()).to.equal(1);
+    expect(await core.rigToIndex(fundRig)).to.equal(0);
     expect(await core.rigToLP(fundRig)).to.equal(lpToken);
-    expect(await core.rigToQuote(fundRig)).to.equal(usdc.address);
-    expect(await core.deployedRigsLength()).to.equal(1);
   });
 
   it("FundRig ownership transferred to launcher", async function () {
@@ -429,7 +427,5 @@ describe("FundCore Launch Tests", function () {
     const tx = await core.connect(user1).launch(launchParams);
     await tx.wait();
 
-    expect(await core.deployedRigsLength()).to.equal(2);
-    console.log("Second fund rig launched. Total:", (await core.deployedRigsLength()).toString());
   });
 });

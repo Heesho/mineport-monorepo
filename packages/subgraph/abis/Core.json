@@ -1,298 +1,23 @@
 [
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_usdcToken",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_uniswapV2Factory",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_uniswapV2Router",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_unitFactory",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_rigFactory",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_auctionFactory",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_entropy",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_protocolFeeAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_minUsdcForLaunch",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
     "inputs": [],
-    "name": "Core__AuctionEpochPeriodOutOfRange",
+    "name": "Registry__AlreadyRegistered",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "Core__AuctionInitPriceOutOfRange",
+    "name": "Registry__EmptyRigType",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "Core__AuctionMinInitPriceOutOfRange",
+    "name": "Registry__NotApprovedFactory",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "Core__AuctionPriceMultiplierOutOfRange",
+    "name": "Registry__ZeroAddress",
     "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "Core__EmptyTokenName",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "Core__EmptyTokenSymbol",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "Core__InsufficientUsdc",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "Core__RigEpochPeriodOutOfRange",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "Core__RigHalvingAmountOutOfRange",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "Core__RigInitialUpsOutOfRange",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "Core__RigMinInitPriceOutOfRange",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "Core__RigPriceMultiplierOutOfRange",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "Core__RigTailUpsOutOfRange",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "Core__ZeroAddress",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "Core__ZeroLauncher",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "Core__ZeroQuoteToken",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "Core__ZeroUnitAmount",
-    "type": "error"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "launcher",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "quoteToken",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "unit",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "rig",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "auction",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "lpToken",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "tokenName",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "tokenSymbol",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "uri",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "usdcAmount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "unitAmount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "initialUps",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "tailUps",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "halvingAmount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "rigEpochPeriod",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "rigPriceMultiplier",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "rigMinInitPrice",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "auctionInitPrice",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "auctionEpochPeriod",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "auctionPriceMultiplier",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "auctionMinInitPrice",
-        "type": "uint256"
-      }
-    ],
-    "name": "Core__Launched",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "minUsdcForLaunch",
-        "type": "uint256"
-      }
-    ],
-    "name": "Core__MinUsdcForLaunchSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "protocolFeeAddress",
-        "type": "address"
-      }
-    ],
-    "name": "Core__ProtocolFeeAddressSet",
-    "type": "event"
   },
   {
     "anonymous": false,
@@ -314,270 +39,60 @@
     "type": "event"
   },
   {
-    "inputs": [],
-    "name": "AUCTION_ABS_MAX_INIT_PRICE",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "AUCTION_ABS_MIN_INIT_PRICE",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "AUCTION_MAX_EPOCH_PERIOD",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "AUCTION_MAX_PRICE_MULTIPLIER",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "AUCTION_MIN_EPOCH_PERIOD",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "AUCTION_MIN_PRICE_MULTIPLIER",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "DEAD_ADDRESS",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "RIG_ABS_MAX_INIT_PRICE",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "RIG_ABS_MIN_INIT_PRICE",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "RIG_MAX_EPOCH_PERIOD",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "RIG_MAX_INITIAL_UPS",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "RIG_MAX_PRICE_MULTIPLIER",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "RIG_MIN_EPOCH_PERIOD",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "RIG_MIN_HALVING_AMOUNT",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "RIG_MIN_PRICE_MULTIPLIER",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "auctionFactory",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
+    "anonymous": false,
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
+        "indexed": true,
+        "internalType": "address",
+        "name": "factory",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "approved",
+        "type": "bool"
       }
     ],
-    "name": "deployedRigs",
-    "outputs": [
+    "name": "Registry__FactoryApproved",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
       {
+        "indexed": true,
         "internalType": "address",
-        "name": "",
+        "name": "rig",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "string",
+        "name": "rigType",
+        "type": "string"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "unit",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "launcher",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "factory",
         "type": "address"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "deployedRigsLength",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "usdcToken",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "entropy",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
+    "name": "Registry__RigRegistered",
+    "type": "event"
   },
   {
     "inputs": [
@@ -587,7 +102,7 @@
         "type": "address"
       }
     ],
-    "name": "isDeployedRig",
+    "name": "approvedFactories",
     "outputs": [
       {
         "internalType": "bool",
@@ -601,132 +116,17 @@
   {
     "inputs": [
       {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "launcher",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "quoteToken",
-            "type": "address"
-          },
-          {
-            "internalType": "string",
-            "name": "tokenName",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "tokenSymbol",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "uri",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "usdcAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "unitAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "initialUps",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "tailUps",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "halvingAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "rigEpochPeriod",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "rigPriceMultiplier",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "rigMinInitPrice",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "auctionInitPrice",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "auctionEpochPeriod",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "auctionPriceMultiplier",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "auctionMinInitPrice",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct Core.LaunchParams",
-        "name": "params",
-        "type": "tuple"
-      }
-    ],
-    "name": "launch",
-    "outputs": [
-      {
         "internalType": "address",
-        "name": "unit",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "rig",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "auction",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "lpToken",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "minUsdcForLaunch",
-    "outputs": [
-      {
-        "internalType": "uint256",
         "name": "",
-        "type": "uint256"
+        "type": "address"
+      }
+    ],
+    "name": "isRegistered",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -746,16 +146,31 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "protocolFeeAddress",
-    "outputs": [
+    "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "rig",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "rigType",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "unit",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "launcher",
         "type": "address"
       }
     ],
-    "stateMutability": "view",
+    "name": "register",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -766,135 +181,19 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "rigFactory",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "factory",
         "type": "address"
-      }
-    ],
-    "name": "rigToAuction",
-    "outputs": [
+      },
       {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
+        "internalType": "bool",
+        "name": "approved",
+        "type": "bool"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "rigToLP",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "rigToLauncher",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "rigToQuote",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "rigToUnit",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_minUsdcForLaunch",
-        "type": "uint256"
-      }
-    ],
-    "name": "setMinUsdcForLaunch",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_protocolFeeAddress",
-        "type": "address"
-      }
-    ],
-    "name": "setProtocolFeeAddress",
+    "name": "setFactoryApproval",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -910,45 +209,6 @@
     "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "uniswapV2Factory",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "uniswapV2Router",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "unitFactory",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   }
 ]

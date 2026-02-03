@@ -2,6 +2,7 @@ import type { PublicClient, Address } from "viem";
 import {
   ADDRESSES,
   CORE_ABI,
+  RIG_ABI,
   MULTICALL_ABI,
   SPIN_MULTICALL_ABI,
   FUND_MULTICALL_ABI,
@@ -142,7 +143,7 @@ const rigTypeCache = new Map<Address, RigType>();
 // ---------------------------------------------------------------------------
 
 /**
- * Detect the rig type by calling `isDeployedRig` on each Core contract.
+ * Detect the rig type by calling `rigToIsRig` on each Core contract.
  * Result is cached — a rig's type never changes.
  */
 export async function detectRigType(
@@ -157,19 +158,19 @@ export async function detectRigType(
       {
         address: ADDRESSES.mineCore as Address,
         abi: CORE_ABI,
-        functionName: "isDeployedRig",
+        functionName: "rigToIsRig",
         args: [rigAddress],
       },
       {
         address: ADDRESSES.spinCore as Address,
         abi: CORE_ABI,
-        functionName: "isDeployedRig",
+        functionName: "rigToIsRig",
         args: [rigAddress],
       },
       {
         address: ADDRESSES.fundCore as Address,
         abi: CORE_ABI,
-        functionName: "isDeployedRig",
+        functionName: "rigToIsRig",
         args: [rigAddress],
       },
     ],
@@ -193,8 +194,8 @@ export async function detectRigType(
 // ---------------------------------------------------------------------------
 
 /**
- * Read the static mappings (unit, auction, LP, quote) from the correct Core
- * for a given rig address and type.
+ * Read the static mappings (unit, auction, LP, quote) for a rig.
+ * unit/quote are read from the rig contract, auction and LP from Core.
  */
 export async function resolveRigInfo(
   publicClient: PublicClient,
@@ -203,14 +204,19 @@ export async function resolveRigInfo(
 ): Promise<RigInfo> {
   const core = coreAddress(rigType);
 
-  const [unitAddress, auctionAddress, lpAddress, quoteAddress] =
+  // Single batch: read unit, quote from rig; auction and LP from core
+  const [unitAddress, quoteAddress, auctionAddress, lpAddress] =
     await publicClient.multicall({
       contracts: [
         {
-          address: core,
-          abi: CORE_ABI,
-          functionName: "rigToUnit",
-          args: [rigAddress],
+          address: rigAddress,
+          abi: RIG_ABI,
+          functionName: "unit",
+        },
+        {
+          address: rigAddress,
+          abi: RIG_ABI,
+          functionName: "quote",
         },
         {
           address: core,
@@ -222,12 +228,6 @@ export async function resolveRigInfo(
           address: core,
           abi: CORE_ABI,
           functionName: "rigToLP",
-          args: [rigAddress],
-        },
-        {
-          address: core,
-          abi: CORE_ABI,
-          functionName: "rigToQuote",
           args: [rigAddress],
         },
       ],

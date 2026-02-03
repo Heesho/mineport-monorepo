@@ -94,6 +94,9 @@ contract SpinRig is IEntropyConsumer, ReentrancyGuard, Ownable {
     mapping(uint64 => address) public sequenceToSpinner;
     mapping(uint64 => uint256) public sequenceToEpoch;
 
+    // Entropy toggle
+    bool public entropyEnabled = true;
+
     // Metadata URI for the rig
     string public uri;
 
@@ -136,6 +139,7 @@ contract SpinRig is IEntropyConsumer, ReentrancyGuard, Ownable {
     event SpinRig__TreasurySet(address indexed treasury);
     event SpinRig__TeamSet(address indexed team);
     event SpinRig__UriSet(string uri);
+    event SpinRig__EntropyEnabledSet(bool enabled);
 
     /*----------  STRUCTS  ----------------------------------------------*/
 
@@ -284,13 +288,25 @@ contract SpinRig is IEntropyConsumer, ReentrancyGuard, Ownable {
 
         emit SpinRig__Spin(msg.sender, spinner, currentEpochId, price);
 
-        // Request VRF for spin outcome
-        uint128 fee = entropy.getFeeV2();
-        if (msg.value < fee) revert SpinRig__InsufficientFee();
-        uint64 seq = entropy.requestV2{value: fee}();
-        sequenceToSpinner[seq] = spinner;
-        sequenceToEpoch[seq] = epochId; // Store the NEW epoch (post-increment)
-        emit SpinRig__EntropyRequested(epochId, seq);
+        if (entropyEnabled) {
+            // Request VRF for spin outcome
+            uint128 fee = entropy.getFeeV2();
+            if (msg.value < fee) revert SpinRig__InsufficientFee();
+            uint64 seq = entropy.requestV2{value: fee}();
+            sequenceToSpinner[seq] = spinner;
+            sequenceToEpoch[seq] = currentEpochId;
+            emit SpinRig__EntropyRequested(currentEpochId, seq);
+        } else {
+            if (msg.value > 0) revert SpinRig__InsufficientFee();
+            // Fallback: use odds[0] as deterministic payout
+            uint256 oddsBps = odds[0];
+            uint256 pool = IERC20(unit).balanceOf(address(this));
+            uint256 winAmount = pool * oddsBps / DIVISOR;
+            if (winAmount > 0) {
+                IERC20(unit).safeTransfer(spinner, winAmount);
+            }
+            emit SpinRig__Win(spinner, currentEpochId, oddsBps, winAmount);
+        }
 
         return price;
     }
@@ -388,6 +404,15 @@ contract SpinRig is IEntropyConsumer, ReentrancyGuard, Ownable {
         emit SpinRig__TeamSet(_team);
     }
 
+
+    /**
+     * @notice Enable or disable entropy for spin outcomes.
+     * @param _enabled True to enable entropy-based random odds, false to use odds[0] as fallback
+     */
+    function setEntropyEnabled(bool _enabled) external onlyOwner {
+        entropyEnabled = _enabled;
+        emit SpinRig__EntropyEnabledSet(_enabled);
+    }
 
     /**
      * @notice Update the metadata URI for the rig.

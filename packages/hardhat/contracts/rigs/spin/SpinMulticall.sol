@@ -99,7 +99,7 @@ contract SpinMulticall {
         uint256 deadline,
         uint256 maxPrice
     ) external payable {
-        if (!ISpinCore(core).isDeployedRig(rig)) revert SpinMulticall__InvalidRig();
+        if (!ISpinCore(core).rigToIsRig(rig)) revert SpinMulticall__InvalidRig();
 
         // Calculate entropy fee
         uint256 entropyFee = ISpinRig(rig).getEntropyFee();
@@ -134,7 +134,7 @@ contract SpinMulticall {
      * @param maxPaymentTokenAmount Maximum LP tokens willing to pay
      */
     function buy(address rig, uint256 epochId, uint256 deadline, uint256 maxPaymentTokenAmount) external {
-        if (!ISpinCore(core).isDeployedRig(rig)) revert SpinMulticall__InvalidRig();
+        if (!ISpinCore(core).rigToIsRig(rig)) revert SpinMulticall__InvalidRig();
         address auction = ISpinCore(core).rigToAuction(rig);
         address paymentToken = IAuction(auction).paymentToken();
         uint256 price = IAuction(auction).getPrice();
@@ -208,12 +208,11 @@ contract SpinMulticall {
         state.entropyFee = ISpinRig(rig).getEntropyFee();
 
         address unitToken = ISpinRig(rig).unit();
-        address auction = ISpinCore(core).rigToAuction(rig);
 
         // Calculate Unit price in USDC from LP reserves
         // USDC has 6 decimals, Unit has 18. Multiply by 1e30 (= 1e12 normalization * 1e18 precision)
-        if (auction != address(0)) {
-            address lpToken = IAuction(auction).paymentToken();
+        address lpToken = ISpinCore(core).rigToLP(rig);
+        if (lpToken != address(0)) {
             uint256 usdcInLP = IERC20(usdc).balanceOf(lpToken);
             uint256 unitInLP = IERC20(unitToken).balanceOf(lpToken);
             state.unitPrice = unitInLP == 0 ? 0 : usdcInLP * 1e30 / unitInLP;

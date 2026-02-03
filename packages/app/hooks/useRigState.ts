@@ -5,6 +5,7 @@ import {
   CONTRACT_ADDRESSES,
   MULTICALL_ABI,
   CORE_ABI,
+  RIG_ABI,
   ERC20_ABI,
   type RigState,
 } from "@/lib/contracts";
@@ -56,19 +57,29 @@ export function useRigInfo(
 ) {
   const resolvedCore = coreAddress ?? CONTRACT_ADDRESSES.core as `0x${string}`;
 
-  // Get unit token address
+  // Get unit token address from rig contract
   const { data: unitAddress } = useReadContract({
-    address: resolvedCore,
-    abi: CORE_ABI,
-    functionName: "rigToUnit",
-    args: rigAddress ? [rigAddress] : undefined,
+    address: rigAddress,
+    abi: RIG_ABI,
+    functionName: "unit",
     chainId: base.id,
     query: {
       enabled: !!rigAddress,
     },
   });
 
-  // Get auction address
+  // Get quote token address from rig contract
+  const { data: quoteAddress } = useReadContract({
+    address: rigAddress,
+    abi: RIG_ABI,
+    functionName: "quote",
+    chainId: base.id,
+    query: {
+      enabled: !!rigAddress,
+    },
+  });
+
+  // Get auction address from Core
   const { data: auctionAddress } = useReadContract({
     address: resolvedCore,
     abi: CORE_ABI,
@@ -80,7 +91,7 @@ export function useRigInfo(
     },
   });
 
-  // Get LP token address
+  // Get LP token address from Core
   const { data: lpAddress } = useReadContract({
     address: resolvedCore,
     abi: CORE_ABI,
@@ -92,24 +103,19 @@ export function useRigInfo(
     },
   });
 
-  // Get quote token address
-  const { data: quoteAddress } = useReadContract({
-    address: resolvedCore,
-    abi: CORE_ABI,
-    functionName: "rigToQuote",
-    args: rigAddress ? [rigAddress] : undefined,
-    chainId: base.id,
-    query: {
-      enabled: !!rigAddress,
-    },
-  });
-
-  // Get launcher address
+  // Get owner (launcher) from rig contract
   const { data: launcher } = useReadContract({
-    address: resolvedCore,
-    abi: CORE_ABI,
-    functionName: "rigToLauncher",
-    args: rigAddress ? [rigAddress] : undefined,
+    address: rigAddress,
+    abi: [
+      {
+        inputs: [],
+        name: "owner",
+        outputs: [{ internalType: "address", name: "", type: "address" }],
+        stateMutability: "view",
+        type: "function",
+      },
+    ] as const,
+    functionName: "owner",
     chainId: base.id,
     query: {
       enabled: !!rigAddress,

@@ -124,7 +124,7 @@ contract MineMulticall {
         uint256 maxPrice,
         string calldata slotUri
     ) external payable {
-        if (!IMineCore(core).isDeployedRig(rig)) revert MineMulticall__InvalidRig();
+        if (!IMineCore(core).rigToIsRig(rig)) revert MineMulticall__InvalidRig();
 
         // Calculate entropy fee if needed
         uint256 entropyFee = _calculateEntropyFee(rig, index);
@@ -172,7 +172,7 @@ contract MineMulticall {
         MineParams[] calldata params,
         uint256 deadline
     ) external payable {
-        if (!IMineCore(core).isDeployedRig(rig)) revert MineMulticall__InvalidRig();
+        if (!IMineCore(core).rigToIsRig(rig)) revert MineMulticall__InvalidRig();
         uint256 length = params.length;
         if (length == 0) revert MineMulticall__ArrayLengthMismatch();
 
@@ -238,7 +238,7 @@ contract MineMulticall {
      * @param maxPaymentTokenAmount Maximum LP tokens willing to pay
      */
     function buy(address rig, uint256 epochId, uint256 deadline, uint256 maxPaymentTokenAmount) external {
-        if (!IMineCore(core).isDeployedRig(rig)) revert MineMulticall__InvalidRig();
+        if (!IMineCore(core).rigToIsRig(rig)) revert MineMulticall__InvalidRig();
         address auction = IMineCore(core).rigToAuction(rig);
         address paymentToken = IAuction(auction).paymentToken();
         uint256 price = IAuction(auction).getPrice();
@@ -304,7 +304,7 @@ contract MineMulticall {
      * @return fee Entropy fee to send (0 if not needed)
      */
     function _calculateEntropyFee(address rig, uint256 index) internal view returns (uint256 fee) {
-        if (!IMineRig(rig).isMultipliersEnabled()) {
+        if (!IMineRig(rig).isEntropyEnabled()) {
             return 0;
         }
 
@@ -345,19 +345,18 @@ contract MineMulticall {
         state.capacity = IMineRig(rig).capacity();
 
         // Entropy state
-        if (IMineRig(rig).isMultipliersEnabled()) {
+        if (IMineRig(rig).isEntropyEnabled()) {
             uint256 duration = IMineRig(rig).upsMultiplierDuration();
             state.needsEntropy = block.timestamp - slot.lastUpsMultiplierTime > duration;
             state.entropyFee = state.needsEntropy ? IMineRig(rig).getEntropyFee() : 0;
         }
 
         address unitToken = IMineRig(rig).unit();
-        address auction = IMineCore(core).rigToAuction(rig);
 
         // Calculate Unit price in USDC from LP reserves
         // USDC has 6 decimals, Unit has 18. Multiply by 1e30 (= 1e12 normalization * 1e18 precision)
-        if (auction != address(0)) {
-            address lpToken = IAuction(auction).paymentToken();
+        address lpToken = IMineCore(core).rigToLP(rig);
+        if (lpToken != address(0)) {
             uint256 usdcInLP = IERC20(usdc).balanceOf(lpToken);
             uint256 unitInLP = IERC20(unitToken).balanceOf(lpToken);
             state.unitPrice = unitInLP == 0 ? 0 : usdcInLP * 1e30 / unitInLP;

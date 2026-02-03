@@ -104,7 +104,6 @@ describe("Core Tests", function () {
     console.log("Protocol Fee Address:", await core.protocolFeeAddress());
     console.log("USDC Token:", await core.usdcToken());
     console.log("Min USDC for Launch:", divDec(await core.minUsdcForLaunch(), 6));
-    console.log("Deployed Rigs Length:", (await core.deployedRigsLength()).toString());
   });
 
   it("Launch a new rig", async function () {
@@ -152,12 +151,12 @@ describe("Core Tests", function () {
     console.log("LP Token at:", lpToken);
 
     // Verify registry
-    expect(await core.isDeployedRig(rig)).to.equal(true);
-    expect(await core.rigToLauncher(rig)).to.equal(user0.address);
-    expect(await core.rigToUnit(rig)).to.equal(unit);
+    expect(await core.rigToIsRig(rig)).to.equal(true);
     expect(await core.rigToAuction(rig)).to.equal(auction);
+    expect(await core.rigs(0)).to.equal(rig);
+    expect(await core.rigsLength()).to.equal(1);
+    expect(await core.rigToIndex(rig)).to.equal(0);
     expect(await core.rigToLP(rig)).to.equal(lpToken);
-    expect(await core.deployedRigsLength()).to.equal(1);
   });
 
   it("Verify rig ownership transferred to launcher", async function () {

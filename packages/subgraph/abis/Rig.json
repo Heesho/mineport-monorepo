@@ -378,7 +378,7 @@
         "type": "bool"
       }
     ],
-    "name": "Rig__MultipliersEnabledSet",
+    "name": "Rig__EntropyEnabledSet",
     "type": "event"
   },
   {
@@ -1093,7 +1093,7 @@
   },
   {
     "inputs": [],
-    "name": "isMultipliersEnabled",
+    "name": "isEntropyEnabled",
     "outputs": [
       {
         "internalType": "bool",
@@ -1163,7 +1163,7 @@
   },
   {
     "inputs": [],
-    "name": "multipliersEnabled",
+    "name": "entropyEnabled",
     "outputs": [
       {
         "internalType": "bool",
@@ -1292,7 +1292,7 @@
         "type": "bool"
       }
     ],
-    "name": "setMultipliersEnabled",
+    "name": "setEntropyEnabled",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

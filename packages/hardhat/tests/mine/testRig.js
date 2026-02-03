@@ -524,8 +524,8 @@ describe("Rig Comprehensive Tests", function () {
     });
 
     it("Should allow enabling multipliers", async function () {
-      await rigContract.connect(user0).setMultipliersEnabled(true);
-      expect(await rigContract.isMultipliersEnabled()).to.equal(true);
+      await rigContract.connect(user0).setEntropyEnabled(true);
+      expect(await rigContract.isEntropyEnabled()).to.equal(true);
     });
 
     it("Should request entropy when multipliers enabled and multiplier needs update", async function () {
@@ -573,8 +573,8 @@ describe("Rig Comprehensive Tests", function () {
     });
 
     it("Should disable multipliers", async function () {
-      await rigContract.connect(user0).setMultipliersEnabled(false);
-      expect(await rigContract.isMultipliersEnabled()).to.equal(false);
+      await rigContract.connect(user0).setEntropyEnabled(false);
+      expect(await rigContract.isEntropyEnabled()).to.equal(false);
     });
 
     it("Should revert with ETH when multipliers are disabled", async function () {
@@ -638,8 +638,8 @@ describe("Rig Comprehensive Tests", function () {
         .to.emit(rigContract, "Rig__CapacitySet")
         .withArgs(10);
 
-      await expect(rigContract.connect(user0).setMultipliersEnabled(true))
-        .to.emit(rigContract, "Rig__MultipliersEnabledSet")
+      await expect(rigContract.connect(user0).setEntropyEnabled(true))
+        .to.emit(rigContract, "Rig__EntropyEnabledSet")
         .withArgs(true);
 
       await expect(rigContract.connect(user0).setUri("test-uri"))
@@ -661,7 +661,7 @@ describe("Rig Comprehensive Tests", function () {
       ).to.be.revertedWith("Ownable: caller is not the owner");
 
       await expect(
-        rigContract.connect(user1).setMultipliersEnabled(true)
+        rigContract.connect(user1).setEntropyEnabled(true)
       ).to.be.revertedWith("Ownable: caller is not the owner");
 
       await expect(

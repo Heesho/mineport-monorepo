@@ -35,7 +35,7 @@ interface IMineRig {
     function setTreasury(address _treasury) external;
     function setTeam(address _team) external;
     function setCapacity(uint256 _capacity) external;
-    function setMultipliersEnabled(bool _enabled) external;
+    function setEntropyEnabled(bool _enabled) external;
     function setUri(string calldata _uri) external;
 
     // View functions
@@ -47,7 +47,7 @@ interface IMineRig {
     function team() external view returns (address);
     function capacity() external view returns (uint256);
     function totalMinted() external view returns (uint256);
-    function multipliersEnabled() external view returns (bool);
+    function entropyEnabled() external view returns (bool);
     function uri() external view returns (string memory);
 
     function getPrice(uint256 index) external view returns (uint256);
@@ -56,7 +56,7 @@ interface IMineRig {
     function getEntropyFee() external view returns (uint256);
     function getUpsMultipliers() external view returns (uint256[] memory);
     function getUpsMultipliersLength() external view returns (uint256);
-    function isMultipliersEnabled() external view returns (bool);
+    function isEntropyEnabled() external view returns (bool);
     function upsMultiplierDuration() external view returns (uint256);
     function accountToClaimable(address account) external view returns (uint256);
 }

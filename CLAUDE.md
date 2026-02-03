@@ -37,7 +37,7 @@ Optionally, Pyth Entropy VRF can assign a random UPS multiplier (1x-10x) to a sl
 - `treasury` -- treasury fee recipient (cannot be zero)
 - `team` -- team fee recipient (zero disables team fees, redirects to treasury)
 - `capacity` -- number of mining slots (can only increase, max 256)
-- `multipliersEnabled` -- toggle Pyth Entropy random multipliers on/off
+- `entropyEnabled` -- toggle Pyth Entropy random multipliers on/off
 - `uri` -- rig metadata URI
 
 ### SpinRig (Slot Machine)

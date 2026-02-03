@@ -525,15 +525,8 @@ describe("Comprehensive Security Tests", function () {
             const { rig, unit, auction, lpToken } = await launchRig(user0);
 
             // Verify all mappings are consistent
-            expect(await core.isDeployedRig(rig.address)).to.be.true;
-            expect(await core.rigToLauncher(rig.address)).to.equal(user0.address);
-            expect(await core.rigToUnit(rig.address)).to.equal(unit.address);
+            expect(await core.rigToIsRig(rig.address)).to.be.true;
             expect(await core.rigToAuction(rig.address)).to.equal(auction.address);
-            expect(await core.rigToLP(rig.address)).to.equal(lpToken.address);
-
-            // Verify array
-            const deployedCount = await core.deployedRigsLength();
-            expect(deployedCount).to.be.gte(1);
         });
 
         it("Complex: Ownership chain verification", async function () {
@@ -793,8 +786,9 @@ describe("Comprehensive Security Tests", function () {
             expect(rigs.length).to.equal(10);
 
             // All rigs should be registered
-            const deployedCount = await core.deployedRigsLength();
-            expect(deployedCount).to.be.gte(10);
+            for (const r of rigs) {
+                expect(await core.rigToIsRig(r.rig.address)).to.be.true;
+            }
         });
 
         it("STRESS: Many users mine same rig", async function () {
