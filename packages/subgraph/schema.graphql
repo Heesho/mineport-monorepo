@@ -265,6 +265,10 @@ type MineRig @entity(immutable: false) {
   id: ID!                              # Same as Rig id
   rig: Rig!
 
+  # Addresses
+  treasury: Bytes!                     # Treasury address (receives 15% of mine fees)
+  team: Bytes!                         # Team address (receives 4%, zero = disabled)
+
   # Emission config
   initialUps: BigInt!                  # Starting units per second
   tailUps: BigInt!                     # Minimum units per second (floor)
@@ -312,6 +316,9 @@ type MineSlot @entity(immutable: false) {
   # Stats
   minted: BigDecimal!                  # Total minted on this slot
   lastMined: BigInt!
+
+  # VRF
+  upsMultiplier: BigInt                # Current VRF multiplier (null if none)
 }
 
 type MineAction @entity(immutable: false) {
@@ -342,6 +349,10 @@ type MineAction @entity(immutable: false) {
 type SpinRig @entity(immutable: false) {
   id: ID!
   rig: Rig!
+
+  # Addresses
+  treasury: Bytes!                     # Treasury address (receives 95% of spin fees)
+  team: Bytes!                         # Team address (receives 4%, zero = disabled)
 
   # Emission config
   initialUps: BigInt!                  # Starting units per second

@@ -2,6 +2,8 @@ import { BigDecimal, BigInt, Address } from '@graphprotocol/graph-ts'
 import {
   FundRig__Funded as FundedEvent,
   FundRig__Claimed as ClaimedEvent,
+  FundRig__TreasuryFee as FundTreasuryFeeEvent,
+  FundRig__TeamFee as FundTeamFeeEvent,
   FundRig__ProtocolFee as ProtocolFeeEvent,
   FundRig__RecipientSet as RecipientSetEvent,
   FundRig__UriSet as UriSetEvent,
@@ -170,9 +172,7 @@ export function handleFunded(event: FundedEvent): void {
   }
   fundRig.save()
 
-  // Update Rig revenue (treasury portion)
-  rig.treasuryRevenue = rig.treasuryRevenue.plus(treasuryAmount)
-  rig.teamRevenue = rig.teamRevenue.plus(teamAmount)
+  // Update Rig activity (revenue tracking handled by TreasuryFee/TeamFee event handlers)
   rig.lastActivityAt = event.block.timestamp
   rig.save()
 
@@ -180,12 +180,6 @@ export function handleFunded(event: FundedEvent): void {
   unit.lastRigActivityAt = event.block.timestamp
   unit.lastActivityAt = event.block.timestamp
   unit.save()
-
-  // Update Protocol stats
-  let protocol = getOrCreateProtocol()
-  protocol.totalTreasuryRevenue = protocol.totalTreasuryRevenue.plus(treasuryAmount)
-  protocol.lastUpdated = event.block.timestamp
-  protocol.save()
 }
 
 export function handleFundClaimed(event: ClaimedEvent): void {
@@ -242,6 +236,36 @@ export function handleFundClaimed(event: ClaimedEvent): void {
   protocol.totalMinted = protocol.totalMinted.plus(amount)
   protocol.lastUpdated = event.block.timestamp
   protocol.save()
+}
+
+export function handleFundTreasuryFee(event: FundTreasuryFeeEvent): void {
+  // Event params: treasury (indexed), day (indexed), amount
+  let rigAddress = event.address.toHexString()
+  let amount = convertTokenToDecimal(event.params.amount, BI_6)
+
+  let rig = Rig.load(rigAddress)
+  if (rig === null) return
+
+  rig.treasuryRevenue = rig.treasuryRevenue.plus(amount)
+  rig.save()
+
+  // Update Protocol treasury revenue
+  let protocol = getOrCreateProtocol()
+  protocol.totalTreasuryRevenue = protocol.totalTreasuryRevenue.plus(amount)
+  protocol.lastUpdated = event.block.timestamp
+  protocol.save()
+}
+
+export function handleFundTeamFee(event: FundTeamFeeEvent): void {
+  // Event params: team (indexed), day (indexed), amount
+  let rigAddress = event.address.toHexString()
+  let amount = convertTokenToDecimal(event.params.amount, BI_6)
+
+  let rig = Rig.load(rigAddress)
+  if (rig === null) return
+
+  rig.teamRevenue = rig.teamRevenue.plus(amount)
+  rig.save()
 }
 
 export function handleFundProtocolFee(event: ProtocolFeeEvent): void {

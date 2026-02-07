@@ -9,6 +9,9 @@ import {
   MineRig__CapacitySet as CapacitySetEvent,
   MineRig__UriSet as UriSetEvent,
   MineRig__Claimed as ClaimedEvent,
+  MineRig__TreasurySet as TreasurySetEvent,
+  MineRig__TeamSet as TeamSetEvent,
+  MineRig__UpsMultiplierSet as UpsMultiplierSetEvent,
 } from '../../generated/templates/MineRig/MineRig'
 import {
   Rig,
@@ -304,4 +307,33 @@ export function handleMineClaimed(event: ClaimedEvent): void {
   claim.blockNumber = event.block.number
   claim.txHash = event.transaction.hash
   claim.save()
+}
+
+export function handleMineTreasurySet(event: TreasurySetEvent): void {
+  let rigAddress = event.address.toHexString()
+  let mineRig = MineRig.load(rigAddress)
+  if (mineRig === null) return
+
+  mineRig.treasury = event.params.treasury
+  mineRig.save()
+}
+
+export function handleMineTeamSet(event: TeamSetEvent): void {
+  let rigAddress = event.address.toHexString()
+  let mineRig = MineRig.load(rigAddress)
+  if (mineRig === null) return
+
+  mineRig.team = event.params.team
+  mineRig.save()
+}
+
+export function handleMineUpsMultiplierSet(event: UpsMultiplierSetEvent): void {
+  let rigAddress = event.address.toHexString()
+  let mineRig = MineRig.load(rigAddress)
+  if (mineRig === null) return
+
+  let slotIndex = event.params.index
+  let slot = getOrCreateSlot(mineRig, slotIndex)
+  slot.upsMultiplier = event.params.upsMultiplier
+  slot.save()
 }

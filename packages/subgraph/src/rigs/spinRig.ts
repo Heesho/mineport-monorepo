@@ -7,6 +7,8 @@ import {
   SpinRig__TeamFee as TeamFeeEvent,
   SpinRig__ProtocolFee as ProtocolFeeEvent,
   SpinRig__UriSet as UriSetEvent,
+  SpinRig__TreasurySet as TreasurySetEvent,
+  SpinRig__TeamSet as TeamSetEvent,
 } from '../../generated/templates/SpinRig/SpinRig'
 import {
   Rig,
@@ -231,4 +233,22 @@ export function handleSpinUriSet(event: UriSetEvent): void {
 
   rig.uri = event.params.uri
   rig.save()
+}
+
+export function handleSpinTreasurySet(event: TreasurySetEvent): void {
+  let rigAddress = event.address.toHexString()
+  let spinRig = SpinRig.load(rigAddress)
+  if (spinRig === null) return
+
+  spinRig.treasury = event.params.treasury
+  spinRig.save()
+}
+
+export function handleSpinTeamSet(event: TeamSetEvent): void {
+  let rigAddress = event.address.toHexString()
+  let spinRig = SpinRig.load(rigAddress)
+  if (spinRig === null) return
+
+  spinRig.team = event.params.team
+  spinRig.save()
 }

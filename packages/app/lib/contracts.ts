@@ -1,15 +1,15 @@
 export const CONTRACT_ADDRESSES = {
   // Per-rig-type Core contracts
-  mineCore: "0xcd3325C59C7048903AdA6E3b2C24E6d3aF569F81",
-  spinCore: "0xAE757D3e55cD32d55AA1e329bfC7Fa63fe5D8660",
-  fundCore: "0xEc5b32a3CB8323606d340CF1824335E67D570DF4",
+  mineCore: "0x5241B7aF042e1f497c69579DA4c2006D1C6e686c",
+  spinCore: "0x7622ADeF952586236E21d26665693B92df848C35",
+  fundCore: "0x1CB04942c897e4701456C4361fDBa9e9507baC27",
   // Per-rig-type Multicall contracts
-  mineMulticall: "0x69694f8124b32Cba6878f3b36a4f5264b1B8E15e",
-  spinMulticall: "0x10233932219250117eB080FbDF6552ebAA6Bf05D",
-  fundMulticall: "0xA31B7B4d143866864B46DBcbfeaBcfC6bFfd82BA",
+  mineMulticall: "0x9E74deE4d2CeFea2E57B5d8e9e1cFF2486525545",
+  spinMulticall: "0xF9040Cfa4de337B6C1122Aa1833d1D9D5E58bBfd",
+  fundMulticall: "0x48A2578e82A023b789b9C703F3a2e26DC0A853c5",
   // Legacy aliases (point to mine variants for backwards compat)
-  core: "0xcd3325C59C7048903AdA6E3b2C24E6d3aF569F81",
-  multicall: "0x69694f8124b32Cba6878f3b36a4f5264b1B8E15e",
+  core: "0x5241B7aF042e1f497c69579DA4c2006D1C6e686c",
+  multicall: "0x9E74deE4d2CeFea2E57B5d8e9e1cFF2486525545",
   // Token addresses (Mock tokens for staging)
   usdc: "0xe90495BE187d434e23A9B1FeC0B6Ce039700870e", // Mock USDC
   // Uniswap V2 on Base

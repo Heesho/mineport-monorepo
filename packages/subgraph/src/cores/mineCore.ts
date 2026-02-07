@@ -1,5 +1,6 @@
 import { Address } from '@graphprotocol/graph-ts'
 import { MineCore__Launched as CoreLaunchedEvent } from '../../generated/MineCore/MineCore'
+import { MineRig as MineRigContract } from '../../generated/MineCore/MineRig'
 import {
   UniswapV2Pair as PairTemplate,
   MineRig as MineRigTemplate,
@@ -79,6 +80,11 @@ export function handleMineCoreLaunched(event: CoreLaunchedEvent): void {
   // Create MineRig specialized entity
   let mineRig = new MineRig(rigAddress.toHexString())
   mineRig.rig = rig.id
+  let mineRigContract = MineRigContract.bind(rigAddress)
+  let treasuryResult = mineRigContract.try_treasury()
+  mineRig.treasury = treasuryResult.reverted ? Address.zero() : treasuryResult.value
+  let teamResult = mineRigContract.try_team()
+  mineRig.team = teamResult.reverted ? Address.zero() : teamResult.value
   mineRig.initialUps = event.params.initialUps
   mineRig.tailUps = event.params.tailUps
   mineRig.halvingAmount = event.params.halvingAmount

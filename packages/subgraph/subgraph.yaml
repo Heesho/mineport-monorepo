@@ -11,9 +11,9 @@ dataSources:
     name: MineCore
     network: base
     source:
-      address: "0xcd3325C59C7048903AdA6E3b2C24E6d3aF569F81"
+      address: "0x5241B7aF042e1f497c69579DA4c2006D1C6e686c"
       abi: MineCore
-      startBlock: 41824029
+      startBlock: 41857213
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -27,6 +27,8 @@ dataSources:
       abis:
         - name: MineCore
           file: ./abis/MineCore.json
+        - name: MineRig
+          file: ./abis/MineRig.json
         - name: ERC20
           file: ./abis/ERC20.json
       eventHandlers:
@@ -41,9 +43,9 @@ dataSources:
     name: SpinCore
     network: base
     source:
-      address: "0xAE757D3e55cD32d55AA1e329bfC7Fa63fe5D8660"
+      address: "0x7622ADeF952586236E21d26665693B92df848C35"
       abi: SpinCore
-      startBlock: 41824029
+      startBlock: 41857213
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -73,9 +75,9 @@ dataSources:
     name: FundCore
     network: base
     source:
-      address: "0xEc5b32a3CB8323606d340CF1824335E67D570DF4"
+      address: "0x1CB04942c897e4701456C4361fDBa9e9507baC27"
       abi: FundCore
-      startBlock: 41824029
+      startBlock: 41857213
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -170,6 +172,12 @@ templates:
           handler: handleMineUriSet
         - event: MineRig__Claimed(indexed address,uint256)
           handler: handleMineClaimed
+        - event: MineRig__TreasurySet(indexed address)
+          handler: handleMineTreasurySet
+        - event: MineRig__TeamSet(indexed address)
+          handler: handleMineTeamSet
+        - event: MineRig__UpsMultiplierSet(indexed uint256,indexed uint256,uint256)
+          handler: handleMineUpsMultiplierSet
       file: ./src/rigs/mineRig.ts
 
   # ==========================================================================
@@ -208,6 +216,10 @@ templates:
           handler: handleSpinEmissionMinted
         - event: SpinRig__UriSet(string)
           handler: handleSpinUriSet
+        - event: SpinRig__TreasurySet(indexed address)
+          handler: handleSpinTreasurySet
+        - event: SpinRig__TeamSet(indexed address)
+          handler: handleSpinTeamSet
       file: ./src/rigs/spinRig.ts
 
   # ==========================================================================
@@ -238,6 +250,10 @@ templates:
           handler: handleFunded
         - event: FundRig__Claimed(indexed address,uint256,uint256)
           handler: handleFundClaimed
+        - event: FundRig__TreasuryFee(indexed address,indexed uint256,uint256)
+          handler: handleFundTreasuryFee
+        - event: FundRig__TeamFee(indexed address,indexed uint256,uint256)
+          handler: handleFundTeamFee
         - event: FundRig__ProtocolFee(indexed address,indexed uint256,uint256)
           handler: handleFundProtocolFee
         - event: FundRig__RecipientSet(indexed address)

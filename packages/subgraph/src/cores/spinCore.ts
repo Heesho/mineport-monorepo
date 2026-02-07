@@ -81,6 +81,11 @@ export function handleSpinCoreLaunched(event: SpinCoreLaunchedEvent): void {
   // Create SpinRig specialized entity
   let spinRig = new SpinRig(rigAddress.toHexString())
   spinRig.rig = rig.id
+  let spinRigContract = SpinRigContract.bind(rigAddress)
+  let treasuryResult = spinRigContract.try_treasury()
+  spinRig.treasury = treasuryResult.reverted ? Address.zero() : treasuryResult.value
+  let teamResult = spinRigContract.try_team()
+  spinRig.team = teamResult.reverted ? Address.zero() : teamResult.value
   spinRig.initialUps = event.params.initialUps
   spinRig.tailUps = event.params.tailUps
   spinRig.halvingPeriod = event.params.halvingPeriod
@@ -95,7 +100,6 @@ export function handleSpinCoreLaunched(event: SpinCoreLaunchedEvent): void {
 
   // Prize pool
   spinRig.prizePool = ZERO_BD
-  let spinRigContract = SpinRigContract.bind(rigAddress)
   let oddsResult = spinRigContract.try_getOdds()
   spinRig.currentOdds = oddsResult.reverted ? new Array<BigInt>() : oddsResult.value
 
