@@ -24,6 +24,8 @@ import {
   QUOTE_TOKEN_DECIMALS,
 } from "@/lib/contracts";
 import { DEADLINE_BUFFER_SECONDS } from "@/lib/constants";
+import { truncateAddress, timeAgo } from "@/lib/format";
+import { TokenLogo } from "@/components/token-logo";
 
 type SpinModalProps = {
   isOpen: boolean;
@@ -33,46 +35,6 @@ type SpinModalProps = {
   tokenName?: string;
   tokenLogoUrl?: string | null;
 };
-
-function truncateAddress(address: string): string {
-  if (!address || address.length < 10) return address;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
-// Token logo component
-function TokenLogo({
-  symbol,
-  logoUrl,
-  size = "md",
-}: {
-  symbol: string;
-  logoUrl?: string | null;
-  size?: "xs" | "sm" | "md";
-}) {
-  const sizeClasses = {
-    xs: "w-4 h-4 text-[8px]",
-    sm: "w-5 h-5 text-[10px]",
-    md: "w-7 h-7 text-xs",
-  };
-
-  if (logoUrl) {
-    return (
-      <img
-        src={logoUrl}
-        alt={symbol}
-        className={`${sizeClasses[size].split(" ").slice(0, 2).join(" ")} rounded-full object-cover`}
-      />
-    );
-  }
-
-  return (
-    <div
-      className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-zinc-500 to-zinc-700 flex items-center justify-center text-white font-semibold`}
-    >
-      {symbol.charAt(0)}
-    </div>
-  );
-}
 
 export function SpinModal({
   isOpen,
@@ -170,17 +132,6 @@ export function SpinModal({
   };
 
   const rigUrl = typeof window !== "undefined" ? `${window.location.origin}/rig/${rigAddress}` : "";
-
-  function timeAgo(timestamp: number): string {
-    const seconds = Math.floor(Date.now() / 1000 - timestamp);
-    if (seconds < 60) return `${seconds}s ago`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  }
 
   // Handle the spin/mine action
   const handleMine = useCallback(async () => {
@@ -330,7 +281,7 @@ export function SpinModal({
                 <span className="text-[11px] text-zinc-500 ml-1.5">{minChance % 1 === 0 ? minChance.toFixed(0) : minChance.toFixed(1)}% chance</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <TokenLogo symbol={tokenSymbol} logoUrl={tokenLogoUrl} size="sm" />
+                <TokenLogo name={tokenSymbol} logoUrl={tokenLogoUrl} size="sm" />
                 <span className="text-lg font-bold tabular-nums">
                   {minMine.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </span>
@@ -347,7 +298,7 @@ export function SpinModal({
                 <span className="text-[13px] font-medium text-zinc-200 ml-1.5">Max Mine</span>
               </div>
               <div className="flex items-center justify-end gap-1.5">
-                <TokenLogo symbol={tokenSymbol} logoUrl={tokenLogoUrl} size="sm" />
+                <TokenLogo name={tokenSymbol} logoUrl={tokenLogoUrl} size="sm" />
                 <span className="text-lg font-bold tabular-nums">
                   {maxMine.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </span>
@@ -398,7 +349,7 @@ export function SpinModal({
                 </div>
                 <div className="text-right">
                   <div className="flex items-center justify-end gap-2 h-8">
-                    <TokenLogo symbol={tokenSymbol} logoUrl={tokenLogoUrl} size="md" />
+                    <TokenLogo name={tokenSymbol} logoUrl={tokenLogoUrl} size="md" />
                     <span className="text-2xl font-bold tabular-nums">
                       {displayedAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </span>
@@ -424,7 +375,7 @@ export function SpinModal({
                 </div>
                 <div className="text-right">
                   <div className="flex items-center justify-end gap-2 h-8">
-                    <TokenLogo symbol={tokenSymbol} logoUrl={tokenLogoUrl} size="md" />
+                    <TokenLogo name={tokenSymbol} logoUrl={tokenLogoUrl} size="md" />
                     <span className="text-2xl font-bold tabular-nums">
                       {displayedAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </span>
@@ -452,7 +403,7 @@ export function SpinModal({
                 </div>
                 <div className="text-right">
                   <div className="flex items-center justify-end gap-2 h-8">
-                    <TokenLogo symbol={tokenSymbol} logoUrl={tokenLogoUrl} size="md" />
+                    <TokenLogo name={tokenSymbol} logoUrl={tokenLogoUrl} size="md" />
                     <span className="text-2xl font-bold tabular-nums">
                       {lastMine.amount > 0 ? lastMine.amount.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "--"}
                     </span>
@@ -478,7 +429,7 @@ export function SpinModal({
               <div>
                 <div className="text-muted-foreground text-[12px] mb-1">Mined</div>
                 <div className="font-semibold text-[15px] tabular-nums flex items-center gap-1.5">
-                  <TokenLogo symbol={tokenSymbol} logoUrl={tokenLogoUrl} size="sm" />
+                  <TokenLogo name={tokenSymbol} logoUrl={tokenLogoUrl} size="sm" />
                   {userStats.mined.toLocaleString()}
                 </div>
               </div>

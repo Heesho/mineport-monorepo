@@ -9,26 +9,8 @@ import { useExploreRigs, type RigListItem, type SortOption } from "@/hooks/useAl
 import { useBatchMetadata } from "@/hooks/useMetadata";
 import { useSparklineData } from "@/hooks/useSparklineData";
 import { useFarcaster } from "@/hooks/useFarcaster";
-
-function formatMarketCap(mcap: number): string {
-  if (mcap >= 1_000_000) return `$${(mcap / 1_000_000).toFixed(2)}M`;
-  if (mcap >= 1_000) return `$${(mcap / 1_000).toFixed(1)}K`;
-  if (mcap >= 1) return `$${mcap.toFixed(2)}`;
-  return `$${mcap.toFixed(4)}`;
-}
-
-/** Gradient color for the letter avatar fallback, based on rig type */
-function rigTypeGradient(rigType: string): string {
-  switch (rigType) {
-    case "spin":
-      return "from-purple-500 to-purple-700";
-    case "fund":
-      return "from-emerald-500 to-emerald-700";
-    case "mine":
-    default:
-      return "from-blue-500 to-blue-700";
-  }
-}
+import { formatMarketCap } from "@/lib/format";
+import { TokenLogo } from "@/components/token-logo";
 
 
 /** Mini sparkline chart */
@@ -50,12 +32,12 @@ function Sparkline({ data, isPositive }: { data: number[]; isPositive: boolean }
   return (
     <svg
       viewBox="0 0 100 100"
-      className="w-16 h-8"
+      className="w-16 h-8 text-zinc-400"
       preserveAspectRatio="none"
     >
       <polyline
         fill="none"
-        stroke="#a1a1aa"
+        stroke="currentColor"
         strokeWidth="3"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -65,47 +47,10 @@ function Sparkline({ data, isPositive }: { data: number[]; isPositive: boolean }
   );
 }
 
-function TokenLogo({
-  rigUri,
-  name,
-  rigType,
-  getLogoUrl,
-}: {
-  rigUri: string;
-  name: string;
-  rigType: string;
-  getLogoUrl: (rigUri: string) => string | null;
-}) {
-  const logoUrl = getLogoUrl(rigUri);
-  const [imgError, setImgError] = useState(false);
-
-  if (logoUrl && !imgError) {
-    return (
-      <img
-        src={logoUrl}
-        alt={name}
-        className="w-10 h-10 rounded-full object-cover"
-        onError={() => setImgError(true)}
-      />
-    );
-  }
-
-  // Letter avatar fallback
-  const gradient = rigTypeGradient(rigType);
-  return (
-    <div
-      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold bg-gradient-to-br ${gradient} text-white shadow-lg`}
-    >
-      {name.charAt(0).toUpperCase()}
-    </div>
-  );
-}
-
 function SkeletonRow() {
   return (
     <div
-      className="grid grid-cols-[1.2fr_1fr_0.8fr] items-center gap-2 py-4"
-      style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+      className="grid grid-cols-[1.2fr_1fr_0.8fr] items-center gap-2 py-4 border-b border-border"
     >
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-secondary animate-pulse" />
@@ -136,9 +81,9 @@ export default function ExplorePage() {
   const rigUris = rigs.map((r) => r.rigUri).filter(Boolean);
   const { getLogoUrl } = useBatchMetadata(rigUris);
 
-  // Batch fetch sparkline data for all units
-  const unitAddresses = rigs.map((r) => r.unitAddress).filter(Boolean);
-  const { getSparkline, getChange24h } = useSparklineData(unitAddresses);
+  // Batch fetch hourly sparkline data (7 days, more granular than daily)
+  const unitAddresses = rigs.map((r) => r.unitAddress);
+  const { getSparkline } = useSparklineData(unitAddresses);
 
   const isSearching = searchQuery.length > 0;
   const showEmpty = !isLoading && rigs.length === 0;
@@ -227,21 +172,15 @@ export default function ExplorePage() {
                   >
                     <Link
                       href={`/rig/${rig.address}`}
-                      className="grid grid-cols-[1.2fr_1fr_0.8fr] items-center gap-2 py-4 transition-colors duration-200 hover:bg-white/[0.02]"
-                      style={{
-                        borderBottom:
-                          index < rigs.length - 1
-                            ? "1px solid rgba(255,255,255,0.06)"
-                            : "none",
-                      }}
+                      className={`grid grid-cols-[1.2fr_1fr_0.8fr] items-center gap-2 py-4 transition-colors duration-200 hover:bg-white/[0.02]${index < rigs.length - 1 ? " border-b border-border" : ""}`}
                     >
                       {/* Left side - Logo, Symbol, Name */}
                       <div className="flex items-center gap-3">
                         <TokenLogo
-                          rigUri={rig.rigUri}
                           name={rig.tokenName}
+                          logoUrl={getLogoUrl(rig.rigUri)}
                           rigType={rig.rigType}
-                          getLogoUrl={getLogoUrl}
+                          size="md-lg"
                         />
                         <div>
                           <div className="font-semibold text-[15px]">
@@ -259,15 +198,15 @@ export default function ExplorePage() {
 
                       {/* Middle - Sparkline */}
                       <div className="flex justify-center">
-                        {(() => {
-                          const change = getChange24h(rig.unitAddress, rig.priceUsd);
-                          return (
-                            <Sparkline
-                              data={getSparkline(rig.unitAddress, rig.priceUsd)}
-                              isPositive={change >= 0}
-                            />
-                          );
-                        })()}
+                        <Sparkline
+                          data={(() => {
+                            const hourly = getSparkline(rig.unitAddress, rig.priceUsd);
+                            if (hourly.length > 1) return hourly;
+                            if (rig.sparklinePrices.length > 1) return rig.sparklinePrices;
+                            return [rig.priceUsd, rig.priceUsd];
+                          })()}
+                          isPositive={rig.change24h >= 0}
+                        />
                       </div>
 
                       {/* Right side - Market cap and 24h change */}
@@ -277,16 +216,11 @@ export default function ExplorePage() {
                             ? formatMarketCap(rig.marketCapUsd)
                             : "--"}
                         </div>
-                        {(() => {
-                          const change = getChange24h(rig.unitAddress, rig.priceUsd);
-                          return (
-                            <div className="text-[13px] tabular-nums text-zinc-400">
-                              {rig.marketCapUsd > 0
-                                ? `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`
-                                : "--"}
-                            </div>
-                          );
-                        })()}
+                        <div className="text-[13px] tabular-nums text-zinc-400">
+                          {rig.marketCapUsd > 0
+                            ? `${rig.change24h >= 0 ? "+" : ""}${rig.change24h.toFixed(2)}%`
+                            : "--"}
+                        </div>
                       </div>
                     </Link>
                   </motion.div>

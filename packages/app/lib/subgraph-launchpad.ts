@@ -42,6 +42,8 @@ export type SubgraphRig = {
   auction: string; // Bytes
   quoteToken: string; // Bytes
   uri: string;
+  usdcAmount: string; // BigDecimal — USDC deposited into LP at launch
+  unitAmount: string; // BigDecimal — Unit tokens deposited into LP at launch
   treasuryRevenue: string; // BigDecimal
   teamRevenue: string; // BigDecimal
   protocolRevenue: string; // BigDecimal
@@ -96,6 +98,7 @@ export type SubgraphUnitListItem = {
   totalMinted: string;
   lastActivityAt: string;
   createdAt: string;
+  dayData?: { close: string; open: string; timestamp: string }[];
   rig: {
     id: string; // Rig contract address
     rigType: string;
@@ -191,6 +194,8 @@ const RIG_FIELDS = `
   auction
   quoteToken
   uri
+  usdcAmount
+  unitAmount
   treasuryRevenue
   teamRevenue
   protocolRevenue
@@ -245,6 +250,11 @@ const UNIT_LIST_FIELDS = `
   totalMinted
   lastActivityAt
   createdAt
+  dayData(first: 7, orderBy: timestamp, orderDirection: desc) {
+    close
+    open
+    timestamp
+  }
   rig {
     id
     rigType
@@ -892,7 +902,7 @@ export async function getBatchSparklineData(
 ): Promise<SparklineMap> {
   if (unitAddresses.length === 0) return new Map();
 
-  const since = Math.floor(Date.now() / 1000) - 86400; // Last 24 hours
+  const since = Math.floor(Date.now() / 1000) - 7 * 86400; // Last 7 days
 
   try {
     const data = await client.request<{

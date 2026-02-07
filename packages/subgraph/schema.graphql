@@ -224,6 +224,10 @@ type Rig @entity(immutable: false) {
   quoteToken: Bytes!                   # Payment token for rig actions
   uri: String!
 
+  # Initial LP amounts (from launch)
+  usdcAmount: BigDecimal!              # USDC deposited into LP at launch (6 decimals → BigDecimal)
+  unitAmount: BigDecimal!              # Unit tokens deposited into LP at launch (18 decimals → BigDecimal)
+
   # Emission config (common across rig types)
   initialUps: BigInt!                  # Starting units per second (or per day for FundRig)
   tailUps: BigInt!                     # Minimum emission rate (floor)

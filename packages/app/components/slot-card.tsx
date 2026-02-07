@@ -5,6 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { TOKEN_DECIMALS } from "@/lib/constants";
 import type { SlotDisplayState } from "@/hooks/useMultiSlotState";
+import { formatNumber } from "@/lib/format";
 
 type SlotCardProps = {
   slot: SlotDisplayState;
@@ -16,12 +17,6 @@ type SlotCardProps = {
     displayName: string;
     avatarUrl?: string;
   };
-};
-
-const formatCompact = (value: number): string => {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
-  return value.toFixed(0);
 };
 
 export function SlotCard({
@@ -85,7 +80,7 @@ export function SlotCard({
             {isCurrentUser ? "You" : (minerProfile?.displayName || `${slot.miner.slice(0, 4)}...`)}
           </span>
           <span className="text-[11px] text-surface-600 mt-0.5">
-            {formatCompact(glazedAmount)} {tokenSymbol.slice(0, 4)}
+            {formatNumber(glazedAmount, 0)} {tokenSymbol.slice(0, 4)}
           </span>
         </>
       )}

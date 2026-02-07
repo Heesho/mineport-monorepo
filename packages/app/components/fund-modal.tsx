@@ -22,6 +22,8 @@ import {
 import { NavBar } from "@/components/nav-bar";
 import { Leaderboard } from "@/components/leaderboard";
 import { DonationHistoryItem } from "@/components/donation-history-item";
+import { truncateAddress, timeAgo, formatUSDC } from "@/lib/format";
+import { TokenLogo } from "@/components/token-logo";
 
 // Preset funding amounts
 const PRESET_AMOUNTS = [1, 10, 100];
@@ -41,43 +43,6 @@ type FundModalProps = {
 };
 
 // ---------------------------------------------------------------------------
-// Token Logo
-// ---------------------------------------------------------------------------
-
-function TokenLogo({
-  symbol,
-  logoUrl,
-  size = "sm",
-}: {
-  symbol: string;
-  logoUrl?: string | null;
-  size?: "xs" | "sm";
-}) {
-  const sizeClasses = {
-    xs: "w-4 h-4 text-[8px]",
-    sm: "w-5 h-5 text-[10px]",
-  };
-
-  if (logoUrl) {
-    return (
-      <img
-        src={logoUrl}
-        alt={symbol}
-        className={`${sizeClasses[size].split(" ").slice(0, 2).join(" ")} rounded-full object-cover`}
-      />
-    );
-  }
-
-  return (
-    <span
-      className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-zinc-500 to-zinc-700 flex items-center justify-center text-white font-semibold`}
-    >
-      {symbol.charAt(0)}
-    </span>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -88,24 +53,6 @@ function formatCountdown(seconds: number): string {
   if (h > 0) return `${h}h ${m}m`;
   if (m > 0) return `${m}m ${s}s`;
   return `${s}s`;
-}
-
-function truncateAddress(address: string): string {
-  if (!address || address.length < 10) return address;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
-function formatUSDC(value: bigint): string {
-  return Number(formatUnits(value, QUOTE_TOKEN_DECIMALS)).toFixed(2);
-}
-
-function timeAgo(timestamp: number): string {
-  const now = Math.floor(Date.now() / 1000);
-  const diff = now - timestamp;
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
 }
 
 // ---------------------------------------------------------------------------
@@ -374,7 +321,7 @@ export function FundModal({
                 <div>
                   <div className="text-muted-foreground text-[11px]">Emission</div>
                   <div className="font-semibold text-[13px] tabular-nums flex items-center gap-1">
-                    <TokenLogo symbol={tokenSymbol} logoUrl={tokenLogoUrl} size="xs" />
+                    <TokenLogo name={tokenSymbol} logoUrl={tokenLogoUrl} size="xs" />
                     {todayEmission >= 1_000_000 ? `${(todayEmission / 1_000_000).toFixed(2)}M`
                       : todayEmission >= 1_000 ? `${(todayEmission / 1_000).toFixed(0)}K`
                       : todayEmission.toFixed(0)}
@@ -465,7 +412,7 @@ export function FundModal({
                     <div>
                       <div className="text-muted-foreground text-[12px] mb-1">Pending</div>
                       <div className="font-semibold text-[15px] tabular-nums flex items-center gap-1.5">
-                        <TokenLogo symbol={tokenSymbol} logoUrl={tokenLogoUrl} size="sm" />
+                        <TokenLogo name={tokenSymbol} logoUrl={tokenLogoUrl} size="sm" />
                         {pendingTokens >= 1000
                           ? `${(pendingTokens / 1000).toFixed(1)}K`
                           : pendingTokens.toFixed(0)}

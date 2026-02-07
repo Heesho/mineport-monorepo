@@ -62,6 +62,8 @@ export function handleMineCoreLaunched(event: CoreLaunchedEvent): void {
   rig.auction = event.params.auction
   rig.quoteToken = quoteToken
   rig.uri = event.params.uri
+  rig.usdcAmount = convertTokenToDecimal(event.params.usdcAmount, BI_6)
+  rig.unitAmount = convertTokenToDecimal(event.params.unitAmount, BI_18)
   rig.initialUps = event.params.initialUps
   rig.tailUps = event.params.tailUps
   rig.halvingPeriod = event.params.halvingAmount

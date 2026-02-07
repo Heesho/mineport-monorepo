@@ -171,8 +171,7 @@ export async function composeCast(options: {
       embeds: embedUrls,
     });
     return true;
-  } catch (error) {
-    console.error("Failed to compose cast:", error);
+  } catch {
     return false;
   }
 }
@@ -229,8 +228,7 @@ export async function viewProfile(fid: number): Promise<boolean> {
   try {
     await sdk.actions.viewProfile({ fid });
     return true;
-  } catch (error) {
-    console.error("Failed to view profile:", error);
+  } catch {
     return false;
   }
 }

@@ -166,7 +166,7 @@ export function AuctionModal({
               </div>
 
               {/* You Pay */}
-              <div className="py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="py-4 border-b border-border">
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] text-muted-foreground">You pay</span>
                   <span className="text-lg font-semibold tabular-nums">
@@ -184,7 +184,7 @@ export function AuctionModal({
               </div>
 
               {/* You Receive */}
-              <div className="py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="py-4 border-b border-border">
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] text-muted-foreground">You receive</span>
                   <span className="text-lg font-semibold tabular-nums">
@@ -232,7 +232,7 @@ export function AuctionModal({
                       : isError
                       ? "bg-zinc-600 text-white"
                       : !account || !isAuctionActive || !hasEnoughLp || isPending
-                      ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                      ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                       : "bg-white text-black hover:bg-zinc-200"
                   }`}
                 >

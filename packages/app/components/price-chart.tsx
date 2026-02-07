@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { createChart, ColorType, LineSeries, AreaSeries, type IChartApi, type ISeriesApi, type LineData, type AreaData, type Time, LineStyle } from "lightweight-charts";
+import { createChart, ColorType, AreaSeries, LineSeries, type IChartApi, type ISeriesApi, type Time, LineStyle } from "lightweight-charts";
 
 export type HoverData = {
   time: number;
@@ -14,19 +14,20 @@ type PriceChartProps = {
   color?: string;
   height?: number;
   onHover?: (data: HoverData) => void;
-  timeframeSeconds?: number;
-  tokenFirstActiveTime?: number | null; // When the token first had activity (for determining if gray padding is needed)
+  tokenFirstActiveTime?: number;
+  initialPrice?: number;
 };
 
 export function PriceChart({
   data,
   isLoading = false,
-  color = "#a06fff",
+  color = "#a1a1aa",
   height = 200,
   onHover,
-  timeframeSeconds,
   tokenFirstActiveTime,
+  initialPrice,
 }: PriceChartProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -37,11 +38,12 @@ export function PriceChart({
   }, []);
 
   useEffect(() => {
-    if (!mounted || !chartContainerRef.current || isLoading) return;
+    if (!mounted || !wrapperRef.current || !chartContainerRef.current || isLoading) return;
 
+    const wrapper = wrapperRef.current;
     const container = chartContainerRef.current;
-    const width = container.clientWidth;
-    if (width === 0) return;
+    const visibleWidth = wrapper.clientWidth;
+    if (visibleWidth === 0) return;
 
     if (chartRef.current) {
       chartRef.current.remove();
@@ -49,6 +51,18 @@ export function PriceChart({
     }
 
     try {
+      const realData = data.filter(d => d.value > 0);
+      const numBars = realData.length;
+
+      // lightweight-charts centers each bar in its pixel slot, leaving half-bar
+      // padding on each edge. To eliminate this, make the chart wider than the
+      // visible area and shift it left so the padding falls outside the clip.
+      const extra = numBars > 1 ? Math.ceil(visibleWidth / (2 * numBars)) + 1 : 0;
+      const chartWidth = visibleWidth + extra * 2;
+
+      container.style.width = `${chartWidth}px`;
+      container.style.marginLeft = `-${extra}px`;
+
       const chart = createChart(container, {
         layout: {
           background: { type: ColorType.Solid, color: "transparent" },
@@ -60,23 +74,32 @@ export function PriceChart({
           vertLines: { visible: false },
           horzLines: { visible: false },
         },
-        width: width,
+        width: chartWidth,
         height: height,
-        handleScroll: true,
-        handleScale: true,
+        handleScroll: false,
+        handleScale: false,
         rightPriceScale: {
           visible: false,
+          borderVisible: false,
           scaleMargins: {
             top: 0.1,
-            bottom: 0.15, // Ensure bottom (0 value) is visible
+            bottom: 0.15,
           },
         },
-        timeScale: { visible: false, borderVisible: false },
+        leftPriceScale: {
+          visible: false,
+          borderVisible: false,
+        },
+        timeScale: {
+          visible: false,
+          borderVisible: false,
+          rightOffset: 0,
+        },
         crosshair: {
           vertLine: {
             visible: true,
             labelVisible: false,
-            color: "#a06fff50",
+            color: "#a1a1aa50",
             width: 1,
             style: 2,
           },
@@ -87,61 +110,58 @@ export function PriceChart({
         },
       });
 
-      const now = Math.floor(Date.now() / 1000);
-      const realData = data.filter(d => d.value > 0);
-
-      // Calculate cutoff for the timeframe
-      const cutoff = timeframeSeconds && timeframeSeconds !== Infinity
-        ? now - timeframeSeconds
-        : (realData.length > 0 ? realData[0].time - 3600 : now - 86400);
-
-      // Determine if we need gray padding - ONLY if the TOKEN is younger than the timeframe
-      const tokenBirthTime = tokenFirstActiveTime ?? (realData.length > 0 ? realData[0].time : now);
-      const needsGrayPadding = timeframeSeconds && timeframeSeconds !== Infinity && tokenBirthTime > cutoff + 60;
-
-      const BASELINE = 0.0001;
       let areaSeries: ISeriesApi<"Area"> | null = null;
+      let baselineSeries: ISeriesApi<"Line"> | null = null;
 
-      // 1. INVISIBLE anchor series spanning full timeframe (forces correct scaling)
-      if (timeframeSeconds && timeframeSeconds !== Infinity) {
-        const anchorSeries = chart.addSeries(LineSeries, {
-          color: "rgba(0,0,0,0)",
-          lineWidth: 1,
-          priceLineVisible: false,
-          lastValueVisible: false,
-          crosshairMarkerVisible: false,
-          visible: false,
-        });
-        anchorSeries.setData([
-          { time: cutoff as Time, value: BASELINE },
-          { time: now as Time, value: BASELINE },
-        ]);
-      }
+      if (realData.length > 0 && tokenFirstActiveTime) {
+        const preData = realData.filter(d => d.time < tokenFirstActiveTime);
+        const postData = realData.filter(d => d.time >= tokenFirstActiveTime);
 
-      // 2. Gray dotted line ONLY for empty period (before token existed)
-      if (needsGrayPadding) {
-        const grayData: LineData<Time>[] = [];
-        const emptyPeriod = tokenBirthTime - cutoff;
-        const numPoints = Math.max(2, Math.min(30, Math.floor(emptyPeriod / 3600)));
+        if (preData.length > 0 && postData.length > 0) {
+          const baselinePrice = initialPrice && initialPrice > 0 ? initialPrice : postData[0].value;
+          const baselineData = [
+            ...preData.map(d => ({ time: d.time as Time, value: baselinePrice })),
+            { time: postData[0].time as Time, value: baselinePrice },
+          ];
 
-        for (let i = 0; i <= numPoints; i++) {
-          const t = cutoff + (emptyPeriod * i / numPoints);
-          grayData.push({ time: Math.floor(t) as Time, value: BASELINE });
+          baselineSeries = chart.addSeries(LineSeries, {
+            color: "#52525b",
+            lineWidth: 1,
+            lineStyle: LineStyle.Dashed,
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: false,
+          });
+          baselineSeries.setData(baselineData);
+
+          areaSeries = chart.addSeries(AreaSeries, {
+            lineColor: color,
+            topColor: `${color}40`,
+            bottomColor: `${color}00`,
+            lineWidth: 2,
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: false,
+          });
+          // Start area series from initialPrice so the line begins at the true launch price
+          const areaData = postData.map(d => ({ time: d.time as Time, value: d.value }));
+          if (initialPrice && initialPrice > 0 && areaData.length > 0 && areaData[0].value !== initialPrice) {
+            areaData[0] = { ...areaData[0], value: initialPrice };
+          }
+          areaSeries.setData(areaData);
+        } else {
+          areaSeries = chart.addSeries(AreaSeries, {
+            lineColor: color,
+            topColor: `${color}40`,
+            bottomColor: `${color}00`,
+            lineWidth: 2,
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: false,
+          });
+          areaSeries.setData(realData.map(d => ({ time: d.time as Time, value: d.value })));
         }
-
-        const graySeries = chart.addSeries(LineSeries, {
-          color: "#71717a",
-          lineWidth: 2,
-          lineStyle: LineStyle.Dotted,
-          priceLineVisible: false,
-          lastValueVisible: false,
-          crosshairMarkerVisible: false,
-        });
-        graySeries.setData(grayData);
-      }
-
-      // 3. Purple area series for actual data
-      if (realData.length > 0) {
+      } else if (realData.length > 0) {
         areaSeries = chart.addSeries(AreaSeries, {
           lineColor: color,
           topColor: `${color}40`,
@@ -166,16 +186,6 @@ export function PriceChart({
           return;
         }
 
-        // Check if we're in the gray/empty area (before first real data)
-        const hoverTime = param.time as number;
-        if (realData.length > 0 && hoverTime < realData[0].time) {
-          onHover({
-            time: hoverTime,
-            value: 0,
-          });
-          return;
-        }
-
         if (areaSeries) {
           const seriesData = param.seriesData.get(areaSeries);
           if (seriesData && "value" in seriesData) {
@@ -187,35 +197,57 @@ export function PriceChart({
           }
         }
 
+        // Fall back to baseline series (dashed line in pre-existence period)
+        if (baselineSeries) {
+          const baseData = param.seriesData.get(baselineSeries);
+          if (baseData && "value" in baseData) {
+            onHover({
+              time: param.time as number,
+              value: baseData.value as number,
+            });
+            return;
+          }
+        }
+
         onHover({
           time: param.time as number,
           value: 0,
         });
       });
 
-    } catch (error) {
-      console.error("Failed to create chart:", error);
+    } catch {
+      // Chart creation failed — silently ignore
     }
 
     const handleResize = () => {
-      if (chartRef.current && container.clientWidth > 0) {
-        chartRef.current.applyOptions({ width: container.clientWidth });
+      if (chartRef.current && wrapper.clientWidth > 0) {
+        const realData = data.filter(d => d.value > 0);
+        const numBars = realData.length;
+        const newVisibleWidth = wrapper.clientWidth;
+        const newExtra = numBars > 1 ? Math.ceil(newVisibleWidth / (2 * numBars)) + 1 : 0;
+        const newChartWidth = newVisibleWidth + newExtra * 2;
+        container.style.width = `${newChartWidth}px`;
+        container.style.marginLeft = `-${newExtra}px`;
+        chartRef.current.applyOptions({ width: newChartWidth });
       }
     };
     window.addEventListener("resize", handleResize);
 
     return () => {
       window.removeEventListener("resize", handleResize);
+      // Reset container styles
+      container.style.width = "";
+      container.style.marginLeft = "";
       if (chartRef.current) {
         chartRef.current.remove();
         chartRef.current = null;
       }
     };
-  }, [mounted, color, height, data, isLoading, onHover, timeframeSeconds, tokenFirstActiveTime]);
+  }, [mounted, color, height, data, isLoading, onHover, tokenFirstActiveTime, initialPrice]);
 
   return (
-    <div style={{ height }} className="w-full relative overflow-hidden">
-      <div ref={chartContainerRef} className="w-full h-full" />
+    <div ref={wrapperRef} style={{ height }} className="w-full relative overflow-hidden">
+      <div ref={chartContainerRef} className="h-full" />
     </div>
   );
 }

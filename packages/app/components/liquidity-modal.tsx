@@ -200,7 +200,7 @@ export function LiquidityModal({
           </div>
 
           {/* Token Input */}
-          <div className="py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="py-4 border-b border-border">
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-muted-foreground">You provide</span>
               <span className="text-lg font-semibold tabular-nums">
@@ -219,7 +219,7 @@ export function LiquidityModal({
           </div>
 
           {/* Required USDC */}
-          <div className="py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="py-4 border-b border-border">
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-muted-foreground">Required USDC</span>
               <span className="text-lg font-semibold tabular-nums">
@@ -263,7 +263,7 @@ export function LiquidityModal({
                 : isError
                 ? "bg-zinc-600 text-white"
                 : !canCreate || isPending
-                ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                 : "bg-white text-black hover:bg-zinc-200"
             }`}
           >

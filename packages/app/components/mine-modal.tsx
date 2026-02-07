@@ -25,6 +25,8 @@ import {
   QUOTE_TOKEN_DECIMALS,
 } from "@/lib/contracts";
 import { DEADLINE_BUFFER_SECONDS } from "@/lib/constants";
+import { truncateAddress, timeAgo, formatUSDC, formatUSDC4, formatCompactToken } from "@/lib/format";
+import { TokenLogo } from "@/components/token-logo";
 import { Leaderboard } from "@/components/leaderboard";
 import { MineHistoryItem } from "@/components/mine-history-item";
 import { type LeaderboardEntry } from "@/hooks/useRigLeaderboard";
@@ -43,75 +45,9 @@ type MineModalProps = {
   multicallAddress?: `0x${string}`;
 };
 
-// Token logo component
-function TokenLogo({
-  symbol,
-  logoUrl,
-  size = "md",
-}: {
-  symbol: string;
-  logoUrl?: string | null;
-  size?: "xs" | "sm" | "md";
-}) {
-  const sizeClasses = {
-    xs: "w-4 h-4 text-[8px]",
-    sm: "w-5 h-5 text-[10px]",
-    md: "w-7 h-7 text-xs",
-  };
-
-  if (logoUrl) {
-    return (
-      <img
-        src={logoUrl}
-        alt={symbol}
-        className={`${sizeClasses[size].split(" ").slice(0, 2).join(" ")} rounded-full object-cover`}
-      />
-    );
-  }
-
-  return (
-    <div
-      className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-zinc-500 to-zinc-700 flex items-center justify-center text-white font-semibold`}
-    >
-      {symbol.charAt(0)}
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function truncateAddress(address: string): string {
-  if (!address || address.length < 10) return address;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
-function formatUSDC(value: bigint): string {
-  return Number(formatUnits(value, QUOTE_TOKEN_DECIMALS)).toFixed(2);
-}
-
-function formatUSDC4(value: bigint): string {
-  return Number(formatUnits(value, QUOTE_TOKEN_DECIMALS)).toFixed(4);
-}
-
-function formatCompactToken(value: bigint): string {
-  const num = Number(formatEther(value));
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
-  return num.toFixed(0);
-}
-
-function timeAgo(timestamp: number): string {
-  const seconds = Math.floor(Date.now() / 1000 - timestamp);
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
 
 // ---------------------------------------------------------------------------
 // Multiplier Countdown
@@ -550,7 +486,7 @@ export function MineModal({
               <div>
                 <div className="text-[12px] text-muted-foreground">Rate</div>
                 <div className="text-[13px] font-medium tabular-nums mt-0.5 flex items-center gap-1">
-                  <TokenLogo symbol={tokenSymbol} logoUrl={tokenLogoUrl} size="xs" />
+                  <TokenLogo name={tokenSymbol} logoUrl={tokenLogoUrl} size="xs" />
                   {Number(formatEther(selectedSlot.ups || 0n)).toFixed(0)}/s
                 </div>
               </div>
@@ -558,7 +494,7 @@ export function MineModal({
                 <div className="text-[12px] text-muted-foreground">Mined</div>
                 <div className="text-[13px] font-medium tabular-nums mt-0.5 flex items-center gap-1">
                   +
-                  <TokenLogo symbol={tokenSymbol} logoUrl={tokenLogoUrl} size="xs" />
+                  <TokenLogo name={tokenSymbol} logoUrl={tokenLogoUrl} size="xs" />
                   {Number(formatEther(tickedGlazed)).toFixed(0)}
                 </div>
               </div>
@@ -628,7 +564,7 @@ export function MineModal({
               <button
                 onClick={handleClaim}
                 disabled={isPending || !account}
-                className="px-3 py-1.5 rounded-lg bg-white text-black text-[12px] font-semibold hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-xl bg-white text-black text-[12px] font-semibold hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isPending ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -647,7 +583,7 @@ export function MineModal({
                 <div>
                   <div className="text-muted-foreground text-[12px] mb-1">Mined</div>
                   <div className="font-semibold text-[15px] tabular-nums flex items-center gap-1.5">
-                    <TokenLogo symbol={tokenSymbol} logoUrl={tokenLogoUrl} size="sm" />
+                    <TokenLogo name={tokenSymbol} logoUrl={tokenLogoUrl} size="sm" />
                     <span>{Number(formatEther(rigState.accountUnitBalance)).toFixed(0)}</span>
                   </div>
                 </div>

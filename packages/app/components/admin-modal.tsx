@@ -267,8 +267,7 @@ export function AdminModal({
       });
 
       await execute([{ to: rigAddress, data, value: 0n }]);
-    } catch (err) {
-      console.error("Metadata save error:", err);
+    } catch {
       setIsUploadingMetadata(false);
       setPendingField(null);
     }

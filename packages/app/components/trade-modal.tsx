@@ -20,6 +20,7 @@ import {
   UNIV2_FACTORY_ABI,
   UNIV2_PAIR_ABI,
 } from "@/lib/contracts";
+import { formatCoin } from "@/lib/format";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,13 +52,6 @@ function useDebounced<T>(value: T, delayMs: number): T {
     return () => clearTimeout(id);
   }, [value, delayMs]);
   return debounced;
-}
-
-function formatCoin(n: number): string {
-  if (n >= 1000000) return `${(n / 1000000).toFixed(2)}M`;
-  if (n >= 1000) return `${(n / 1000).toFixed(2)}K`;
-  if (n < 1) return n.toFixed(6);
-  return n.toFixed(2);
 }
 
 function addCommas(s: string): string {
@@ -393,7 +387,7 @@ export function TradeModal({
           </div>
 
           {/* Amount input display */}
-          <div className="py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="py-4 border-b border-border">
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-muted-foreground">Pay</span>
               <span className="text-lg font-semibold tabular-nums">
@@ -403,7 +397,7 @@ export function TradeModal({
           </div>
 
           {/* Market price */}
-          <div className="py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="py-4 border-b border-border">
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-muted-foreground">Market price</span>
               <span className="text-[13px] font-medium tabular-nums">
@@ -413,7 +407,7 @@ export function TradeModal({
           </div>
 
           {/* Estimated output */}
-          <div className="py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="py-4 border-b border-border">
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-muted-foreground">Est. received</span>
               <span className="text-[13px] font-medium tabular-nums">
@@ -473,7 +467,7 @@ export function TradeModal({
             onClick={handleConfirm}
             className={`w-full h-11 rounded-xl font-semibold text-[14px] transition-all mb-4 flex items-center justify-center gap-2 ${
               buttonDisabled
-                ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                 : isSuccess
                 ? "bg-zinc-300 text-black"
                 : "bg-white text-black hover:bg-zinc-200"

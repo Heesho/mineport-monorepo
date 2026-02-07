@@ -12,6 +12,8 @@ import {
   ONE_BI,
   ZERO_BD,
   PROTOCOL_ID,
+  BI_6,
+  BI_18,
   RIG_TYPE_FUND,
 } from '../constants'
 import {
@@ -64,6 +66,8 @@ export function handleFundCoreLaunched(event: FundCoreLaunchedEvent): void {
   rig.auction = event.params.auction
   rig.quoteToken = quoteToken
   rig.uri = event.params.uri
+  rig.usdcAmount = convertTokenToDecimal(event.params.usdcAmount, BI_6)
+  rig.unitAmount = convertTokenToDecimal(event.params.unitAmount, BI_18)
   rig.initialUps = event.params.initialEmission
   rig.tailUps = event.params.minEmission
   rig.halvingPeriod = event.params.halvingPeriod

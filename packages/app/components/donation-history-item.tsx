@@ -5,6 +5,7 @@ import { formatUnits } from "viem";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useBatchProfiles";
 import { viewProfile } from "@/hooks/useFarcaster";
+import { formatNumber } from "@/lib/format";
 
 type DonationHistoryItemProps = {
   donation: {
@@ -18,12 +19,6 @@ type DonationHistoryItemProps = {
   timeAgo: (ts: number) => string;
   tokenSymbol?: string;
 };
-
-function formatNumber(num: number): string {
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
-  return num.toFixed(0);
-}
 
 export const DonationHistoryItem = memo(function DonationHistoryItem({
   donation,
@@ -79,7 +74,7 @@ export const DonationHistoryItem = memo(function DonationHistoryItem({
         </div>
         <div>
           <div className="text-[12px] text-muted-foreground">Est.</div>
-          <div className="text-[13px] font-medium text-zinc-400">~{formatNumber(tokens)}</div>
+          <div className="text-[13px] font-medium text-zinc-400">~{formatNumber(tokens, 0)}</div>
         </div>
       </div>
     </div>

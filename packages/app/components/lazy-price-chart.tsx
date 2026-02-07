@@ -10,8 +10,8 @@ type PriceChartProps = {
   color?: string;
   height?: number;
   onHover?: (data: HoverData) => void;
-  timeframeSeconds?: number;
-  tokenFirstActiveTime?: number | null;
+  tokenFirstActiveTime?: number;
+  initialPrice?: number;
 };
 
 const PriceChartInner = dynamic(
@@ -32,11 +32,11 @@ const PriceChartInner = dynamic(
 export const LazyPriceChart = memo(function LazyPriceChart({
   data,
   isLoading = false,
-  color = "#a06fff",
+  color = "#a1a1aa",
   height = 200,
   onHover,
-  timeframeSeconds,
   tokenFirstActiveTime,
+  initialPrice,
 }: PriceChartProps) {
   return (
     <PriceChartInner
@@ -45,8 +45,8 @@ export const LazyPriceChart = memo(function LazyPriceChart({
       color={color}
       height={height}
       onHover={onHover}
-      timeframeSeconds={timeframeSeconds}
       tokenFirstActiveTime={tokenFirstActiveTime}
+      initialPrice={initialPrice}
     />
   );
 });

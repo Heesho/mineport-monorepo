@@ -10,6 +10,8 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { useTokenMetadata } from "@/hooks/useMetadata";
 import { CONTRACT_ADDRESSES, ERC20_ABI, MOCK_MINT_ABI, QUOTE_TOKEN_DECIMALS } from "@/lib/contracts";
 import type { UserHolding, UserLaunchedRig } from "@/hooks/useUserProfile";
+import { formatNumber } from "@/lib/format";
+import { TokenLogo } from "@/components/token-logo";
 
 type Tab = "holdings" | "launched";
 
@@ -17,56 +19,12 @@ type Tab = "holdings" | "launched";
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatNumber(num: number): string {
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`;
-  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
-  return num.toFixed(2);
-}
-
 function formatUsd(value: number): string {
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`;
   if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
   if (value >= 0.01) return `$${value.toFixed(2)}`;
   if (value > 0) return `<$0.01`;
   return "$0.00";
-}
-
-// ---------------------------------------------------------------------------
-// TokenLogo
-// ---------------------------------------------------------------------------
-
-function TokenLogo({
-  name,
-  logoUrl,
-  size = "md",
-}: {
-  name: string;
-  logoUrl?: string | null;
-  size?: "sm" | "md" | "lg";
-}) {
-  const sizeClasses = {
-    sm: "w-5 h-5 text-[9px]",
-    md: "w-10 h-10 text-sm",
-    lg: "w-12 h-12 text-base",
-  };
-
-  if (logoUrl) {
-    return (
-      <img
-        src={logoUrl}
-        alt={name}
-        className={`${sizeClasses[size]} rounded-full object-cover`}
-      />
-    );
-  }
-
-  return (
-    <div
-      className={`${sizeClasses[size]} rounded-full flex items-center justify-center font-semibold bg-gradient-to-br from-zinc-500 to-zinc-700 text-white`}
-    >
-      {name.charAt(0)}
-    </div>
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -80,7 +38,7 @@ function HoldingRow({ holding }: { holding: UserHolding }) {
     <Link href={`/rig/${holding.address}`} className="block">
       <div className="flex items-center justify-between py-3 hover:bg-secondary/30 -mx-4 px-4 transition-colors rounded-lg">
         <div className="flex items-center gap-3 min-w-0">
-          <TokenLogo name={holding.tokenName} logoUrl={logoUrl} size="md" />
+          <TokenLogo name={holding.tokenName} logoUrl={logoUrl} size="md-lg" />
           <div className="min-w-0">
             <div className="text-[15px] font-medium truncate">
               {holding.tokenName}
@@ -116,7 +74,7 @@ function LaunchedRow({ rig }: { rig: UserLaunchedRig }) {
     <Link href={`/rig/${rig.address}`} className="block">
       <div className="flex items-center justify-between py-3 hover:bg-secondary/30 -mx-4 px-4 transition-colors rounded-lg">
         <div className="flex items-center gap-3 min-w-0">
-          <TokenLogo name={rig.tokenName} logoUrl={logoUrl} size="md" />
+          <TokenLogo name={rig.tokenName} logoUrl={logoUrl} size="md-lg" />
           <div className="min-w-0">
             <div className="text-[15px] font-medium truncate">
               {rig.tokenName}

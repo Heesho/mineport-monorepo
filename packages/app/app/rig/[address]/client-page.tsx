@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Share2, Copy } from "lucide-react";
@@ -31,16 +31,12 @@ import {
   RIG_ABI,
   type RigType,
 } from "@/lib/contracts";
-import { getRig, getUnitHourData } from "@/lib/subgraph-launchpad";
+import { getRig } from "@/lib/subgraph-launchpad";
+import { truncateAddress, formatPrice, formatNumber, formatMarketCap } from "@/lib/format";
+import { PriceChart, type HoverData } from "@/components/price-chart";
+import { TokenLogo } from "@/components/token-logo";
 
 type Timeframe = "1H" | "1D" | "1W" | "1M" | "ALL";
-
-// Helper to truncate address for display
-function truncateAddress(address: string): string {
-  if (!address || address.length < 10) return address;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
 // Clickable address component
 function AddressLink({ address }: { address: string | null }) {
   if (!address) return <span>None</span>;
@@ -54,28 +50,6 @@ function AddressLink({ address }: { address: string | null }) {
       {truncateAddress(address)}
     </a>
   );
-}
-
-function formatPrice(price: number): string {
-  if (price === 0) return "$0.00";
-  if (price >= 1) return `$${price.toFixed(2)}`;
-  if (price >= 0.01) return `$${price.toFixed(4)}`;
-  if (price >= 0.0001) return `$${price.toFixed(6)}`;
-  if (price >= 0.000001) return `$${price.toFixed(8)}`;
-  if (price >= 0.00000001) return `$${price.toFixed(10)}`;
-  return `$${price.toFixed(12)}`;
-}
-
-function formatNumber(num: number): string {
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`;
-  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
-  return num.toFixed(2);
-}
-
-function formatMarketCap(mcap: number): string {
-  if (mcap >= 1_000_000) return `$${(mcap / 1_000_000).toFixed(2)}M`;
-  if (mcap >= 1_000) return `$${(mcap / 1_000).toFixed(0)}K`;
-  return `$${mcap.toFixed(2)}`;
 }
 
 // Format UPS (units per second) - BigInt string with 18 decimals
@@ -190,91 +164,6 @@ function parseOddsDistribution(odds: readonly (bigint | string)[] | undefined): 
       payout: oddsValue / 100,
       chance: Math.round((count / parsed.length) * 100),
     }));
-}
-
-function TokenLogo({
-  name,
-  logoUrl,
-  size = "md",
-}: {
-  name: string;
-  logoUrl?: string | null;
-  size?: "xs" | "sm" | "md" | "lg";
-}) {
-  const sizeClasses = {
-    xs: "w-4 h-4 text-[8px]",
-    sm: "w-5 h-5 text-[9px]",
-    md: "w-10 h-10 text-sm",
-    lg: "w-12 h-12 text-base",
-  };
-
-  if (logoUrl) {
-    return (
-      <img
-        src={logoUrl}
-        alt={name}
-        className={`${sizeClasses[size]} rounded-full object-cover`}
-      />
-    );
-  }
-
-  return (
-    <div
-      className={`${sizeClasses[size]} rounded-full flex items-center justify-center font-semibold bg-gradient-to-br from-zinc-500 to-zinc-700 text-white`}
-    >
-      {name.charAt(0)}
-    </div>
-  );
-}
-
-// Simple chart component - placeholder data for now (Task 8 will wire real data)
-type ChartDataPoint = { time: string; price: number };
-
-function SimpleChart({
-  data,
-  isPositive,
-}: {
-  data: ChartDataPoint[];
-  isPositive: boolean;
-}) {
-  if (data.length < 2) {
-    return (
-      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
-        {data.length === 0 ? "No chart data" : `$${data[0].price.toFixed(4)}`}
-      </div>
-    );
-  }
-
-  const prices = data.map((d) => d.price);
-  const min = Math.min(...prices);
-  const max = Math.max(...prices);
-  const range = max - min || 1;
-
-  const points = data
-    .map((d, i) => {
-      const x = (i / (data.length - 1)) * 100;
-      const y = 100 - ((d.price - min) / range) * 80 - 10;
-      return `${x},${y}`;
-    })
-    .join(" ");
-
-  return (
-    <svg
-      viewBox="0 0 100 100"
-      className="w-full h-full"
-      preserveAspectRatio="none"
-    >
-      <polyline
-        fill="none"
-        stroke={isPositive ? "hsl(0, 0%, 80%)" : "hsl(0, 0%, 50%)"}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-        points={points}
-      />
-    </svg>
-  );
 }
 
 // Loading skeleton for the page
@@ -561,25 +450,6 @@ export default function RigDetailPage() {
       ? totalSupplyRaw * Number(formatEther(unitPrice))
       : 0;
 
-  // 24h change computed from hourly candle data
-  const { data: candles24h } = useQuery({
-    queryKey: ["change24h", rigInfo?.unitAddress],
-    queryFn: async () => {
-      const since = Math.floor(Date.now() / 1000) - 86400;
-      return getUnitHourData(rigInfo!.unitAddress.toLowerCase(), since);
-    },
-    enabled: !!rigInfo?.unitAddress,
-    staleTime: 60_000,
-    refetchInterval: 60_000,
-  });
-  const change24h = useMemo(() => {
-    if (!candles24h || candles24h.length === 0) return 0;
-    const oldPrice = parseFloat(candles24h[0].close);
-    if (oldPrice <= 0) return 0;
-    return ((priceUsd - oldPrice) / oldPrice) * 100;
-  }, [candles24h, priceUsd]);
-  const isPositive = change24h >= 0;
-
   // User position
   const userUnitBalance = accountUnitBalance
     ? Number(formatEther(accountUnitBalance))
@@ -639,6 +509,14 @@ export default function RigDetailPage() {
     : null;
   const launchDateStr = createdAt ? getRelativeTime(createdAt) : "--";
 
+  // Initial LP price: usdcAmount / unitAmount from launch params
+  const initialPrice = useMemo(() => {
+    const usdc = parseFloat(subgraphRig?.usdcAmount ?? "0");
+    const unit = parseFloat(subgraphRig?.unitAmount ?? "0");
+    if (unit > 0) return usdc / unit;
+    return 0;
+  }, [subgraphRig?.usdcAmount, subgraphRig?.unitAmount]);
+
   // Chart data from subgraph price history
   const [timeframe, setTimeframe] = useState<Timeframe>("1D");
   const { data: chartData } = usePriceHistory(
@@ -647,7 +525,18 @@ export default function RigDetailPage() {
     rigInfo?.unitAddress,
     priceUsd,
     createdAtTimestamp,
+    initialPrice,
   );
+  // Timeframe-based price change: compare first chart data point to current price
+  const displayChange = useMemo(() => {
+    if (!chartData || chartData.length === 0 || priceUsd === 0) return 0;
+    const firstPoint = chartData.find(d => d.value > 0);
+    if (!firstPoint || firstPoint.value === 0) return 0;
+    return ((priceUsd - firstPoint.value) / firstPoint.value) * 100;
+  }, [chartData, priceUsd]);
+
+  const [hoverData, setHoverData] = useState<HoverData>(null);
+  const handleChartHover = useCallback((data: HoverData) => setHoverData(data), []);
 
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [showHeaderPrice, setShowHeaderPrice] = useState(false);
@@ -743,16 +632,32 @@ export default function RigDetailPage() {
               </div>
             </div>
             <div className="text-right">
-              <div className="price-large">{formatPrice(priceUsd)}</div>
-              <div className="text-[13px] font-medium text-zinc-400">
-                {`${change24h >= 0 ? "+" : ""}${change24h.toFixed(2)}%`}
+              <div className="price-large">
+                {hoverData && hoverData.value > 0
+                  ? formatPrice(hoverData.value)
+                  : formatPrice(priceUsd)}
               </div>
+              {hoverData ? (
+                <div className="text-[13px] font-medium text-zinc-400">
+                  {new Date(hoverData.time * 1000).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                </div>
+              ) : (
+                <div className="text-[13px] font-medium text-zinc-400">
+                  {`${displayChange >= 0 ? "+" : ""}${displayChange.toFixed(2)}%`}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Chart */}
-          <div className="h-44 mb-2 -mx-4">
-            <SimpleChart data={chartData} isPositive={isPositive} />
+          <div className="mb-2 -mx-4">
+            <PriceChart
+              data={chartData}
+              height={176}
+              onHover={handleChartHover}
+              tokenFirstActiveTime={createdAtTimestamp}
+              initialPrice={initialPrice}
+            />
           </div>
 
           {/* Timeframe Selector */}

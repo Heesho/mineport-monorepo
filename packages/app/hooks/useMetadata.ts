@@ -31,18 +31,10 @@ async function fetchMetadata(rigUri: string): Promise<TokenMetadata | null> {
 
   try {
     const response = await fetch(metadataUrl);
-    if (!response.ok) {
-      console.warn(`[useMetadata] Failed to fetch metadata from ${metadataUrl}: ${response.status}`);
-      return null;
-    }
+    if (!response.ok) return null;
     const data = await response.json();
-    // Log if metadata is missing image
-    if (!data.image) {
-      console.warn(`[useMetadata] Metadata has no image field:`, rigUri, data);
-    }
     return data;
-  } catch (error) {
-    console.warn(`[useMetadata] Error fetching metadata from ${metadataUrl}:`, error);
+  } catch {
     return null;
   }
 }

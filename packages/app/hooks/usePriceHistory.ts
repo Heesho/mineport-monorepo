@@ -8,7 +8,7 @@ import { getUnitHourData, getUnitDayData, type SubgraphUnitCandle } from "@/lib/
 
 type Timeframe = "1H" | "1D" | "1W" | "1M" | "ALL";
 
-type ChartDataPoint = { time: string; price: number };
+export type ChartDataPoint = { time: number; value: number };
 
 // ---------------------------------------------------------------------------
 // Timeframe configuration
@@ -23,30 +23,35 @@ function getTimeframeConfig(timeframe: Timeframe) {
         sinceTimestamp: now - 3600,
         refetchInterval: 30_000,
         intervalSeconds: 180, // 3 min intervals for 1H (20 points)
+        timeframeSeconds: 3600,
       };
     case "1D":
       return {
         sinceTimestamp: now - 86400,
         refetchInterval: 30_000,
         intervalSeconds: 3600, // 1 hour intervals for 1D (24 points)
+        timeframeSeconds: 86400,
       };
     case "1W":
       return {
         sinceTimestamp: now - 7 * 86400,
         refetchInterval: 60_000,
         intervalSeconds: 21600, // 6 hour intervals for 1W (28 points)
+        timeframeSeconds: 7 * 86400,
       };
     case "1M":
       return {
         sinceTimestamp: now - 30 * 86400,
         refetchInterval: 60_000,
         intervalSeconds: 86400, // 1 day intervals for 1M (30 points)
+        timeframeSeconds: 30 * 86400,
       };
     case "ALL":
       return {
         sinceTimestamp: 0,
         refetchInterval: 60_000,
         intervalSeconds: 86400, // 1 day intervals
+        timeframeSeconds: Infinity,
       };
   }
 }
@@ -60,6 +65,7 @@ function fillChartData(
   timeframe: Timeframe,
   currentPrice: number,
   createdAt?: number,
+  initialPrice?: number,
 ): ChartDataPoint[] {
   const config = getTimeframeConfig(timeframe);
   const rawNow = Math.floor(Date.now() / 1000);
@@ -74,17 +80,17 @@ function fillChartData(
   // Create a map of existing data points by rounded timestamp
   const dataMap = new Map<number, number>();
   candles.forEach(c => {
-    const ts = Math.floor(new Date(c.time).getTime() / 1000);
-    const roundedTs = Math.floor(ts / config.intervalSeconds) * config.intervalSeconds;
-    dataMap.set(roundedTs, c.price);
+    const roundedTs = Math.floor(c.time / config.intervalSeconds) * config.intervalSeconds;
+    dataMap.set(roundedTs, c.value);
   });
 
   // Generate all time points we need
   const result: ChartDataPoint[] = [];
 
-  // If we have candle data, use the earliest price as starting point
-  // Otherwise use current price for a flat line
-  let lastPrice = candles.length > 0 ? candles[0].price : currentPrice;
+  // Starting price priority: initial LP price > earliest candle > current price
+  let lastPrice = initialPrice && initialPrice > 0
+    ? initialPrice
+    : candles.length > 0 ? candles[0].value : currentPrice;
 
   for (let ts = startTimestamp; ts <= now; ts += config.intervalSeconds) {
     const roundedTs = Math.floor(ts / config.intervalSeconds) * config.intervalSeconds;
@@ -94,19 +100,19 @@ function fillChartData(
     }
 
     result.push({
-      time: new Date(roundedTs * 1000).toISOString(),
-      price: lastPrice,
+      time: roundedTs,
+      value: lastPrice,
     });
   }
 
   // If we still have no data points, create a flat line with current price
   if (result.length === 0) {
     const numPoints = 20;
-    const intervalMs = (now - startTimestamp) * 1000 / numPoints;
+    const interval = (now - startTimestamp) / numPoints;
     for (let i = 0; i < numPoints; i++) {
       result.push({
-        time: new Date(startTimestamp * 1000 + i * intervalMs).toISOString(),
-        price: currentPrice,
+        time: Math.floor(startTimestamp + i * interval),
+        value: currentPrice,
       });
     }
   }
@@ -114,7 +120,7 @@ function fillChartData(
   // Only update last point to current price if we have actual candle data
   // This keeps the line connected to where trading actually happened
   if (result.length > 0 && candles.length > 0) {
-    result[result.length - 1].price = currentPrice;
+    result[result.length - 1].value = currentPrice;
   }
 
   return result;
@@ -140,8 +146,8 @@ async function fetchCandlePriceHistory(
   if (!candles || candles.length === 0) return [];
 
   return candles.map((c: SubgraphUnitCandle) => ({
-    time: new Date(parseInt(c.timestamp) * 1000).toISOString(),
-    price: parseFloat(c.close),
+    time: parseInt(c.timestamp),
+    value: parseFloat(c.close),
   }));
 }
 
@@ -155,7 +161,8 @@ export function usePriceHistory(
   unitAddress?: string,
   currentPrice: number = 0,
   createdAt?: number,
-): { data: ChartDataPoint[]; isLoading: boolean } {
+  initialPrice?: number,
+): { data: ChartDataPoint[]; isLoading: boolean; timeframeSeconds: number } {
   const config = getTimeframeConfig(timeframe);
 
   const { data: rawData, isLoading } = useQuery({
@@ -175,12 +182,13 @@ export function usePriceHistory(
   // Round currentPrice to prevent tiny floating point changes from causing recalcs
   const roundedPrice = Math.round(currentPrice * 1e6) / 1e6;
   const filledData = useMemo(
-    () => fillChartData(rawData ?? [], timeframe, roundedPrice, createdAt),
-    [rawData, timeframe, roundedPrice, createdAt]
+    () => fillChartData(rawData ?? [], timeframe, roundedPrice, createdAt, initialPrice),
+    [rawData, timeframe, roundedPrice, createdAt, initialPrice]
   );
 
   return {
     data: filledData,
     isLoading,
+    timeframeSeconds: config.timeframeSeconds,
   };
 }

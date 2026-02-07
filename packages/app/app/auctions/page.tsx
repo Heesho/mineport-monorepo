@@ -6,61 +6,12 @@ import { Flame, ArrowRight, Check } from "lucide-react";
 import { NavBar } from "@/components/nav-bar";
 import { useAuctions, type AuctionItem } from "@/hooks/useAuctions";
 import { useBatchMetadata } from "@/hooks/useMetadata";
-
-/** Gradient color for the letter avatar fallback, based on rig type */
-function rigTypeGradient(rigType: string): string {
-  switch (rigType) {
-    case "spin":
-      return "from-purple-500 to-purple-700";
-    case "fund":
-      return "from-emerald-500 to-emerald-700";
-    case "mine":
-    default:
-      return "from-blue-500 to-blue-700";
-  }
-}
-
-function TokenLogo({
-  rigUri,
-  name,
-  rigType,
-  getLogoUrl,
-}: {
-  rigUri: string;
-  name: string;
-  rigType: string;
-  getLogoUrl: (rigUri: string) => string | null;
-}) {
-  const logoUrl = getLogoUrl(rigUri);
-  const [imgError, setImgError] = useState(false);
-
-  if (logoUrl && !imgError) {
-    return (
-      <img
-        src={logoUrl}
-        alt={name}
-        className="w-10 h-10 rounded-full object-cover"
-        onError={() => setImgError(true)}
-      />
-    );
-  }
-
-  // Letter avatar fallback
-  const gradient = rigTypeGradient(rigType);
-  return (
-    <div
-      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold bg-gradient-to-br ${gradient} text-white shadow-lg`}
-    >
-      {name.charAt(0).toUpperCase()}
-    </div>
-  );
-}
+import { TokenLogo } from "@/components/token-logo";
 
 function SkeletonRow() {
   return (
     <div
-      className="flex items-center justify-between py-4"
-      style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+      className="flex items-center justify-between py-4 border-b border-border"
     >
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-secondary animate-pulse" />
@@ -132,22 +83,16 @@ export default function AuctionsPage() {
                     selectedIndex === index
                       ? "bg-white/[0.03]"
                       : "hover:bg-white/[0.02]"
-                  }`}
-                  style={{
-                    borderBottom:
-                      index < auctions.length - 1
-                        ? "1px solid rgba(255,255,255,0.06)"
-                        : "none",
-                  }}
+                  }${index < auctions.length - 1 ? " border-b border-border" : ""}`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <TokenLogo
-                          rigUri={auction.rigUri}
                           name={auction.tokenName}
+                          logoUrl={getLogoUrl(auction.rigUri)}
                           rigType={auction.rigType}
-                          getLogoUrl={getLogoUrl}
+                          size="md-lg"
                         />
                         {selectedIndex === index && (
                           <div className="absolute -right-1 -bottom-1 w-5 h-5 rounded-full bg-white flex items-center justify-center">
@@ -204,8 +149,7 @@ export default function AuctionsPage() {
             <div className="max-w-[520px] mx-auto px-4 py-4">
               {/* Trade Summary */}
               <div
-                className="pb-4 mb-4"
-                style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+                className="pb-4 mb-4 border-b border-border"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -214,10 +158,10 @@ export default function AuctionsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <TokenLogo
-                        rigUri={selectedAuction.rigUri}
                         name={selectedAuction.tokenName}
+                        logoUrl={getLogoUrl(selectedAuction.rigUri)}
                         rigType={selectedAuction.rigType}
-                        getLogoUrl={getLogoUrl}
+                        size="md-lg"
                       />
                       <div>
                         <span className="font-semibold text-[17px] tabular-nums">

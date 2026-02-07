@@ -5,6 +5,7 @@ import { formatUnits } from "viem";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useBatchProfiles";
 import { viewProfile } from "@/hooks/useFarcaster";
+import { formatNumber } from "@/lib/format";
 
 type MineHistoryItemProps = {
   mine: {
@@ -22,12 +23,6 @@ type MineHistoryItemProps = {
   timeAgo: (ts: number) => string;
   tokenSymbol?: string;
 };
-
-function formatNumber(num: number): string {
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
-  return num.toFixed(0);
-}
 
 /**
  * Memoized mine history item with cached profile lookup
@@ -95,7 +90,7 @@ export const MineHistoryItem = memo(function MineHistoryItem({
         </div>
         <div>
           <div className="text-[12px] text-muted-foreground">Mined</div>
-          <div className="text-[13px] font-medium">{formatNumber(mined)}</div>
+          <div className="text-[13px] font-medium">{formatNumber(mined, 0)}</div>
         </div>
       </div>
     </div>

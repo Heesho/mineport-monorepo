@@ -23,6 +23,8 @@ export type RigListItem = {
   marketCapUsd: number;
   volume24h: number;           // 24h volume in USDC
   liquidityUsd: number;
+  // Sparkline (daily close prices, chronological order)
+  sparklinePrices: number[];
   // Subgraph data
   totalMinted: bigint;
   lastActivityAt: number;         // Unix timestamp
@@ -77,6 +79,34 @@ function unitToRigListItem(u: SubgraphUnitListItem): RigListItem {
     marketCapUsd = priceUsd * totalSupply;
   }
 
+  // Compute 24h change from day candle data:
+  // dayData is ordered desc, so [0] = today, [1] = yesterday
+  let change24h = 0;
+  if (u.dayData && u.dayData.length >= 2) {
+    // Compare current price to yesterday's close
+    const yesterdayClose = parseFloat(u.dayData[1].close);
+    if (yesterdayClose > 0 && priceUsd > 0) {
+      change24h = ((priceUsd - yesterdayClose) / yesterdayClose) * 100;
+    }
+  } else if (u.dayData && u.dayData.length === 1) {
+    // Only today's candle — compare current price to today's open
+    const todayOpen = parseFloat(u.dayData[0].open);
+    if (todayOpen > 0 && priceUsd > 0) {
+      change24h = ((priceUsd - todayOpen) / todayOpen) * 100;
+    }
+  }
+
+  // Build sparkline from day candle close prices (reverse to chronological order)
+  // Then append current price as the latest point
+  const sparklinePrices: number[] = [];
+  if (u.dayData && u.dayData.length > 0) {
+    const reversed = [...u.dayData].reverse(); // oldest first
+    for (const d of reversed) {
+      sparklinePrices.push(parseFloat(d.close));
+    }
+    sparklinePrices.push(priceUsd); // current price as last point
+  }
+
   return {
     address: u.rig.id.toLowerCase() as `0x${string}`,
     unitAddress: u.id.toLowerCase() as `0x${string}`,
@@ -87,10 +117,11 @@ function unitToRigListItem(u: SubgraphUnitListItem): RigListItem {
     rigUri: u.rig.uri,
     launcher: u.rig.launcher.id.toLowerCase() as `0x${string}`,
     priceUsd,
-    change24h: parseFloat(u.priceChange24h) || 0,
+    change24h,
     marketCapUsd,
     volume24h: parseFloat(u.volume24h) || 0,
     liquidityUsd: parseFloat(u.liquidityUSD) || parseFloat(u.liquidity) || 0,
+    sparklinePrices,
     totalMinted: BigInt(Math.floor(totalMinted * 1e18)),
     lastActivityAt: parseInt(u.lastActivityAt) || 0,
     createdAt: parseInt(u.createdAt) || 0,

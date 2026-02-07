@@ -60,11 +60,11 @@ function MiniSparkline({ prices }: { prices: number[] }) {
   })();
 
   return (
-    <svg width="60" height="24" className="overflow-visible">
+    <svg width="60" height="24" className="overflow-visible text-zinc-400">
       <polyline
         points={points}
         fill="none"
-        stroke="#a1a1aa"
+        stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -125,11 +125,10 @@ export function RigCard({ rig, isTopBump = false, isNewBump = false }: RigCardPr
     <Link href={`/rig/${rig.address}`} className="block">
       <div
         className={cn(
-          "flex items-center gap-3 py-4 transition-colors hover:bg-white/[0.02]",
+          "flex items-center gap-3 py-4 transition-colors hover:bg-white/[0.02] border-b border-border",
           isNewBump && "animate-bump-enter",
           isTopBump && !isNewBump && "animate-bump-glow"
         )}
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
       >
         {/* Token Logo */}
         <div className="flex-shrink-0 w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden">
