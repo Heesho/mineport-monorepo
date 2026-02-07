@@ -14,7 +14,7 @@ export type ChartDataPoint = { time: number; value: number };
 // Timeframe configuration
 // ---------------------------------------------------------------------------
 
-function getTimeframeConfig(timeframe: Timeframe) {
+function getTimeframeConfig(timeframe: Timeframe, createdAt?: number) {
   const now = Math.floor(Date.now() / 1000);
 
   switch (timeframe) {
@@ -24,6 +24,7 @@ function getTimeframeConfig(timeframe: Timeframe) {
         refetchInterval: 30_000,
         intervalSeconds: 180, // 3 min intervals for 1H (20 points)
         timeframeSeconds: 3600,
+        useHourly: true,
       };
     case "1D":
       return {
@@ -31,6 +32,7 @@ function getTimeframeConfig(timeframe: Timeframe) {
         refetchInterval: 30_000,
         intervalSeconds: 3600, // 1 hour intervals for 1D (24 points)
         timeframeSeconds: 86400,
+        useHourly: true,
       };
     case "1W":
       return {
@@ -38,6 +40,7 @@ function getTimeframeConfig(timeframe: Timeframe) {
         refetchInterval: 60_000,
         intervalSeconds: 21600, // 6 hour intervals for 1W (28 points)
         timeframeSeconds: 7 * 86400,
+        useHourly: false,
       };
     case "1M":
       return {
@@ -45,14 +48,37 @@ function getTimeframeConfig(timeframe: Timeframe) {
         refetchInterval: 60_000,
         intervalSeconds: 86400, // 1 day intervals for 1M (30 points)
         timeframeSeconds: 30 * 86400,
+        useHourly: false,
       };
-    case "ALL":
+    case "ALL": {
+      // Dynamic interval based on token age for ALL timeframe
+      const tokenAge = createdAt ? now - createdAt : 365 * 86400;
+      let intervalSeconds: number;
+      let useHourly: boolean;
+      if (tokenAge < 3600) {
+        intervalSeconds = 180; // < 1h old → 3min intervals
+        useHourly = true;
+      } else if (tokenAge < 86400) {
+        intervalSeconds = 900; // < 1d old → 15min intervals
+        useHourly = true;
+      } else if (tokenAge < 7 * 86400) {
+        intervalSeconds = 3600; // < 1w old → 1h intervals
+        useHourly = true;
+      } else if (tokenAge < 30 * 86400) {
+        intervalSeconds = 21600; // < 1m old → 6h intervals
+        useHourly = false;
+      } else {
+        intervalSeconds = 86400; // > 1m old → 1d intervals
+        useHourly = false;
+      }
       return {
         sinceTimestamp: 0,
         refetchInterval: 60_000,
-        intervalSeconds: 86400, // 1 day intervals
+        intervalSeconds,
         timeframeSeconds: Infinity,
+        useHourly,
       };
+    }
   }
 }
 
@@ -67,15 +93,24 @@ function fillChartData(
   createdAt?: number,
   initialPrice?: number,
 ): ChartDataPoint[] {
-  const config = getTimeframeConfig(timeframe);
+  const config = getTimeframeConfig(timeframe, createdAt);
   const rawNow = Math.floor(Date.now() / 1000);
   // Round "now" to the interval to prevent constant small shifts
   const now = Math.floor(rawNow / config.intervalSeconds) * config.intervalSeconds;
 
-  // For "ALL" timeframe, use createdAt as start if available
-  const startTimestamp = timeframe === "ALL" && createdAt
-    ? Math.max(createdAt, rawNow - 365 * 86400) // Cap at 1 year
-    : Math.floor(config.sinceTimestamp / config.intervalSeconds) * config.intervalSeconds;
+  // For "ALL" timeframe, start before createdAt to show baseline
+  let startTimestamp: number;
+  if (timeframe === "ALL" && createdAt) {
+    // Include 30% of token age before creation (min 1 interval) for baseline
+    const tokenAge = rawNow - createdAt;
+    const preBuffer = Math.max(Math.floor(tokenAge * 0.3), config.intervalSeconds * 3);
+    startTimestamp = Math.max(
+      Math.floor((createdAt - preBuffer) / config.intervalSeconds) * config.intervalSeconds,
+      rawNow - 365 * 86400,
+    );
+  } else {
+    startTimestamp = Math.floor(config.sinceTimestamp / config.intervalSeconds) * config.intervalSeconds;
+  }
 
   // Create a map of existing data points by rounded timestamp
   const dataMap = new Map<number, number>();
@@ -105,22 +140,28 @@ function fillChartData(
     });
   }
 
+  // Always add a final point at rawNow with currentPrice to ensure
+  // there's a post-creation data point (fixes 1M/ALL when token is very new
+  // and `now` rounds down to before `createdAt`)
+  if (currentPrice > 0) {
+    const lastTime = result.length > 0 ? result[result.length - 1].time : 0;
+    if (rawNow > lastTime) {
+      result.push({ time: rawNow, value: currentPrice });
+    } else if (result.length > 0 && candles.length > 0) {
+      result[result.length - 1].value = currentPrice;
+    }
+  }
+
   // If we still have no data points, create a flat line with current price
   if (result.length === 0) {
     const numPoints = 20;
-    const interval = (now - startTimestamp) / numPoints;
+    const interval = Math.max((now - startTimestamp) / numPoints, 1);
     for (let i = 0; i < numPoints; i++) {
       result.push({
         time: Math.floor(startTimestamp + i * interval),
         value: currentPrice,
       });
     }
-  }
-
-  // Only update last point to current price if we have actual candle data
-  // This keeps the line connected to where trading actually happened
-  if (result.length > 0 && candles.length > 0) {
-    result[result.length - 1].value = currentPrice;
   }
 
   return result;
@@ -133,13 +174,11 @@ function fillChartData(
 async function fetchCandlePriceHistory(
   unitAddress: string,
   timeframe: Timeframe,
+  createdAt?: number,
 ): Promise<ChartDataPoint[]> {
-  const config = getTimeframeConfig(timeframe);
+  const config = getTimeframeConfig(timeframe, createdAt);
 
-  // Use hourly data for short timeframes, daily for longer ones
-  const useHourly = timeframe === "1H" || timeframe === "1D";
-
-  const candles = useHourly
+  const candles = config.useHourly
     ? await getUnitHourData(unitAddress, config.sinceTimestamp)
     : await getUnitDayData(unitAddress, config.sinceTimestamp);
 
@@ -163,13 +202,13 @@ export function usePriceHistory(
   createdAt?: number,
   initialPrice?: number,
 ): { data: ChartDataPoint[]; isLoading: boolean; timeframeSeconds: number } {
-  const config = getTimeframeConfig(timeframe);
+  const config = getTimeframeConfig(timeframe, createdAt);
 
   const { data: rawData, isLoading } = useQuery({
     queryKey: ["priceHistory", rigAddress, timeframe, unitAddress],
     queryFn: () =>
       unitAddress
-        ? fetchCandlePriceHistory(unitAddress.toLowerCase(), timeframe)
+        ? fetchCandlePriceHistory(unitAddress.toLowerCase(), timeframe, createdAt)
         : Promise.resolve([]),
     enabled: !!rigAddress && !!unitAddress,
     staleTime: config.refetchInterval,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { createChart, ColorType, AreaSeries, LineSeries, type IChartApi, type ISeriesApi, type Time, LineStyle } from "lightweight-charts";
+import { createChart, ColorType, LineSeries, type IChartApi, type ISeriesApi, type Time, LineStyle } from "lightweight-charts";
 
 export type HoverData = {
   time: number;
@@ -110,7 +110,7 @@ export function PriceChart({
         },
       });
 
-      let areaSeries: ISeriesApi<"Area"> | null = null;
+      let priceSeries: ISeriesApi<"Line"> | null = null;
       let baselineSeries: ISeriesApi<"Line"> | null = null;
 
       if (realData.length > 0 && tokenFirstActiveTime) {
@@ -134,44 +134,38 @@ export function PriceChart({
           });
           baselineSeries.setData(baselineData);
 
-          areaSeries = chart.addSeries(AreaSeries, {
-            lineColor: color,
-            topColor: `${color}40`,
-            bottomColor: `${color}00`,
+          priceSeries = chart.addSeries(LineSeries, {
+            color: color,
             lineWidth: 2,
             priceLineVisible: false,
             lastValueVisible: false,
             crosshairMarkerVisible: false,
           });
-          // Start area series from initialPrice so the line begins at the true launch price
-          const areaData = postData.map(d => ({ time: d.time as Time, value: d.value }));
-          if (initialPrice && initialPrice > 0 && areaData.length > 0 && areaData[0].value !== initialPrice) {
-            areaData[0] = { ...areaData[0], value: initialPrice };
+          // Start price series from initialPrice so the line begins at the true launch price
+          const priceData = postData.map(d => ({ time: d.time as Time, value: d.value }));
+          if (initialPrice && initialPrice > 0 && priceData.length > 0 && priceData[0].value !== initialPrice) {
+            priceData[0] = { ...priceData[0], value: initialPrice };
           }
-          areaSeries.setData(areaData);
+          priceSeries.setData(priceData);
         } else {
-          areaSeries = chart.addSeries(AreaSeries, {
-            lineColor: color,
-            topColor: `${color}40`,
-            bottomColor: `${color}00`,
+          priceSeries = chart.addSeries(LineSeries, {
+            color: color,
             lineWidth: 2,
             priceLineVisible: false,
             lastValueVisible: false,
             crosshairMarkerVisible: false,
           });
-          areaSeries.setData(realData.map(d => ({ time: d.time as Time, value: d.value })));
+          priceSeries.setData(realData.map(d => ({ time: d.time as Time, value: d.value })));
         }
       } else if (realData.length > 0) {
-        areaSeries = chart.addSeries(AreaSeries, {
-          lineColor: color,
-          topColor: `${color}40`,
-          bottomColor: `${color}00`,
+        priceSeries = chart.addSeries(LineSeries, {
+          color: color,
           lineWidth: 2,
           priceLineVisible: false,
           lastValueVisible: false,
           crosshairMarkerVisible: false,
         });
-        areaSeries.setData(realData.map(d => ({ time: d.time as Time, value: d.value })));
+        priceSeries.setData(realData.map(d => ({ time: d.time as Time, value: d.value })));
       }
 
       chart.timeScale().fitContent();
@@ -186,8 +180,8 @@ export function PriceChart({
           return;
         }
 
-        if (areaSeries) {
-          const seriesData = param.seriesData.get(areaSeries);
+        if (priceSeries) {
+          const seriesData = param.seriesData.get(priceSeries);
           if (seriesData && "value" in seriesData) {
             onHover({
               time: param.time as number,
