@@ -1599,7 +1599,7 @@ describe("Edge Case Security Audit Tests", function () {
       await usdc.connect(user1).approve(rig, convert("100", 6));
       await expect(
         rigContract.connect(user1).fund(AddressZero, convert("100", 6), "")
-      ).to.be.revertedWith("FundRig__ZeroAddress()");
+      ).to.be.revertedWith("FundRig__ZeroFunder()");
     });
 
     it("FundRig: claim to zero address should revert", async function () {

@@ -252,21 +252,23 @@ contract SpinRig is IEntropyConsumer, ReentrancyGuard, Ownable {
 
         // Distribute fees from spin price
         if (price > 0) {
+            IERC20(quote).safeTransferFrom(msg.sender, address(this), price);
+
             address protocol = ISpinCore(core).protocolFeeAddress();
             uint256 teamFee = team != address(0) ? price * TEAM_BPS / DIVISOR : 0;
             uint256 protocolFee = protocol != address(0) ? price * PROTOCOL_BPS / DIVISOR : 0;
             uint256 treasuryFee = price - teamFee - protocolFee;
 
-            IERC20(quote).safeTransferFrom(msg.sender, treasury, treasuryFee);
+            IERC20(quote).safeTransfer(treasury, treasuryFee);
             emit SpinRig__TreasuryFee(treasury, epochId, treasuryFee);
 
             if (teamFee > 0) {
-                IERC20(quote).safeTransferFrom(msg.sender, team, teamFee);
+                IERC20(quote).safeTransfer(team, teamFee);
                 emit SpinRig__TeamFee(team, epochId, teamFee);
             }
 
             if (protocolFee > 0) {
-                IERC20(quote).safeTransferFrom(msg.sender, protocol, protocolFee);
+                IERC20(quote).safeTransfer(protocol, protocolFee);
                 emit SpinRig__ProtocolFee(protocol, epochId, protocolFee);
             }
         }

@@ -245,7 +245,7 @@ export function handleFundClaimed(event: ClaimedEvent): void {
 }
 
 export function handleFundProtocolFee(event: ProtocolFeeEvent): void {
-  // Event params: protocol (indexed), amount, day
+  // Event params: protocol (indexed), day (indexed), amount
   let rigAddress = event.address.toHexString()
   let amount = convertTokenToDecimal(event.params.amount, BI_6)
 

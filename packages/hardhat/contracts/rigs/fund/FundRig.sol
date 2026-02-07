@@ -83,7 +83,7 @@ contract FundRig is ReentrancyGuard, Ownable {
 
     /*----------  ERRORS  -----------------------------------------------*/
 
-    error FundRig__ZeroAmount();
+    error FundRig__ZeroFunder();
     error FundRig__DayNotEnded();
     error FundRig__AlreadyClaimed();
     error FundRig__NoDonation();
@@ -100,9 +100,9 @@ contract FundRig is ReentrancyGuard, Ownable {
     event FundRig__RecipientSet(address indexed recipient);
     event FundRig__TreasurySet(address indexed treasury);
     event FundRig__TeamSet(address indexed team);
-    event FundRig__TreasuryFee(address indexed treasury, uint256 amount, uint256 day);
-    event FundRig__TeamFee(address indexed team, uint256 amount, uint256 day);
-    event FundRig__ProtocolFee(address indexed protocol, uint256 amount, uint256 day);
+    event FundRig__TreasuryFee(address indexed treasury, uint256 indexed day, uint256 amount);
+    event FundRig__TeamFee(address indexed team, uint256 indexed day, uint256 amount);
+    event FundRig__ProtocolFee(address indexed protocol, uint256 indexed day, uint256 amount);
     event FundRig__UriSet(string uri);
 
     /*----------  CONSTRUCTOR  ------------------------------------------*/
@@ -161,7 +161,7 @@ contract FundRig is ReentrancyGuard, Ownable {
      * @param amount The amount of payment tokens to fund
      */
     function fund(address account, uint256 amount, string calldata _uri) external nonReentrant {
-        if (account == address(0)) revert FundRig__ZeroAddress();
+        if (account == address(0)) revert FundRig__ZeroFunder();
         if (amount < MIN_DONATION) revert FundRig__BelowMinDonation();
         if (recipient == address(0)) revert FundRig__RecipientNotSet();
 
@@ -173,21 +173,21 @@ contract FundRig is ReentrancyGuard, Ownable {
         // Calculate splits
         address protocol = IFundCore(core).protocolFeeAddress();
         uint256 recipientAmount = amount * RECIPIENT_BPS / DIVISOR;
-        uint256 teamAmount = team != address(0) ? amount * TEAM_BPS / DIVISOR : 0;
-        uint256 protocolAmount = protocol != address(0) ? amount * PROTOCOL_BPS / DIVISOR : 0;
-        uint256 treasuryAmount = amount - recipientAmount - teamAmount - protocolAmount;
+        uint256 teamFee = team != address(0) ? amount * TEAM_BPS / DIVISOR : 0;
+        uint256 protocolFee = protocol != address(0) ? amount * PROTOCOL_BPS / DIVISOR : 0;
+        uint256 treasuryFee = amount - recipientAmount - teamFee - protocolFee;
 
         // Distribute funds
         IERC20(quote).safeTransfer(recipient, recipientAmount);
-        IERC20(quote).safeTransfer(treasury, treasuryAmount);
-        emit FundRig__TreasuryFee(treasury, treasuryAmount, day);
-        if (teamAmount > 0) {
-            IERC20(quote).safeTransfer(team, teamAmount);
-            emit FundRig__TeamFee(team, teamAmount, day);
+        IERC20(quote).safeTransfer(treasury, treasuryFee);
+        emit FundRig__TreasuryFee(treasury, day, treasuryFee);
+        if (teamFee > 0) {
+            IERC20(quote).safeTransfer(team, teamFee);
+            emit FundRig__TeamFee(team, day, teamFee);
         }
-        if (protocolAmount > 0) {
-            IERC20(quote).safeTransfer(protocol, protocolAmount);
-            emit FundRig__ProtocolFee(protocol, protocolAmount, day);
+        if (protocolFee > 0) {
+            IERC20(quote).safeTransfer(protocol, protocolFee);
+            emit FundRig__ProtocolFee(protocol, day, protocolFee);
         }
 
         // Update state - credit the account, not msg.sender

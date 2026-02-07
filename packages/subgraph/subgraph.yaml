@@ -238,7 +238,7 @@ templates:
           handler: handleFunded
         - event: FundRig__Claimed(indexed address,uint256,uint256)
           handler: handleFundClaimed
-        - event: FundRig__ProtocolFee(indexed address,uint256,uint256)
+        - event: FundRig__ProtocolFee(indexed address,indexed uint256,uint256)
           handler: handleFundProtocolFee
         - event: FundRig__RecipientSet(indexed address)
           handler: handleFundRecipientSet

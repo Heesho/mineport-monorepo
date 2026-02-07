@@ -103,7 +103,7 @@ contract SpinMulticall {
         if (!ISpinCore(core).rigToIsRig(rig)) revert SpinMulticall__InvalidRig();
 
         // Calculate entropy fee (only required when entropy is enabled)
-        uint256 entropyFee = ISpinRig(rig).entropyEnabled() ? ISpinRig(rig).getEntropyFee() : 0;
+        uint256 entropyFee = _calculateEntropyFee(rig);
         if (msg.value < entropyFee) revert SpinMulticall__InsufficientETH();
         if (msg.value > entropyFee) revert SpinMulticall__ExcessETH();
 
@@ -189,6 +189,20 @@ contract SpinMulticall {
         });
 
         return ISpinCore(core).launch(launchParams);
+    }
+
+    /*----------  INTERNAL FUNCTIONS  -----------------------------------*/
+
+    /**
+     * @notice Calculate entropy fee if randomness is enabled.
+     * @param rig Rig contract address
+     * @return fee Entropy fee to send (0 if not needed)
+     */
+    function _calculateEntropyFee(address rig) internal view returns (uint256 fee) {
+        if (!ISpinRig(rig).entropyEnabled()) {
+            return 0;
+        }
+        return ISpinRig(rig).getEntropyFee();
     }
 
     /*----------  VIEW FUNCTIONS  ---------------------------------------*/

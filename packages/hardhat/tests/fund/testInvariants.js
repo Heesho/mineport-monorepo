@@ -404,7 +404,7 @@ describe("FundRig Business Logic Tests", function () {
 
       await expect(
         rig.connect(user0).fund(AddressZero, convert("100", 6), "")
-      ).to.be.revertedWith("FundRig__ZeroAddress()");
+      ).to.be.revertedWith("FundRig__ZeroFunder()");
     });
 
     it("Should allow donating on behalf of another account", async function () {

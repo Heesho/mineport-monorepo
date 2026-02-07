@@ -32,6 +32,7 @@ interface IMineRig {
     function ABS_MAX_INIT_PRICE() external view returns (uint256);
     function MAX_INITIAL_UPS() external view returns (uint256);
     function MIN_HALVING_AMOUNT() external view returns (uint256);
+    function MAX_HALVING_AMOUNT() external view returns (uint256);
     function DEFAULT_UPS_MULTIPLIER() external view returns (uint256);
     function MIN_UPS_MULTIPLIER() external view returns (uint256);
     function MAX_UPS_MULTIPLIER() external view returns (uint256);

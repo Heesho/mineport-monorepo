@@ -14,9 +14,22 @@ import {IMineCore} from "./interfaces/IMineCore.sol";
  * @title MineRig
  * @author heesho
  * @notice A mine-based mining rig contract that uses Dutch auctions for slot acquisition.
- *         Miners compete to control slots, paying fees that are distributed to
- *         protocol, treasury, team, and previous miners. Unit tokens are minted
- *         based on time held and multiplier bonuses from optional Pyth Entropy randomness.
+ * @dev Miners compete to control slots by paying Dutch auction prices. While holding a slot,
+ *      miners earn Unit token emissions proportional to time held. When displaced, the previous
+ *      miner receives 80% of the incoming payment. Optional Pyth Entropy VRF assigns random
+ *      UPS multipliers (1x-10x) to slots.
+ *
+ *      Mechanics:
+ *      - Slot price starts high and decays linearly each epoch
+ *      - Displaced miner receives 80% of slot purchase price (pull-based claim)
+ *      - UPS halves based on total minted supply (geometric threshold series)
+ *      - Optional VRF-based UPS multiplier per slot, lasting upsMultiplierDuration
+ *
+ *      Fee Split:
+ *      - 80% to Previous Miner
+ *      - 15% to Treasury
+ *      - 4% to Team
+ *      - 1% to Protocol
  */
 contract MineRig is IEntropyConsumer, ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
@@ -48,6 +61,7 @@ contract MineRig is IEntropyConsumer, ReentrancyGuard, Ownable {
 
     // Halving bounds
     uint256 public constant MIN_HALVING_AMOUNT = 1000 ether; // Prevent degenerate tokenomics
+    uint256 public constant MAX_HALVING_AMOUNT = 1e27;       // Prevent effectively-never halvings
 
     // UPS multiplier bounds
     uint256 public constant DEFAULT_UPS_MULTIPLIER = 1e18;
@@ -150,10 +164,10 @@ contract MineRig is IEntropyConsumer, ReentrancyGuard, Ownable {
     event MineRig__UpsMultiplierSet(uint256 indexed index, uint256 indexed epochId, uint256 upsMultiplier);
     event MineRig__EntropyRequested(uint256 indexed index, uint256 indexed epochId, uint64 indexed sequenceNumber);
     event MineRig__EntropyIgnored(uint256 indexed index, uint256 indexed epochId);
-    event MineRig__ProtocolFee(address indexed protocol, uint256 indexed index, uint256 indexed epochId, uint256 amount);
+    event MineRig__MinerFee(address indexed miner, uint256 indexed index, uint256 indexed epochId, uint256 amount);
     event MineRig__TreasuryFee(address indexed treasury, uint256 indexed index, uint256 indexed epochId, uint256 amount);
     event MineRig__TeamFee(address indexed team, uint256 indexed index, uint256 indexed epochId, uint256 amount);
-    event MineRig__MinerFee(address indexed miner, uint256 indexed index, uint256 indexed epochId, uint256 amount);
+    event MineRig__ProtocolFee(address indexed protocol, uint256 indexed index, uint256 indexed epochId, uint256 amount);
     event MineRig__Mint(address indexed miner, uint256 indexed index, uint256 indexed epochId, uint256 amount);
     event MineRig__TreasurySet(address indexed treasury);
     event MineRig__TeamSet(address indexed team);
@@ -213,8 +227,9 @@ contract MineRig is IEntropyConsumer, ReentrancyGuard, Ownable {
         if (_config.tailUps == 0 || _config.tailUps > _config.initialUps) revert MineRig__TailUpsOutOfRange();
 
         // Validate halving amount
-        if (_config.halvingAmount == 0) revert MineRig__HalvingAmountOutOfRange();
-        if (_config.halvingAmount < MIN_HALVING_AMOUNT) revert MineRig__HalvingAmountOutOfRange();
+        if (_config.halvingAmount < MIN_HALVING_AMOUNT || _config.halvingAmount > MAX_HALVING_AMOUNT) {
+            revert MineRig__HalvingAmountOutOfRange();
+        }
 
         // Validate upsMultiplierDuration
         if (_config.upsMultiplierDuration < MIN_UPS_MULTIPLIER_DURATION || _config.upsMultiplierDuration > MAX_UPS_MULTIPLIER_DURATION) {
@@ -302,9 +317,9 @@ contract MineRig is IEntropyConsumer, ReentrancyGuard, Ownable {
             // Calculate fees
             uint256 minerFee = price * (DIVISOR - TOTAL_BPS) / DIVISOR;
             address protocol = IMineCore(core).protocolFeeAddress();
-            uint256 protocolFee = protocol != address(0) ? price * PROTOCOL_BPS / DIVISOR : 0;
             uint256 teamFee = team != address(0) ? price * TEAM_BPS / DIVISOR : 0;
-            uint256 treasuryFee = price - minerFee - protocolFee - teamFee; // remainder collects dust
+            uint256 protocolFee = protocol != address(0) ? price * PROTOCOL_BPS / DIVISOR : 0;
+            uint256 treasuryFee = price - minerFee - teamFee - protocolFee; // remainder collects dust
 
             // Distribute fees
             accountToClaimable[slotCache.miner] += minerFee;
@@ -313,14 +328,14 @@ contract MineRig is IEntropyConsumer, ReentrancyGuard, Ownable {
             IERC20(quote).safeTransfer(treasury, treasuryFee);
             emit MineRig__TreasuryFee(treasury, index, epochId, treasuryFee);
 
-            if (protocolFee > 0) {
-                IERC20(quote).safeTransfer(protocol, protocolFee);
-                emit MineRig__ProtocolFee(protocol, index, epochId, protocolFee);
-            }
-
             if (teamFee > 0) {
                 IERC20(quote).safeTransfer(team, teamFee);
                 emit MineRig__TeamFee(team, index, epochId, teamFee);
+            }
+
+            if (protocolFee > 0) {
+                IERC20(quote).safeTransfer(protocol, protocolFee);
+                emit MineRig__ProtocolFee(protocol, index, epochId, protocolFee);
             }
         }
 

@@ -436,21 +436,20 @@ Each rig type has a Multicall helper that handles token approvals and provides a
 ```solidity
 // MineMulticall
 function mine(address rig, uint256 index, uint256 epochId, uint256 deadline, uint256 maxPrice, string calldata slotUri) external payable
-function mineMultiple(address rig, MineParams[] calldata params, uint256 deadline) external payable
 function buy(address rig, uint256 epochId, uint256 deadline, uint256 maxPaymentTokenAmount) external
 function launch(LaunchParams calldata params) external returns (address, address, address, address)
 function getRig(address rig, uint256 index, address account) external view returns (RigState memory)
 function getAuction(address rig, address account) external view returns (AuctionState memory)
 
 // SpinMulticall
-function spin(address rig, uint256 epochId, uint256 deadline, uint256 maxPrice) external payable
+function spin(address rig, uint256 epochId, uint256 deadline, uint256 maxPrice, string calldata _uri) external payable
 function buy(...) external
 function launch(...) external returns (...)
 function getRig(address rig, address account) external view returns (RigState memory)
 function getAuction(address rig, address account) external view returns (AuctionState memory)
 
 // FundMulticall
-function fund(address rig, address account, uint256 amount) external
+function fund(address rig, address account, uint256 amount, string calldata _uri) external
 function claim(address rig, address account, uint256 day) external
 function claimMultiple(address rig, address account, uint256[] calldata dayIds) external
 function buy(...) external

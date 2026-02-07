@@ -336,7 +336,7 @@ describe("FundRig Tests", function () {
       await paymentToken.connect(user0).approve(rig.address, convert("100", 6));
       await expect(
         rig.connect(user0).fund(AddressZero, convert("100", 6), "")
-      ).to.be.revertedWith("FundRig__ZeroAddress()");
+      ).to.be.revertedWith("FundRig__ZeroFunder()");
     });
 
     it("Should redirect team fees to treasury when team address is zero", async function () {
