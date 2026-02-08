@@ -2,7 +2,7 @@ import "@/app/globals.css";
 import type { Metadata } from "next";
 import { Providers } from "@/components/providers";
 
-const appDomain = process.env.NEXT_PUBLIC_APP_URL || "https://farplace.app";
+const appDomain = process.env.NEXT_PUBLIC_APP_URL || "https://farplace.io";
 const heroImageUrl = `${appDomain}/media/hero.png`;
 const splashImageUrl = `${appDomain}/media/splash.png`;
 
@@ -10,7 +10,7 @@ const miniAppEmbed = {
   version: "1",
   imageUrl: heroImageUrl,
   button: {
-    title: "Launch on Farplace!",
+    title: "Start mining",
     action: {
       type: "launch_miniapp" as const,
       name: "Farplace",
@@ -23,10 +23,10 @@ const miniAppEmbed = {
 
 export const metadata: Metadata = {
   title: "Farplace",
-  description: "Launch and distribute tokens through gamified mechanisms. No presales, no VCs — just fair distribution.",
+  description: "A fair-launch coin launchpad on Base. Mine coins, not buy them.",
   openGraph: {
     title: "Farplace",
-    description: "Launch and distribute tokens through gamified mechanisms.",
+    description: "A fair-launch coin launchpad on Base. Mine coins, not buy them.",
     url: appDomain,
     images: [
       {
