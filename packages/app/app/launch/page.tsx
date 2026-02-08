@@ -763,20 +763,20 @@ const LAUNCHED_EVENT_ABIS = [
 
 export default function LaunchPage() {
   const { address: account, isConnected, isConnecting, connect } = useFarcaster();
-  const { execute, status: txStatus, txHash, error: txError, reset: resetTx } = useBatchedTransaction();
+  const { execute, status: txStatus, txHash, batchReceipts, error: txError, reset: resetTx } = useBatchedTransaction();
 
-  // Extract rig address from tx receipt
+  // Extract rig address from tx receipt (sequential mode)
   const [launchedRigAddress, setLaunchedRigAddress] = useState<string | null>(null);
   const { data: txReceipt } = useWaitForTransactionReceipt({
     hash: txHash as `0x${string}` | undefined,
   });
 
-  useEffect(() => {
-    if (!txReceipt?.logs) return;
+  // Helper to extract rig address from parsed logs
+  const extractRigAddress = (logs: readonly { address: string; topics: readonly string[]; data: string }[]) => {
     try {
       const parsed = parseEventLogs({
         abi: LAUNCHED_EVENT_ABIS,
-        logs: txReceipt.logs,
+        logs: logs as Parameters<typeof parseEventLogs>["0"]["logs"],
       });
       const launchedEvent = parsed.find(
         (e) =>
@@ -785,12 +785,34 @@ export default function LaunchPage() {
           e.eventName === "FundCore__Launched"
       );
       if (launchedEvent?.args && "rig" in launchedEvent.args) {
-        setLaunchedRigAddress(launchedEvent.args.rig as string);
+        return launchedEvent.args.rig as string;
       }
-    } catch {
-      // If parsing fails, fall back to explore page
+    } catch (err) {
+      console.error("Failed to parse launch event logs:", err);
     }
-  }, [txReceipt]);
+    return null;
+  };
+
+  // Parse from sequential tx receipt
+  useEffect(() => {
+    if (!txReceipt?.logs || launchedRigAddress) return;
+    const rig = extractRigAddress(txReceipt.logs);
+    if (rig) setLaunchedRigAddress(rig);
+  }, [txReceipt, launchedRigAddress]);
+
+  // Parse from EIP-5792 batch receipts (batch mode may not populate txHash)
+  useEffect(() => {
+    if (!batchReceipts || launchedRigAddress) return;
+    for (const receipt of batchReceipts) {
+      if (receipt.logs) {
+        const rig = extractRigAddress(receipt.logs as never);
+        if (rig) {
+          setLaunchedRigAddress(rig);
+          break;
+        }
+      }
+    }
+  }, [batchReceipts, launchedRigAddress]);
 
   // Read user's USDC balance
   const { data: usdcBalance } = useReadContract({

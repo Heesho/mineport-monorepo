@@ -33,17 +33,33 @@ function friendlyError(err: unknown): Error {
   return new Error(first || "Transaction failed.");
 }
 
+type BatchReceipt = {
+  transactionHash?: `0x${string}`;
+  logs?: Array<{
+    address: string;
+    topics: string[];
+    data: string;
+    blockNumber: string;
+    transactionHash: string;
+    transactionIndex: string;
+    blockHash: string;
+    logIndex: string;
+    removed: boolean;
+  }>;
+};
+
 type UseBatchedTransactionReturn = {
   execute: (calls: Call[]) => Promise<void>;
   status: BatchedTransactionState;
   txHash: string | undefined;
+  batchReceipts: BatchReceipt[] | undefined;
   error: Error | null;
   reset: () => void;
   reportsCapability: boolean;
 };
 
 type CallsStatusWithReceipts = {
-  receipts?: Array<{ transactionHash?: `0x${string}` }>;
+  receipts?: BatchReceipt[];
 };
 
 /**
@@ -249,10 +265,14 @@ export function useBatchedTransaction(): UseBatchedTransactionReturn {
     resetSeq();
   }, [resetBatch, resetSeq]);
 
+  // Expose batch receipts for callers that need to parse logs
+  const batchReceipts = (callsStatus as CallsStatusWithReceipts | undefined)?.receipts;
+
   return {
     execute,
     status: state,
     txHash,
+    batchReceipts,
     error,
     reset,
     // Reports whether capability was detected (not whether batching will work)

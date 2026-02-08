@@ -860,7 +860,7 @@ export const RIG_ABI = [
   },
   {
     inputs: [],
-    name: "isEntropyEnabled",
+    name: "entropyEnabled",
     outputs: [{ internalType: "bool", name: "", type: "bool" }],
     stateMutability: "view",
     type: "function",

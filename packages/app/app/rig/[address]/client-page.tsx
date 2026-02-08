@@ -323,7 +323,7 @@ export default function RigDetailPage() {
   const { data: isEntropyEnabled } = useReadContract({
     address: rigAddress,
     abi: RIG_ABI,
-    functionName: "isEntropyEnabled",
+    functionName: "entropyEnabled",
     chainId: base.id,
     query: {
       enabled: !!rigAddress && rigType === "mine",
@@ -627,8 +627,8 @@ export default function RigDetailPage() {
             <div className="flex items-center gap-3">
               <TokenLogo name={tokenName} logoUrl={logoUrl} size="lg" />
               <div>
-                <div className="text-[13px] text-muted-foreground">{tokenSymbol}</div>
-                <div className="text-[15px] font-medium">{tokenName}</div>
+                <div className="text-[13px] text-muted-foreground">{tokenName}</div>
+                <div className="text-[15px] font-medium">{tokenSymbol}</div>
               </div>
             </div>
             <div className="text-right">
@@ -655,8 +655,8 @@ export default function RigDetailPage() {
               data={chartData}
               height={176}
               onHover={handleChartHover}
-              tokenFirstActiveTime={createdAtTimestamp}
-              initialPrice={initialPrice}
+              tokenFirstActiveTime={timeframe !== "ALL" ? createdAtTimestamp : undefined}
+              initialPrice={timeframe !== "ALL" ? initialPrice : undefined}
             />
           </div>
 
