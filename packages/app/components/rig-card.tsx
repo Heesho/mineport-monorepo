@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { RigListItem } from "@/hooks/useAllRigs";
 import { cn } from "@/lib/utils";
 import { ipfsToHttp } from "@/lib/constants";
-import { getUnitHourData } from "@/lib/subgraph-launchpad";
+import { getUnitMinuteData, getUnitHourData } from "@/lib/subgraph-launchpad";
 
 type RigCardProps = {
   rig: RigListItem;
@@ -77,12 +77,16 @@ export function RigCard({ rig, isTopBump = false, isNewBump = false }: RigCardPr
   const marketCapUsd = rig.marketCapUsd;
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
-  // Fetch 24h candle data
+  // Fetch candle data — use minute candles for tokens < 24h old, hourly otherwise
+  const tokenAge = rig.createdAt ? Math.floor(Date.now() / 1000) - rig.createdAt : Infinity;
   const { data: candles } = useQuery({
-    queryKey: ["miniSparkline", rig.unitAddress],
+    queryKey: ["miniSparkline", rig.unitAddress, tokenAge < 86400 ? "minute" : "hour"],
     queryFn: async () => {
       const now = Math.floor(Date.now() / 1000);
       const since = now - 86400;
+      if (tokenAge < 86400) {
+        return getUnitMinuteData(rig.unitAddress.toLowerCase(), since);
+      }
       return getUnitHourData(rig.unitAddress.toLowerCase(), since);
     },
     staleTime: 60_000,

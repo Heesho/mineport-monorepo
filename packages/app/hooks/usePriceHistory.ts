@@ -110,11 +110,13 @@ function fillChartData(
   const rawNow = Math.floor(Date.now() / 1000);
   const now = Math.floor(rawNow / config.intervalSeconds) * config.intervalSeconds;
 
-  // ALL starts at createdAt (no pre-creation data, no baseline)
+  // ALL starts at the first candle (no pre-trading flat padding)
   // Other timeframes start at their sinceTimestamp (shows baseline for pre-creation period)
   let startTimestamp: number;
-  if (timeframe === "ALL" && createdAt) {
-    // Round UP so the first generated point is never before createdAt
+  if (timeframe === "ALL" && candles.length > 0) {
+    // Start from first actual candle so there's no flat pre-trading gap
+    startTimestamp = Math.floor(candles[0].time / config.intervalSeconds) * config.intervalSeconds;
+  } else if (timeframe === "ALL" && createdAt) {
     startTimestamp = Math.ceil(createdAt / config.intervalSeconds) * config.intervalSeconds;
   } else {
     startTimestamp = Math.floor(config.sinceTimestamp / config.intervalSeconds) * config.intervalSeconds;
