@@ -840,6 +840,9 @@ export default function LaunchPage() {
   const [recipientName, setRecipientName] = useState("");
   const [recipientAddress, setRecipientAddress] = useState("");
 
+  // Links (websites, socials)
+  const [links, setLinks] = useState<string[]>([]);
+
   // Advanced settings
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -1043,7 +1046,7 @@ export default function LaunchPage() {
         description: tokenDescription,
         defaultMessage: miningMessage || "gm",
         ...(rigType === "fund" && recipientName ? { recipientName } : {}),
-        links: [],
+        links: links.filter((l) => l.trim() !== ""),
       }),
     });
     const data = await res.json();
@@ -1361,6 +1364,44 @@ export default function LaunchPage() {
                 onChange={(e) => setMiningMessage(e.target.value)}
                 className="w-full h-10 px-3 rounded-lg bg-transparent ring-1 ring-zinc-700 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-zinc-500 text-sm"
               />
+
+              {/* Links */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[13px] text-zinc-400">Links</span>
+                  {links.length < 5 && (
+                    <button
+                      type="button"
+                      onClick={() => setLinks([...links, ""])}
+                      className="text-[12px] text-zinc-500 hover:text-zinc-300 transition-colors"
+                    >
+                      + Add link
+                    </button>
+                  )}
+                </div>
+                {links.map((link, i) => (
+                  <div key={i} className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={link}
+                      onChange={(e) => {
+                        const updated = [...links];
+                        updated[i] = e.target.value;
+                        setLinks(updated);
+                      }}
+                      className="flex-1 h-10 px-3 rounded-lg bg-transparent ring-1 ring-zinc-700 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-zinc-500 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setLinks(links.filter((_, j) => j !== i))}
+                      className="px-2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
 
               {/* FundRig-specific fields */}
               {rigType === "fund" && (

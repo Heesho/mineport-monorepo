@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Share2, Copy } from "lucide-react";
+import { ArrowLeft, Share2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useReadContract } from "wagmi";
 import { base } from "wagmi/chains";
@@ -785,26 +785,53 @@ export default function RigDetailPage() {
               </p>
             )}
 
-            {/* Link buttons - copy real addresses */}
-            <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => {
-                  if (rigInfo?.unitAddress) navigator.clipboard.writeText(rigInfo.unitAddress);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-[12px] text-muted-foreground hover:bg-secondary/80 transition-colors"
-              >
-                {tokenSymbol}
-                <Copy className="w-3 h-3" />
-              </button>
-              <button
-                onClick={() => {
-                  if (rigInfo?.lpAddress) navigator.clipboard.writeText(rigInfo.lpAddress);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-[12px] text-muted-foreground hover:bg-secondary/80 transition-colors"
-              >
-                {tokenSymbol}-USDC LP
-                <Copy className="w-3 h-3" />
-              </button>
+            {/* Address + link buttons */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {rigInfo?.unitAddress && (
+                <a
+                  href={`https://basescan.org/token/${rigInfo.unitAddress}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-[12px] text-muted-foreground hover:bg-secondary/80 transition-colors"
+                >
+                  {tokenSymbol}
+                </a>
+              )}
+              {rigInfo?.lpAddress && (
+                <a
+                  href={`https://basescan.org/address/${rigInfo.lpAddress}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-[12px] text-muted-foreground hover:bg-secondary/80 transition-colors"
+                >
+                  {tokenSymbol}-USDC LP
+                </a>
+              )}
+              {metadata?.links && metadata.links.length > 0 && metadata.links.map((link, i) => {
+                let label: string;
+                try {
+                  const hostname = new URL(link).hostname.replace("www.", "");
+                  if (hostname.includes("twitter.com") || hostname.includes("x.com")) label = "Twitter";
+                  else if (hostname.includes("t.me") || hostname.includes("telegram")) label = "Telegram";
+                  else if (hostname.includes("discord")) label = "Discord";
+                  else if (hostname.includes("github.com")) label = "GitHub";
+                  else if (hostname.includes("warpcast.com")) label = "Warpcast";
+                  else label = hostname;
+                } catch {
+                  label = link;
+                }
+                return (
+                  <a
+                    key={i}
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-[12px] text-muted-foreground hover:bg-secondary/80 transition-colors"
+                  >
+                    {label}
+                  </a>
+                );
+              })}
             </div>
 
             {/* Parameters - rig configuration from subgraph */}

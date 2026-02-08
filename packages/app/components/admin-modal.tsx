@@ -114,6 +114,7 @@ export function AdminModal({
   const [description, setDescription] = useState("");
   const [defaultMessage, setDefaultMessage] = useState("");
   const [recipientName, setRecipientName] = useState("");
+  const [links, setLinks] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Common state
@@ -152,6 +153,7 @@ export function AdminModal({
       setDescription(existingMetadata?.description || "");
       setDefaultMessage(existingMetadata?.defaultMessage || "");
       setRecipientName(existingMetadata?.recipientName || "");
+      setLinks(existingMetadata?.links || []);
     }
     if (!isOpen) {
       wasOpenRef.current = false;
@@ -165,6 +167,7 @@ export function AdminModal({
       setDescription(existingMetadata.description || "");
       setDefaultMessage(existingMetadata.defaultMessage || "");
       setRecipientName(existingMetadata.recipientName || "");
+      setLinks(existingMetadata.links || []);
     }
   }, [isOpen, existingMetadata]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -197,7 +200,8 @@ export function AdminModal({
     description !== (existingMetadata?.description || "") ||
     defaultMessage !== (existingMetadata?.defaultMessage || "") ||
     recipientName !== (existingMetadata?.recipientName || "") ||
-    logoFile !== null;
+    logoFile !== null ||
+    JSON.stringify(links) !== JSON.stringify(existingMetadata?.links || []);
 
   // Handle logo file selection
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,7 +252,7 @@ export function AdminModal({
           description,
           defaultMessage,
           ...(recipientName ? { recipientName } : {}),
-          links: existingMetadata?.links || [],
+          links: links.filter((l) => l.trim() !== ""),
         }),
       });
 
@@ -465,6 +469,47 @@ export function AdminModal({
               />
             </div>
           )}
+
+          {/* Links */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className={labelClass}>Links</label>
+              {links.length < 5 && (
+                <button
+                  type="button"
+                  onClick={() => setLinks([...links, ""])}
+                  className="text-[12px] text-zinc-500 hover:text-zinc-300 transition-colors"
+                >
+                  + Add link
+                </button>
+              )}
+            </div>
+            {links.map((link, i) => (
+              <div key={i} className="flex gap-2 mb-2">
+                <input
+                  type="url"
+                  value={link}
+                  onChange={(e) => {
+                    const updated = [...links];
+                    updated[i] = e.target.value;
+                    setLinks(updated);
+                  }}
+                  placeholder="https://..."
+                  className="flex-1 bg-zinc-800 rounded-xl px-3 py-2.5 text-[14px] outline-none placeholder:text-zinc-600"
+                />
+                <button
+                  type="button"
+                  onClick={() => setLinks(links.filter((_, j) => j !== i))}
+                  className="px-2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            {links.length === 0 && (
+              <p className="text-[12px] text-zinc-600">No links added</p>
+            )}
+          </div>
 
           {/* Save Profile */}
           <button
