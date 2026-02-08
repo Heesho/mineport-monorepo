@@ -5,7 +5,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { X, Loader2, CheckCircle, User } from "lucide-react";
 import { formatUnits, formatEther, zeroAddress } from "viem";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { NavBar } from "@/components/nav-bar";
 import { useFarcaster } from "@/hooks/useFarcaster";
 import { useRigState } from "@/hooks/useRigState";
 import { useMultiSlotState } from "@/hooks/useMultiSlotState";
@@ -748,7 +747,6 @@ export function MineModal({
           </div>
         </div>
       </div>
-      <NavBar />
     </div>
   );
 }

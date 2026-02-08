@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { X, Loader2, CheckCircle } from "lucide-react";
-import { NavBar } from "@/components/nav-bar";
 import { formatEther, formatUnits } from "viem";
 import { useAuctionState } from "@/hooks/useAuctionState";
 import {
@@ -257,7 +256,6 @@ export function AuctionModal({
           )}
         </div>
       </div>
-      <NavBar />
     </div>
   );
 }

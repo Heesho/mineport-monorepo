@@ -19,7 +19,6 @@ import {
   FUND_MULTICALL_ABI,
   QUOTE_TOKEN_DECIMALS,
 } from "@/lib/contracts";
-import { NavBar } from "@/components/nav-bar";
 import { Leaderboard } from "@/components/leaderboard";
 import { DonationHistoryItem } from "@/components/donation-history-item";
 import { truncateAddress, timeAgo, formatUSDC } from "@/lib/format";
@@ -616,7 +615,6 @@ export function FundModal({
           </div>
         </div>
       </div>
-      <NavBar />
     </div>
   );
 }

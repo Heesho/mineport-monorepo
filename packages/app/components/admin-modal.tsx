@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Plus, Minus, Camera, Loader2 } from "lucide-react";
 import { encodeFunctionData } from "viem";
-import { NavBar } from "@/components/nav-bar";
 import { useTokenMetadata } from "@/hooks/useMetadata";
 import { useBatchedTransaction, type Call } from "@/hooks/useBatchedTransaction";
 import { ipfsToHttp } from "@/lib/constants";
@@ -666,7 +665,6 @@ export function AdminModal({
           <div className="pb-6" />
         </div>
       </div>
-      <NavBar />
     </div>
   );
 }

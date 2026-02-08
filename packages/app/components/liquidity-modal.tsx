@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { X, Delete, Loader2, CheckCircle } from "lucide-react";
 import { parseUnits, parseEther, formatEther, formatUnits } from "viem";
-import { NavBar } from "@/components/nav-bar";
 import { useFarcaster } from "@/hooks/useFarcaster";
 import {
   useBatchedTransaction,
@@ -307,7 +306,6 @@ export function LiquidityModal({
           </div>
         </div>
       </div>
-      <NavBar />
     </div>
   );
 }

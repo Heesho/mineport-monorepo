@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { X, Loader2, CheckCircle } from "lucide-react";
 import { formatUnits, formatEther } from "viem";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { NavBar } from "@/components/nav-bar";
 import { Leaderboard } from "@/components/leaderboard";
 import { SpinHistoryItem } from "@/components/spin-history-item";
 import { useFarcaster } from "@/hooks/useFarcaster";
@@ -558,7 +557,6 @@ export function SpinModal({
           </div>
         </div>
       </div>
-      <NavBar />
     </div>
   );
 }

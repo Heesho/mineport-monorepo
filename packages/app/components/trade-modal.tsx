@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { X, Delete, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { useReadContract } from "wagmi";
-import { NavBar } from "@/components/nav-bar";
 import { formatUnits, formatEther, parseUnits } from "viem";
 import { useSwapQuote } from "@/hooks/useSwapQuote";
 import {
@@ -481,7 +480,7 @@ export function TradeModal({
           {/* Number pad */}
           <div
             className="pb-4"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 70px)" }}
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}
           >
             <div className="grid grid-cols-3 gap-2">
               {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "backspace"].map(
@@ -499,7 +498,6 @@ export function TradeModal({
           </div>
         </div>
       </div>
-      <NavBar />
     </div>
   );
 }
