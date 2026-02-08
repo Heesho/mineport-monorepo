@@ -17,6 +17,7 @@ import {
   encodeContractCall,
   type Call,
 } from "@/hooks/useBatchedTransaction";
+import { useBatchProfiles } from "@/hooks/useBatchProfiles";
 import {
   CONTRACT_ADDRESSES,
   MULTICALL_ABI,
@@ -84,6 +85,8 @@ type SlotCardProps = {
   isUserSlot: boolean;
   isSingleSlot: boolean;
   isFlashing?: boolean;
+  avatarUrl?: string;
+  displayName?: string;
 };
 
 function SlotCard({
@@ -96,9 +99,10 @@ function SlotCard({
   isUserSlot,
   isSingleSlot,
   isFlashing,
+  avatarUrl,
+  displayName,
 }: SlotCardProps) {
   const isEmpty = miner === zeroAddress;
-  const avatarSeed = miner === zeroAddress ? "empty" : miner;
 
   return (
     <button
@@ -122,14 +126,11 @@ function SlotCard({
       {/* Avatar */}
       <div className="flex justify-center py-1">
         <Avatar className={isSingleSlot ? "h-20 w-20" : "h-10 w-10"}>
-          {!isEmpty && (
-            <AvatarImage
-              src={`https://api.dicebear.com/7.x/shapes/svg?seed=${avatarSeed}`}
-              alt={miner}
-            />
+          {!isEmpty && avatarUrl && (
+            <AvatarImage src={avatarUrl} alt={displayName || miner} />
           )}
           <AvatarFallback className={`bg-zinc-700 text-zinc-300 ${isSingleSlot ? "text-xl" : "text-xs"}`}>
-            {isEmpty ? "?" : miner.slice(2, 4).toUpperCase()}
+            {isEmpty ? "?" : (displayName?.[0]?.toUpperCase() || miner.slice(2, 4).toUpperCase())}
           </AvatarFallback>
         </Avatar>
       </div>
@@ -213,6 +214,22 @@ export function MineModal({
     mines: mineHistory,
     isLoading: isHistoryLoading,
   } = useMineHistory(rigAddress, 10);
+
+  // Batch fetch Farcaster profiles for all miners (slots + leaderboard)
+  const minerAddresses = useMemo(
+    () => {
+      const addrs = new Set<string>();
+      for (const s of slots) {
+        if (s.miner !== zeroAddress) addrs.add(s.miner);
+      }
+      for (const e of leaderboardEntries || []) {
+        if (e.miner) addrs.add(e.miner);
+      }
+      return [...addrs];
+    },
+    [slots, leaderboardEntries]
+  );
+  const { getDisplayName, getAvatarUrl, getProfile } = useBatchProfiles(minerAddresses);
 
   // Rig metadata (for default message from IPFS)
   const { metadata } = useTokenMetadata(rigState?.rigUri);
@@ -303,21 +320,24 @@ export function MineModal({
   // Rig URL for sharing
   const rigUrl = typeof window !== "undefined" ? `${window.location.origin}/rig/${rigAddress}` : "";
 
-  // Map leaderboard entries to expected format
-  const formattedLeaderboard: LeaderboardEntry[] = (leaderboardEntries || []).map((entry, index) => ({
-    rank: index + 1,
-    miner: entry.miner,
-    address: entry.miner,
-    mined: entry.mined,
-    minedFormatted: formatCompactToken(entry.mined),
-    spent: entry.spent,
-    spentFormatted: `$${formatUSDC(entry.spent)}`,
-    earned: entry.earned,
-    earnedFormatted: `$${formatUSDC(entry.earned)}`,
-    isCurrentUser: account ? entry.miner.toLowerCase() === account.toLowerCase() : false,
-    isFriend: false,
-    profile: null,
-  }));
+  // Map leaderboard entries to expected format (profile populated after batch fetch)
+  const formattedLeaderboard: LeaderboardEntry[] = (leaderboardEntries || []).map((entry, index) => {
+    const profile = getProfile(entry.miner);
+    return {
+      rank: index + 1,
+      miner: entry.miner,
+      address: entry.miner,
+      mined: entry.mined,
+      minedFormatted: formatCompactToken(entry.mined),
+      spent: entry.spent,
+      spentFormatted: `$${formatUSDC(entry.spent)}`,
+      earned: entry.earned,
+      earnedFormatted: `$${formatUSDC(entry.earned)}`,
+      isCurrentUser: account ? entry.miner.toLowerCase() === account.toLowerCase() : false,
+      isFriend: false,
+      profile: profile ? { displayName: profile.displayName, username: profile.username, pfpUrl: profile.pfpUrl } : null,
+    };
+  });
 
   // ---------- Reset tx status on modal close ----------
   useEffect(() => {
@@ -456,7 +476,7 @@ export function MineModal({
             <div className="flex items-start gap-3 mb-3">
               <Avatar className="h-14 w-14 flex-shrink-0">
                 {selectedSlot.miner !== zeroAddress && (
-                  <AvatarImage src={`https://api.dicebear.com/7.x/shapes/svg?seed=${selectedSlot.miner}`} />
+                  <AvatarImage src={getAvatarUrl(selectedSlot.miner)} />
                 )}
                 <AvatarFallback className="bg-zinc-700 text-sm">
                   {selectedSlot.miner === zeroAddress ? "?" : selectedSlot.miner.slice(2, 4).toUpperCase()}
@@ -465,7 +485,7 @@ export function MineModal({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-base font-semibold truncate">
-                    {selectedSlot.miner === zeroAddress ? "Empty Slot" : `Slot #${selectedSlotIndex + 1}`}
+                    {selectedSlot.miner === zeroAddress ? "Empty Slot" : getDisplayName(selectedSlot.miner)}
                   </span>
                   <span className="text-xs font-semibold text-zinc-300 bg-zinc-700 px-1.5 py-0.5 rounded flex-shrink-0">
                     {Number((selectedSlot.upsMultiplier || BigInt(1e18)) / BigInt(1e18))}x
@@ -545,6 +565,8 @@ export function MineModal({
                     onSelect={() => setSelectedSlotIndex(index)}
                     isUserSlot={isUser || false}
                     isSingleSlot={slots.length === 1}
+                    avatarUrl={slot.miner !== zeroAddress ? getAvatarUrl(slot.miner) : undefined}
+                    displayName={slot.miner !== zeroAddress ? getDisplayName(slot.miner) : undefined}
                   />
                 );
               })}
