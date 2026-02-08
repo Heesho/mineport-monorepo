@@ -115,7 +115,10 @@ export function handleSpinCoreLaunched(event: SpinCoreLaunchedEvent): void {
   rig.save()
 
   // Link unit to rig
+  // Set initial totalSupply from launch unitAmount — Transfer events fire before
+  // the Unit template is active, so the initial LP mint is missed by handleUnitTransfer
   unit.rig = rig.id
+  unit.totalSupply = convertTokenToDecimal(event.params.unitAmount, BI_18)
   unit.save()
 
   // Start indexing events from the new contracts
