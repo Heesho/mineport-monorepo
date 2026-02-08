@@ -681,12 +681,12 @@ const LAUNCHED_EVENT_ABIS = [
     type: "event",
     name: "MineCore__Launched",
     inputs: [
-      { name: "launcher", type: "address", indexed: false },
-      { name: "quoteToken", type: "address", indexed: false },
-      { name: "unit", type: "address", indexed: false },
-      { name: "rig", type: "address", indexed: false },
+      { name: "launcher", type: "address", indexed: true },
+      { name: "rig", type: "address", indexed: true },
+      { name: "unit", type: "address", indexed: true },
       { name: "auction", type: "address", indexed: false },
       { name: "lpToken", type: "address", indexed: false },
+      { name: "quoteToken", type: "address", indexed: false },
       { name: "tokenName", type: "string", indexed: false },
       { name: "tokenSymbol", type: "string", indexed: false },
       { name: "uri", type: "string", indexed: false },
@@ -698,6 +698,8 @@ const LAUNCHED_EVENT_ABIS = [
       { name: "rigEpochPeriod", type: "uint256", indexed: false },
       { name: "rigPriceMultiplier", type: "uint256", indexed: false },
       { name: "rigMinInitPrice", type: "uint256", indexed: false },
+      { name: "upsMultipliers", type: "uint256[]", indexed: false },
+      { name: "upsMultiplierDuration", type: "uint256", indexed: false },
       { name: "auctionInitPrice", type: "uint256", indexed: false },
       { name: "auctionEpochPeriod", type: "uint256", indexed: false },
       { name: "auctionPriceMultiplier", type: "uint256", indexed: false },
@@ -725,6 +727,7 @@ const LAUNCHED_EVENT_ABIS = [
       { name: "rigEpochPeriod", type: "uint256", indexed: false },
       { name: "rigPriceMultiplier", type: "uint256", indexed: false },
       { name: "rigMinInitPrice", type: "uint256", indexed: false },
+      { name: "odds", type: "uint256[]", indexed: false },
       { name: "auctionInitPrice", type: "uint256", indexed: false },
       { name: "auctionEpochPeriod", type: "uint256", indexed: false },
       { name: "auctionPriceMultiplier", type: "uint256", indexed: false },
@@ -844,13 +847,15 @@ export default function LaunchPage() {
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Auto-reset error state after 2 seconds so button reverts to normal
+  // Auto-reset error state after 10 seconds so button reverts to normal
   useEffect(() => {
     if (txStatus !== "error" && !launchError) return;
+    if (launchError) console.error("[Launch Error]", launchError);
+    if (txStatus === "error") console.error("[Tx Error]", txStatus);
     const timer = setTimeout(() => {
       resetTx();
       setLaunchError(null);
-    }, 2000);
+    }, 10000);
     return () => clearTimeout(timer);
   }, [txStatus, launchError, resetTx]);
 
